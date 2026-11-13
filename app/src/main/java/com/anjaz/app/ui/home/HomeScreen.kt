@@ -43,7 +43,7 @@ import com.anjaz.app.ui.components.TaskCard
 import com.anjaz.app.ui.components.Tone
 import com.anjaz.app.ui.icons.AnjazIcons
 import com.anjaz.app.ui.theme.Anjaz
-import com.anjaz.app.ui.theme.ReemKufi
+import com.anjaz.app.ui.theme.Display
 import com.anjaz.app.ui.theme.ltr
 
 @Composable
@@ -88,7 +88,7 @@ private fun Header(unsynced: Int) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Column {
             Text("مرحباً بك", color = c.mute, style = MaterialTheme.typography.bodySmall)
-            Text(BrandConfig.NAME, color = if (c.dark) c.ink else c.navy, fontFamily = ReemKufi, style = MaterialTheme.typography.headlineMedium)
+            Text(BrandConfig.NAME, color = if (c.dark) c.ink else c.navy, fontFamily = Display, style = MaterialTheme.typography.headlineMedium)
         }
         Box(Modifier.size(44.dp).clip(CircleShape).background(c.card), contentAlignment = Alignment.Center) {
             AnjazIcon(AnjazIcons.Bell, c.ink, description = "الإشعارات")
@@ -109,11 +109,11 @@ private fun Hero(done: Int, total: Int, progress: Float) {
     ) {
         Box(Modifier.size(112.dp), contentAlignment = Alignment.Center) {
             ProgressRing(progress, Modifier.size(112.dp), track = c.onNavy.copy(.16f), ring = c.emerald, square = c.emerald)
-            Text(ltr("${(progress * 100).toInt()}%"), color = c.onNavy, fontFamily = ReemKufi, style = MaterialTheme.typography.titleLarge)
+            Text(ltr("${(progress * 100).toInt()}%"), color = c.onNavy, fontFamily = Display, style = MaterialTheme.typography.titleLarge)
         }
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("إنجاز المهام", color = c.onNavy.copy(.78f), style = MaterialTheme.typography.bodySmall)
-            Text("${ltr(done.toString())} من ${ltr(total.toString())}", color = c.onNavy, fontFamily = ReemKufi, style = MaterialTheme.typography.headlineMedium)
+            Text("${ltr(done.toString())} من ${ltr(total.toString())}", color = c.onNavy, fontFamily = Display, style = MaterialTheme.typography.headlineMedium)
             Text(if (total == 0) "لا توجد مهام بعد" else "مهمة معتمدة", color = c.onNavy.copy(.78f), style = MaterialTheme.typography.bodySmall)
         }
     }

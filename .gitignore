@@ -11,3 +11,4 @@ node_modules/
 firestore-debug.log
 ui-debug.log
 firebase-debug.log
+__pycache__/

@@ -8,7 +8,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.anjaz.app.R
 
-val ReemKufi = FontFamily(Font(R.font.reem_kufi_bold, FontWeight.SemiBold), Font(R.font.reem_kufi_bold, FontWeight.Bold))
+val Display = FontFamily(Font(R.font.alexandria_semibold, FontWeight.SemiBold), Font(R.font.alexandria_bold, FontWeight.Bold))
 
 val PlexArabic = FontFamily(
     Font(R.font.plex_ar_regular, FontWeight.Normal),
@@ -19,9 +19,9 @@ val PlexArabic = FontFamily(
 private const val TNUM = "tnum"
 
 val AnjazTypography = Typography(
-    displayLarge = TextStyle(fontFamily = ReemKufi, fontWeight = FontWeight.SemiBold, fontSize = 34.sp, lineHeight = 36.sp, fontFeatureSettings = TNUM),
-    headlineMedium = TextStyle(fontFamily = ReemKufi, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 30.sp),
-    titleLarge = TextStyle(fontFamily = ReemKufi, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, lineHeight = 26.sp),
+    displayLarge = TextStyle(fontFamily = Display, fontWeight = FontWeight.SemiBold, fontSize = 34.sp, lineHeight = 36.sp, fontFeatureSettings = TNUM),
+    headlineMedium = TextStyle(fontFamily = Display, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 30.sp),
+    titleLarge = TextStyle(fontFamily = Display, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, lineHeight = 26.sp),
     titleMedium = TextStyle(fontFamily = PlexArabic, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 22.sp),
     bodyLarge = TextStyle(fontFamily = PlexArabic, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 22.sp, fontFeatureSettings = TNUM),
     bodyMedium = TextStyle(fontFamily = PlexArabic, fontWeight = FontWeight.Normal, fontSize = 13.sp, lineHeight = 20.sp, fontFeatureSettings = TNUM),

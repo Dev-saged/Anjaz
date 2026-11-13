@@ -4,8 +4,8 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 22 ملفاً · 1249 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
-> الأكبر: home-directions.html 271 · repomap.py 146 · apply-to-all-repos.yml 106 · build.yml 104 · new-project.yml 95 · presentation.html 86 · unpack-zip.yml 79 · build_brand.py 76
+> 23 ملفاً · 1414 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> الأكبر: home-directions.html 271 · home-a.html 164 · repomap.py 146 · apply-to-all-repos.yml 106 · build.yml 104 · new-project.yml 95 · presentation.html 86 · unpack-zip.yml 79
 
 ### ./
 - CLAUDE.md (44)
@@ -29,6 +29,7 @@
 - ic_launcher.xml (7)
 - ic_launcher_round.xml (7)
 ### brand/prototype/
+- home-a.html (164)
 - home-directions.html (271)
 ### brand/tools/
 - build_brand.py (76): oklch, symbol, svg, wordmark, write
@@ -36,7 +37,7 @@
 ### brand/variants/
 - head-snippet.html (6)
 ### docs/
-- repo-map.md (30)
+- repo-map.md (31)
 ### tools/
 - repomap.py (146): files, symbols, build, main
 <!-- repomap:auto:end -->

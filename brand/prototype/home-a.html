@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>إنجاز — الشاشة الرئيسية (الاتجاه المعتمد A)</title>
+<style>
+@font-face{font-family:"Reem Kufi";src:url(fonts/ReemKufi.ttf);font-weight:400 700}
+@font-face{font-family:"Plex Ar";src:url(fonts/IBMPlexSansArabic-Regular.ttf);font-weight:400}
+@font-face{font-family:"Plex Ar";src:url(fonts/IBMPlexSansArabic-Medium.ttf);font-weight:500}
+@font-face{font-family:"Plex Ar";src:url(fonts/IBMPlexSansArabic-SemiBold.ttf);font-weight:600}
+:root{
+  --navy:oklch(.30 .075 255);--navy-3:oklch(.46 .08 255);
+  --em:oklch(.72 .16 158);--em-d:oklch(.50 .13 158);
+  --amber:oklch(.78 .15 70);--amber-d:oklch(.48 .12 60);
+  --red:oklch(.60 .21 25);--red-d:oklch(.48 .19 25);
+  --surface:oklch(.98 .005 250);--card:#fff;--ink:oklch(.20 .04 255);--mute:oklch(.50 .03 255);--line:oklch(.91 .01 250);
+  --ease:cubic-bezier(.22,.9,.2,1)
+}
+*{box-sizing:border-box;margin:0}
+body{background:oklch(.93 .008 250);font:400 14px/1.5 "Plex Ar",sans-serif;color:var(--ink);display:grid;place-items:center;min-height:100vh;padding:24px}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+button:focus-visible{outline:2px solid var(--em);outline-offset:2px}
+.num{font-feature-settings:"tnum";unicode-bidi:isolate;direction:ltr;display:inline-block}
+svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.phone{width:360px;height:760px;border-radius:38px;overflow:hidden;position:relative;background:var(--surface);box-shadow:0 0 0 8px oklch(.18 .02 255),0 30px 60px -20px oklch(.2 .05 255/.5)}
+.scroll{position:absolute;inset:0;overflow-y:auto;padding-bottom:128px;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+.hero{background:linear-gradient(170deg,var(--navy) 0%,oklch(.25 .07 258) 100%);color:#fff;padding-bottom:18px;border-radius:0 0 32px 32px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;width:300px;height:300px;border-radius:50%;border:34px solid oklch(1 0 0/.05);inset-block-start:-100px;inset-inline-start:-120px}
+.status{display:flex;justify-content:space-between;padding:12px 22px 0;font-size:12px;font-weight:500;position:relative}
+.top{display:flex;align-items:center;gap:12px;padding:12px 20px 0;position:relative}
+.av{width:44px;height:44px;border-radius:14px;background:var(--navy-3);display:grid;place-items:center;font:600 18px "Reem Kufi"}
+.who{flex:1}.who b{display:block;font-weight:600}.who span{font-size:12px;opacity:.75}
+.ib{width:44px;height:44px;border-radius:14px;background:oklch(1 0 0/.1);display:grid;place-items:center;position:relative;color:#fff}
+.badge{position:absolute;top:0;inset-inline-end:8px;min-width:16px;height:16px;border-radius:8px;background:var(--red);color:#fff;font-size:10px;display:grid;place-items:center;padding:0 4px}
+.ib .badge{top:6px;inset-inline-end:6px}
+.ringrow{display:flex;align-items:center;gap:18px;padding:14px 24px 0;position:relative}
+.ringbox{position:relative;width:116px;height:116px;flex:none}
+.ringbox .c{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ringbox .c b{font:600 30px/1 "Reem Kufi"}.ringbox .c small{font-size:11px;opacity:.75;display:block;margin-top:2px}
+.meta{flex:1;display:grid;gap:8px}
+.meta div{display:flex;justify-content:space-between;font-size:12px;opacity:.9;border-bottom:1px solid oklch(1 0 0/.12);padding-bottom:5px}
+.meta b{font-weight:600}
+.body{padding:14px 16px 0;display:grid;gap:12px}
+.sec{display:flex;justify-content:space-between;align-items:baseline;font-weight:600}
+.sec small{font-weight:400;font-size:12px;color:var(--mute)}
+.week{display:flex;gap:6px}
+.day{flex:1;min-height:58px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;color:var(--mute);background:var(--card);border:1px solid var(--line);position:relative;transition:transform .2s var(--ease),background .2s}
+.day b{font:600 17px "Reem Kufi";color:var(--ink)}
+.day:active{transform:scale(.96)}
+.day.on{background:var(--navy);color:#fff;border-color:var(--navy)}.day.on b{color:#fff}
+.day i{position:absolute;bottom:6px;width:5px;height:5px;border-radius:50%;background:var(--em)}.day i.w{background:var(--amber)}.day i.r{background:var(--red)}
+.day.on i{background:var(--em)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kpi{background:var(--card);border-radius:16px;padding:10px 4px;text-align:center;border:1px solid var(--line);min-height:62px}
+.kpi b{display:block;font:600 21px/1.1 "Reem Kufi";color:var(--navy)}.kpi span{font-size:11px;color:var(--mute)}
+.kpi.w b{color:var(--amber-d)}.kpi.r b{color:var(--red-d)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 oklch(.6 .21 25/.5)}50%{box-shadow:0 0 0 8px oklch(.6 .21 25/0)}}
+.sos{display:flex;align-items:center;gap:12px;background:oklch(.97 .02 25);border:1px solid oklch(.85 .08 25);border-radius:18px;padding:12px}
+.sos .ic{width:40px;height:40px;border-radius:12px;background:var(--red);color:#fff;display:grid;place-items:center;animation:pulse 2s infinite;flex:none}
+.sos b{display:block;font-weight:600;color:var(--ink);font-size:13px}.sos span{font-size:12px;color:var(--mute)}
+.list{display:grid;gap:10px}
+.item{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;animation:up .35s var(--ease) both}
+.item time{font:600 12px "Plex Ar";color:var(--mute);width:38px;text-align:center;flex:none}
+.item .dot{width:4px;align-self:stretch;border-radius:2px;background:var(--em)}.item.o .dot{background:var(--amber)}.item.u .dot{background:var(--red)}
+.item b{display:block;font-weight:600;font-size:13px}.item span{font-size:12px;color:var(--mute)}
+@keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* شريط التنقل العائم الزجاجي */
+.navbg{position:absolute;inset:auto 14px 14px 14px;height:64px;border-radius:26px;background:oklch(1 0 0/.78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid oklch(.9 .01 250);box-shadow:0 14px 30px -14px oklch(.3 .08 255/.45)}
+.nav{position:absolute;inset:auto 14px 14px 14px;height:64px;display:flex;justify-content:space-around;align-items:center;padding:0 4px}
+.nav button{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:56px;min-height:48px;font-size:11px;font-weight:500;color:var(--mute);position:relative}
+.nav button[aria-current]{color:var(--navy)}
+.nav button[aria-current]::before{content:"";position:absolute;top:-4px;width:20px;height:3px;border-radius:2px;background:var(--em)}
+.nav .gap{width:60px}
+.nav .badge{inset-inline-end:6px}
+.fab{position:absolute;inset-inline-start:50%;transform:translateX(50%);inset-block-end:42px;width:64px;height:64px;border-radius:22px;background:var(--em);color:oklch(.2 .04 255);display:grid;place-items:center;box-shadow:0 14px 30px -8px oklch(.6 .16 158/.8);z-index:2;transition:transform .2s var(--ease)}
+.fab:active{transform:translateX(50%) scale(.94)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="home" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="tasks" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="m8.5 12.2 2.5 2.5 4.5-5"/></symbol>
+  <symbol id="chat" viewBox="0 0 24 24"><path d="M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-7l-4.5 3.5V16H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 9.5h8M8 12.5h5"/></symbol>
+  <symbol id="more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/></symbol>
+  <symbol id="bell" viewBox="0 0 24 24"><path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5H5z"/><path d="M10 20.5h4"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="sos" viewBox="0 0 24 24"><path d="M12 3.5 21 19.5H3z"/><path d="M12 10v4.2"/><circle cx="12" cy="17" r=".6"/></symbol>
+</svg>
+
+<div class="phone">
+  <div class="scroll">
+    <div class="hero">
+      <div class="status"><span class="num">11:45</span><span>الجمعة 13 نوفمبر</span></div>
+      <div class="top">
+        <div class="av">خ</div>
+        <div class="who"><b>م. خالد الشرافي</b><span>مدير منطقة الوسط</span></div>
+        <button class="ib" aria-label="الإشعارات"><svg class="i"><use href="#bell"/></svg><span class="badge">4</span></button>
+      </div>
+      <div class="ringrow">
+        <div class="ringbox"><svg width="116" height="116" viewBox="0 0 132 132" id="ring"></svg>
+          <div class="c"><div><b class="num">72%</b><small>إنجاز المنطقة</small></div></div></div>
+        <div class="meta">
+          <div><span>المربعات</span><b class="num">4</b></div>
+          <div><span>الموظفون</span><b class="num">38</b></div>
+          <div><span>متصلون الآن</span><b class="num">11</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="week" id="week" role="tablist" aria-label="أيام الأسبوع"></div>
+      <div class="kpis">
+        <div class="kpi"><b class="num">7</b><span>جديدة</span></div>
+        <div class="kpi"><b class="num">12</b><span>قيد المتابعة</span></div>
+        <div class="kpi w"><b class="num">5</b><span>بانتظار الاعتماد</span></div>
+        <div class="kpi r"><b class="num">3</b><span>متأخرة</span></div>
+      </div>
+      <div class="sos"><div class="ic"><svg class="i"><use href="#sos"/></svg></div>
+        <div><b>استغاثة: انقطاع المياه عن مخيم الصفا</b><span>خطورة عالية · مربع الأمل · قبل <span class="num">12</span> دقيقة</span></div></div>
+      <div class="sec"><span id="dayTitle">مهام اليوم</span><small id="dayCount"></small></div>
+      <div class="list" id="list"></div>
+    </div>
+  </div>
+  <div class="navbg"></div>
+  <button class="fab" aria-label="مهمة جديدة"><svg class="i" style="width:28px;height:28px"><use href="#plus"/></svg></button>
+  <nav class="nav">
+    <button aria-current="page"><svg class="i"><use href="#home"/></svg>الرئيسية</button>
+    <button><svg class="i"><use href="#tasks"/></svg>المهام</button>
+    <span class="gap"></span>
+    <button><svg class="i"><use href="#chat"/></svg>الرسائل<span class="badge">3</span></button>
+    <button><svg class="i"><use href="#more"/></svg>المزيد</button>
+  </nav>
+</div>
+
+<script>
+(function(){
+  var svg=document.getElementById('ring'),R=52,w=14,pct=.72,len=2*Math.PI*R,off=len*(1-pct);
+  var a=-90+360*pct,x=66+R*Math.cos(a*Math.PI/180),y=66+R*Math.sin(a*Math.PI/180);
+  svg.innerHTML='<circle cx="66" cy="66" r="52" fill="none" stroke="oklch(1 0 0/.12)" stroke-width="'+w+'"/>'+
+  '<circle cx="66" cy="66" r="52" fill="none" stroke="#fff" stroke-width="'+w+'" stroke-linecap="round" transform="rotate(-90 66 66)" stroke-dasharray="'+len+'" stroke-dashoffset="'+off+'"/>'+
+  '<rect x="'+(x-9)+'" y="'+(y-9)+'" width="18" height="18" rx="5" fill="oklch(.72 .16 158)" transform="rotate(-8 '+x+' '+y+')"/>';
+  var days=[['سبت',7,''],['أحد',8,''],['اثنين',9,'w'],['ثلاثاء',10,''],['أربعاء',11,'r'],['خميس',12,''],['جمعة',13,'']];
+  var data={
+    13:[['15:00','حصر الأسر المرشحة لسلة الغذاء','مربع النصر · موعد التسليم اليوم','u'],['16:30','اعتماد تقرير المخيم الشرقي','أنجزه سامي العمصي · مربع الزيتون','o'],['18:30','اجتماع تنسيق المربعات','اجتماع مرئي · 9 مشاركين','']],
+    12:[['10:00','زيارة ميدانية لمخيم الصفا','مربع الأمل · أنجزت','' ],['13:00','توزيع الطرود الغذائية','مربع الفرقان · أنجزت','']],
+    11:[['09:30','كشف المخيم الشمالي','مربع الزيتون · متأخرة','u']]
+  };
+  var week=document.getElementById('week'),list=document.getElementById('list'),sel=13;
+  function render(){
+    week.innerHTML=days.map(function(d){return '<button class="day'+(d[1]==sel?' on':'')+'" role="tab" aria-selected="'+(d[1]==sel)+'" data-d="'+d[1]+'"><span>'+d[0]+'</span><b class="num">'+d[1]+'</b>'+(d[2]?'<i class="'+d[2]+'"></i>':'')+'</button>'}).join('');
+    var rows=data[sel]||[];
+    document.getElementById('dayTitle').textContent=sel==13?'مهام اليوم':'مهام '+days.filter(function(d){return d[1]==sel})[0][0];
+    document.getElementById('dayCount').textContent=rows.length?rows.length+' مهام':'';
+    list.innerHTML=rows.length?rows.map(function(r,i){return '<div class="item '+r[3]+'" style="animation-delay:'+(i*60)+'ms"><time class="num">'+r[0]+'</time><i class="dot"></i><div><b>'+r[1]+'</b><span>'+r[2]+'</span></div></div>'}).join(''):'<div class="item" style="justify-content:center;color:var(--mute)">لا مهام في هذا اليوم</div>';
+  }
+  week.addEventListener('click',function(e){var b=e.target.closest('.day');if(!b)return;sel=+b.dataset.d;if(navigator.vibrate)try{navigator.vibrate(8)}catch(_){}render()});
+  render();
+})();
+</script>
+</body>
+</html>

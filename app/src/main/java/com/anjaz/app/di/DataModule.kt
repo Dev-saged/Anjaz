@@ -25,4 +25,10 @@ object DataModule {
     @Provides fun outboxDao(db: AnjazDatabase) = db.outbox()
     @Provides fun directoryDao(db: AnjazDatabase) = db.directory()
     @Provides fun clock(): Clock = SystemClock
+
+    @Provides @Singleton
+    fun remote(cloud: com.anjaz.app.cloud.CloudState): com.anjaz.app.sync.RemoteStore =
+        if (cloud.available) com.anjaz.app.sync.FirestoreRemoteStore() else com.anjaz.app.sync.NoRemoteStore
+
+    @Provides fun notifier(api: com.anjaz.app.sync.ApiClient): com.anjaz.app.sync.Notifier = api
 }

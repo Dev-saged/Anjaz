@@ -38,6 +38,9 @@ interface TaskDao {
 
     @Query("SELECT COUNT(*) FROM tasks")
     suspend fun countAll(): Int
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(task: TaskEntity)
 }
 
 @Dao
@@ -50,6 +53,9 @@ interface TaskEventDao {
 
     @Query("SELECT COUNT(*) FROM task_events")
     suspend fun countAll(): Int
+
+    @Query("SELECT * FROM task_events WHERE id = :id")
+    suspend fun byId(id: String): TaskEventEntity?
 }
 
 @Dao
@@ -68,6 +74,15 @@ interface OutboxDao {
 
     @Query("SELECT COUNT(*) FROM outbox")
     suspend fun countAll(): Int
+
+    @Query("SELECT COUNT(*) FROM outbox WHERE state <> 'SYNCED' AND payload LIKE '%' || :id || '%'")
+    suspend fun unsyncedFor(id: String): Int
+
+    @Query("UPDATE outbox SET state = 'FAILED' WHERE state = 'SENDING'")
+    suspend fun recoverSending()
+
+    @Query("SELECT COUNT(*) FROM outbox WHERE state = 'NEEDS_ATTENTION'")
+    fun observeNeedsAttention(): Flow<Int>
 }
 
 @Dao
@@ -89,4 +104,7 @@ interface DirectoryDao {
 
     @Query("SELECT COUNT(*) FROM users WHERE active = 1")
     fun observeActiveUsers(): Flow<Int>
+
+    @Query("SELECT * FROM users WHERE active = 1 AND role <> 'CENTRAL' ORDER BY displayName")
+    fun observeTeam(): Flow<List<UserEntity>>
 }

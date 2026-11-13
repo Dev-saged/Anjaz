@@ -144,7 +144,7 @@ fun ProgressRing(progress: Float, modifier: Modifier = Modifier, stroke: Dp = 12
 data class NavItem(val route: String, val label: String, val icon: ImageVector, val badge: Int = 0)
 
 @Composable
-fun GlassNavBar(items: List<NavItem>, selected: String, onSelect: (String) -> Unit, onFab: () -> Unit, fabIcon: ImageVector, fabLabel: String, modifier: Modifier = Modifier) {
+fun GlassNavBar(items: List<NavItem>, selected: String, onSelect: (String) -> Unit, onFab: () -> Unit, fabIcon: ImageVector, fabLabel: String, modifier: Modifier = Modifier, fabColor: Color? = null) {
     val c = Anjaz.colors
     Box(modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 14.dp).padding(bottom = 10.dp), contentAlignment = Alignment.BottomCenter) {
         val shape = RoundedCornerShape(26.dp)
@@ -161,7 +161,7 @@ fun GlassNavBar(items: List<NavItem>, selected: String, onSelect: (String) -> Un
         }
         Box(
             Modifier.padding(bottom = 26.dp).size(64.dp).shadow(14.dp, RoundedCornerShape(22.dp), ambientColor = c.emerald, spotColor = c.emerald)
-                .clip(RoundedCornerShape(22.dp)).background(c.emerald).clickable(onClick = onFab)
+                .clip(RoundedCornerShape(22.dp)).background(fabColor ?: c.emerald).clickable(onClick = onFab)
                 .semantics { contentDescription = fabLabel; role = Role.Button },
             contentAlignment = Alignment.Center,
         ) { AnjazIcon(fabIcon, c.onEmerald, 28.dp) }

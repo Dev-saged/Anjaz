@@ -10,6 +10,7 @@
 - الرئيسية → ui/home → `HomeViewModel`؛ المهام → ui/tasks → `TasksViewModel`، `NewTaskSheet`؛ التنقل → ui/nav → `AnjazRoot`
 - المنطق المحلي → data/ → `TaskRepository` (create/transition + outbox)، `DashboardRepository`، `DemoSeeder`؛ اختبار ذاتي → core/SelfTest
 - الخلفية → backend/firebase (القواعد + اختباراتها) و backend/worker (المسارات في `route` داخل src/index.js، الصلاحيات في policy.js، التصعيد cron.js، النسخ backup.js)
+- الدخول والجلسة → cloud/AuthRepository، ui/login؛ المزامنة → sync/ (`SyncEngine` دفع الصندوق الصادر + سحب، `FirestoreRemoteStore`، `SyncWorker`، `ApiClient` للـ Worker)
 
 ## Decisions
 - جمعية واحدة تدير مناطق ← مربعات ← مخيمات؛ بلا SaaS الآن، والتصميم يسمح بالتوسع لاحقاً. السبب: طلب ساجد.
@@ -33,6 +34,6 @@
 ## Open issues
 - الإجراءات تُسجَّل بمعرّف محلي `Session.LOCAL_ACTOR` حتى يُربط تسجيل الدخول؛ الأدوار معرّفة في domain/Role لكن غير مفروضة على الواجهة بعد.
 - الخلفية مختبَرة بمحاكيات (Firestore emulator للقواعد، ومحاكاة REST للـ Worker) ولم تُنشر على مشروع حقيقي؛ الإعداد في backend/README.md.
-- الصندوق الصادر يُكتب ولا يُرسَل بعد (لا Worker متزامن حتى الآن).
+- المزامنة مكتوبة ومختبرة بخادم وهمي فقط؛ تحتاج google-services.json وWORKER_URL في BrandConfig لتعمل فعلياً. سجل أحداث المهمة يُدفع ولا يُسحب بعد.
 - التحقق من حدود Cloudflare المجانية الحالية (Workers/D1/Cron) قبل التنفيذ.
 - اختبار الصوت والاجتماعات والإنذار يحتاج هواتف حقيقية من ساجد.

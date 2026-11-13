@@ -11,5 +11,6 @@ import kotlinx.coroutines.flow.Flow
 class TaskQueries @Inject constructor(private val db: AnjazDatabase, private val clock: Clock) {
     fun all(): Flow<List<TaskEntity>> = db.tasks().observeAll()
     fun events(taskId: String): Flow<List<TaskEventEntity>> = db.taskEvents().observeFor(taskId)
+    fun team(): Flow<List<com.anjaz.app.data.db.UserEntity>> = db.directory().observeTeam()
     fun now(): Long = clock.now()
 }

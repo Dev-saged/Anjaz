@@ -20,7 +20,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 @Serializable
-data class TaskOpPayload(val taskId: String, val status: String, val note: String? = null)
+data class TaskOpPayload(val taskId: String, val status: String, val note: String? = null, val eventId: String? = null)
 
 @Singleton
 class TaskRepository @Inject constructor(
@@ -29,7 +29,13 @@ class TaskRepository @Inject constructor(
 ) {
     private val json = Json { encodeDefaults = true }
 
-    suspend fun create(values: Map<String, String>, actorId: String): Outcome<String> {
+    suspend fun create(
+        values: Map<String, String>,
+        actorId: String,
+        regionId: String? = null,
+        squareId: String? = null,
+        assigneeId: String? = null,
+    ): Outcome<String> {
         val errors = SchemaValidator.validate(Schemas.task, values)
         if (errors.isNotEmpty()) return Outcome.Failure(errors.values.first())
         val clean = SchemaValidator.clean(Schemas.task, values)
@@ -37,7 +43,7 @@ class TaskRepository @Inject constructor(
         val id = UUID.randomUUID().toString()
         val task = TaskEntity(
             id = id, number = null, title = clean.getValue("title"), description = clean.getValue("description"),
-            createdBy = actorId, regionId = null, squareId = null, assigneeId = null,
+            createdBy = actorId, regionId = regionId, squareId = squareId, assigneeId = assigneeId?.takeIf { it.isNotBlank() },
             priority = Priority.parse(clean.getValue("priority")).name,
             status = TaskStatus.NEW.name, deadline = deadlineFor(clean.getValue("deadline"), now),
             createdAt = now, updatedAt = now, archived = false,
@@ -45,8 +51,9 @@ class TaskRepository @Inject constructor(
         return runCatching {
             db.withTransaction {
                 db.tasks().insert(task)
-                db.taskEvents().insert(event(id, null, TaskStatus.NEW, actorId, null, now))
-                db.outbox().insertIgnore(outbox("task", "create", TaskOpPayload(id, TaskStatus.NEW.name), now))
+                val ev = event(id, null, TaskStatus.NEW, actorId, null, now)
+                db.taskEvents().insert(ev)
+                db.outbox().insertIgnore(outbox("task", "create", TaskOpPayload(id, TaskStatus.NEW.name, null, ev.id), now))
             }
             Outcome.Ok(id)
         }.getOrElse { Outcome.Failure("تعذّر الحفظ محلياً") }
@@ -60,8 +67,9 @@ class TaskRepository @Inject constructor(
                 val from = TaskStatus.parse(task.status)
                 if (!from.canMoveTo(to)) return@withTransaction Outcome.Failure("انتقال غير مسموح")
                 db.tasks().update(task.copy(status = to.name, updatedAt = now))
-                db.taskEvents().insert(event(taskId, from, to, actorId, note, now))
-                db.outbox().insertIgnore(outbox("task", "status", TaskOpPayload(taskId, to.name, note), now))
+                val ev = event(taskId, from, to, actorId, note, now)
+                db.taskEvents().insert(ev)
+                db.outbox().insertIgnore(outbox("task", "status", TaskOpPayload(taskId, to.name, note, ev.id), now))
                 Outcome.Ok(Unit)
             }
         }.getOrElse { Outcome.Failure("تعذّر الحفظ محلياً") }

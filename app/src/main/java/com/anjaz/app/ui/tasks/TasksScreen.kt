@@ -145,15 +145,17 @@ private fun quietLabel(to: TaskStatus) = when (to) {
 @Composable
 fun NewTaskSheet(vm: TasksViewModel) {
     val f by vm.form.collectAsStateWithLifecycle()
+    val team by vm.team.collectAsStateWithLifecycle()
     if (!f.visible) return
+    val schema = Schemas.taskWithAssignee(team)
     val c = Anjaz.colors
     ModalBottomSheet(onDismissRequest = vm::closeForm, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = c.surface) {
         Column(
             Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 20.dp).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            ScreenTitle(Schemas.task.title)
-            SchemaForm(Schemas.task, f.values, f.errors, vm::edit)
+            ScreenTitle(schema.title)
+            SchemaForm(schema, f.values, f.errors, vm::edit)
             PrimaryButton(if (f.saving) "جارٍ الحفظ…" else "حفظ المهمة", vm::submit, enabled = !f.saving)
         }
     }

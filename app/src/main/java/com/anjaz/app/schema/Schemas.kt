@@ -18,6 +18,10 @@ object Schemas {
         listColumns = listOf("title", "priority"),
     )
 
+    fun taskWithAssignee(team: List<Choice>): ModuleSchema =
+        if (team.isEmpty()) task
+        else task.copy(fields = task.fields + FieldSchema("assigneeId", "المكلّف بالمهمة", FieldType.CHOICE, choices = team))
+
     val region = ModuleSchema(
         id = "regions", title = "منطقة",
         fields = listOf(

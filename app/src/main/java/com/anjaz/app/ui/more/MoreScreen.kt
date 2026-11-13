@@ -24,6 +24,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.anjaz.app.BrandConfig
 import com.anjaz.app.BuildConfig
+import androidx.compose.foundation.clickable
+import com.anjaz.app.domain.Profile
 import com.anjaz.app.ui.components.AnjazCard
 import com.anjaz.app.ui.components.AnjazIcon
 import com.anjaz.app.ui.components.ScreenTitle
@@ -37,7 +39,7 @@ private data class Entry(val title: String, val icon: ImageVector)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MoreScreen(onOpenSelfTest: () -> Unit) {
+fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Unit) {
     val c = Anjaz.colors
     val haptic = LocalHapticFeedback.current
     val upcoming = listOf(
@@ -49,6 +51,16 @@ fun MoreScreen(onOpenSelfTest: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         ScreenTitle("المزيد", Modifier.padding(bottom = 6.dp))
+        AnjazCard(Modifier.fillMaxWidth()) {
+            Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                AnjazIcon(AnjazIcons.User, c.ink)
+                Column(Modifier.weight(1f)) {
+                    Text(profile.displayName, color = c.ink, style = MaterialTheme.typography.titleMedium)
+                    Text(profile.roleEnum.label, color = c.mute, style = MaterialTheme.typography.bodySmall)
+                }
+                Text("خروج", color = c.redDeep, style = MaterialTheme.typography.labelLarge, modifier = Modifier.heightIn(min = 44.dp).clickable(onClick = onSignOut).padding(8.dp))
+            }
+        }
         upcoming.forEach { e ->
             AnjazCard(Modifier.fillMaxWidth()) {
                 Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {

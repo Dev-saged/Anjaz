@@ -22,6 +22,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.foundation.background
+import com.anjaz.app.domain.Profile
+import com.anjaz.app.ui.login.AppSessionViewModel
+import com.anjaz.app.ui.login.LoginScreen
+import com.anjaz.app.ui.login.SessionState
+import com.anjaz.app.ui.theme.Anjaz
 import com.anjaz.app.ui.components.GlassNavBar
 import com.anjaz.app.ui.components.NavItem
 import com.anjaz.app.ui.home.HomeScreen
@@ -42,12 +48,24 @@ object Routes {
 }
 
 @Composable
-fun AnjazRoot() {
+fun AnjazRoot(session: AppSessionViewModel = hiltViewModel()) {
+    val state by session.state.collectAsStateWithLifecycle()
+    when (val st = state) {
+        SessionState.Loading -> Box(Modifier.fillMaxSize().background(Anjaz.colors.surface))
+        SessionState.LoggedOut -> LoginScreen()
+        is SessionState.LoggedIn -> MainShell(st.profile, onSignOut = { session.signOut() })
+    }
+}
+
+@Composable
+private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
     val nav = rememberNavController()
     val tasksVm: TasksViewModel = hiltViewModel()
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route ?: Routes.HOME
     val haptic = LocalHapticFeedback.current
+    val sync: SyncViewModel = hiltViewModel()
+    LaunchedEffect(profile.uid) { sync.start(profile) }
     val snack = remember { SnackbarHostState() }
     val message by tasksVm.message.collectAsStateWithLifecycle()
     LaunchedEffect(message) { message?.let { snack.showSnackbar(it); tasksVm.consumeMessage() } }
@@ -70,7 +88,7 @@ fun AnjazRoot() {
             composable(Routes.HOME) { HomeScreen(onOpenTask = { nav.navigateTab(Routes.TASKS) }, onNewTask = tasksVm::openForm) }
             composable(Routes.TASKS) { TasksScreen(tasksVm, onNewTask = tasksVm::openForm) }
             composable(Routes.CHAT) { ChatPlaceholder() }
-            composable(Routes.MORE) { MoreScreen(onOpenSelfTest = { nav.navigate(Routes.TEST) }) }
+            composable(Routes.MORE) { MoreScreen(profile, onSignOut = onSignOut, onOpenSelfTest = { nav.navigate(Routes.TEST) }) }
             composable(Routes.TEST) { SelfTestScreen() }
         }
         if (route != Routes.TEST) {

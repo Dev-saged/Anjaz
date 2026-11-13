@@ -7,3 +7,7 @@ local.properties
 *.jks
 *.keystore
 secrets/
+node_modules/
+firestore-debug.log
+ui-debug.log
+firebase-debug.log

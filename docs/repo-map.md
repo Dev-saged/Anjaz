@@ -9,6 +9,7 @@
 - ثيم/ألوان/خطوط → app/.../ui/theme → `AnjazTheme`، `Anjaz.colors`؛ المكوّنات → ui/components → `GlassNavBar`، `ProgressRing`، `SchemaForm`
 - الرئيسية → ui/home → `HomeViewModel`؛ المهام → ui/tasks → `TasksViewModel`، `NewTaskSheet`؛ التنقل → ui/nav → `AnjazRoot`
 - المنطق المحلي → data/ → `TaskRepository` (create/transition + outbox)، `DashboardRepository`، `DemoSeeder`؛ اختبار ذاتي → core/SelfTest
+- الخلفية → backend/firebase (القواعد + اختباراتها) و backend/worker (المسارات في `route` داخل src/index.js، الصلاحيات في policy.js، التصعيد cron.js، النسخ backup.js)
 
 ## Decisions
 - جمعية واحدة تدير مناطق ← مربعات ← مخيمات؛ بلا SaaS الآن، والتصميم يسمح بالتوسع لاحقاً. السبب: طلب ساجد.
@@ -27,10 +28,11 @@
 - الشاشة الرئيسية معتمدة: اتجاه A (رأس كحلي بحلقة الإنجاز) + شريط أيام الأسبوع من B + تنقل زجاجي عائم بزر + مركزي من C (4 عناصر: الرئيسية، المهام، الرسائل، المزيد). الاجتماعات تحت المزيد. المرجع: brand/prototype/home-a.html. لا يُعاد بناء الهيكل بعد الاعتماد.
 
 ## Solved bugs (never reintroduce)
-- (لا شيء بعد)
+- قاعدة readBy في رسائل المحادثة كانت تسمح بإضافة معرّف مستخدم آخر؛ السبب أن الشرط يفحص الحجم فقط. الإصلاح: المقارنة بالاتحاد الدقيق `readBy ∪ {uid}` + اختبار.
 
 ## Open issues
 - الإجراءات تُسجَّل بمعرّف محلي `Session.LOCAL_ACTOR` حتى يُربط تسجيل الدخول؛ الأدوار معرّفة في domain/Role لكن غير مفروضة على الواجهة بعد.
+- الخلفية مختبَرة بمحاكيات (Firestore emulator للقواعد، ومحاكاة REST للـ Worker) ولم تُنشر على مشروع حقيقي؛ الإعداد في backend/README.md.
 - الصندوق الصادر يُكتب ولا يُرسَل بعد (لا Worker متزامن حتى الآن).
 - التحقق من حدود Cloudflare المجانية الحالية (Workers/D1/Cron) قبل التنفيذ.
 - اختبار الصوت والاجتماعات والإنذار يحتاج هواتف حقيقية من ساجد.

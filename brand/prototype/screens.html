@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>إنجاز — الشاشات الداخلية</title>
+<style>
+@font-face{font-family:"Reem Kufi";src:url(fonts/ReemKufi.ttf);font-weight:400 700}
+@font-face{font-family:"Plex Ar";src:url(fonts/IBMPlexSansArabic-Regular.ttf);font-weight:400}
+@font-face{font-family:"Plex Ar";src:url(fonts/IBMPlexSansArabic-Medium.ttf);font-weight:500}
+@font-face{font-family:"Plex Ar";src:url(fonts/IBMPlexSansArabic-SemiBold.ttf);font-weight:600}
+:root{--navy:oklch(.30 .075 255);--navy-3:oklch(.46 .08 255);--em:oklch(.72 .16 158);--em-d:oklch(.50 .13 158);--amber:oklch(.78 .15 70);--amber-d:oklch(.48 .12 60);--red:oklch(.60 .21 25);--red-d:oklch(.48 .19 25);--surface:oklch(.98 .005 250);--card:#fff;--ink:oklch(.20 .04 255);--mute:oklch(.50 .03 255);--line:oklch(.91 .01 250);--ease:cubic-bezier(.22,.9,.2,1)}
+*{box-sizing:border-box;margin:0}
+body{background:oklch(.93 .008 250);font:400 14px/1.5 "Plex Ar",sans-serif;color:var(--ink);padding:28px 20px 36px}
+h1{font:600 22px "Reem Kufi";text-align:center;margin-bottom:22px}
+.stage{display:flex;gap:26px;justify-content:center;flex-wrap:wrap}
+.col{display:flex;flex-direction:column;align-items:center;gap:12px}
+.cap{font:600 15px "Reem Kufi"}.cap small{display:block;font:400 12px "Plex Ar";color:var(--mute);text-align:center}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+button:focus-visible{outline:2px solid var(--em);outline-offset:2px}
+.num{font-feature-settings:"tnum";unicode-bidi:isolate;direction:ltr;display:inline-block}
+svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.phone{width:360px;height:760px;border-radius:38px;overflow:hidden;position:relative;background:var(--surface);box-shadow:0 0 0 8px oklch(.18 .02 255),0 30px 60px -20px oklch(.2 .05 255/.5)}
+.status{display:flex;justify-content:space-between;padding:12px 22px 0;font-size:12px;font-weight:500}
+.badge{position:absolute;top:0;inset-inline-end:6px;min-width:16px;height:16px;border-radius:8px;background:var(--red);color:#fff;font-size:10px;display:grid;place-items:center;padding:0 4px}
+.bar{display:flex;align-items:center;gap:8px;padding:10px 14px 4px}
+.bar h2{flex:1;font:600 20px "Reem Kufi";color:var(--navy)}
+.sq{width:44px;height:44px;border-radius:14px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;color:var(--navy);position:relative}
+.pad{padding:8px 16px}
+.solid{height:52px;border-radius:18px;background:var(--navy);color:#fff;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.solid.em{background:var(--em);color:var(--ink)}.solid.red{background:var(--red);color:#fff}
+.quiet{height:48px;border-radius:16px;border:1px solid var(--line);background:var(--card);font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.chips{display:flex;gap:8px;overflow:hidden;padding:4px 16px}
+.chip{height:36px;padding:0 14px;border-radius:18px;background:var(--card);border:1px solid var(--line);font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px;white-space:nowrap;flex:none}
+.chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.chip b{font:600 12px "Plex Ar"}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 14px}
+.card+.card{margin-top:10px}
+.tag{display:inline-block;font-size:11px;font-weight:500;padding:2px 10px;border-radius:10px;background:oklch(.94 .04 158);color:var(--em-d)}
+.tag.u{background:oklch(.95 .04 25);color:var(--red-d)}.tag.w{background:oklch(.95 .06 80);color:var(--amber-d)}.tag.n{background:oklch(.94 .02 255);color:var(--mute)}
+.muted{color:var(--mute);font-size:12px}
+.navbg{position:absolute;inset:auto 14px 14px 14px;height:64px;border-radius:26px;background:oklch(1 0 0/.8);backdrop-filter:blur(16px);border:1px solid oklch(.9 .01 250);box-shadow:0 14px 30px -14px oklch(.3 .08 255/.45)}
+.nav{position:absolute;inset:auto 14px 14px 14px;height:64px;display:flex;justify-content:space-around;align-items:center;padding:0 4px}
+.nav button{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:56px;min-height:48px;font-size:11px;font-weight:500;color:var(--mute);position:relative}
+.nav button[aria-current]{color:var(--navy)}.nav button[aria-current]::before{content:"";position:absolute;top:-4px;width:20px;height:3px;border-radius:2px;background:var(--em)}
+.nav .gap{width:60px}
+.fab{position:absolute;inset-inline-start:50%;transform:translateX(50%);inset-block-end:42px;width:64px;height:64px;border-radius:22px;background:var(--em);color:var(--ink);display:grid;place-items:center;box-shadow:0 14px 30px -8px oklch(.6 .16 158/.8);z-index:2}
+/* login */
+.login{background:linear-gradient(170deg,var(--navy),oklch(.24 .07 258));color:#fff}
+.login .logo{display:flex;justify-content:center;margin:70px 0 10px}
+.login h2{font:600 30px "Reem Kufi";text-align:center}.login p{text-align:center;opacity:.75;margin-top:2px}
+.login .form{position:absolute;inset:auto 0 0 0;background:var(--surface);color:var(--ink);border-radius:32px 32px 0 0;padding:26px 20px 30px;display:grid;gap:14px}
+.field{display:grid;gap:6px;font-size:12px;font-weight:500;color:var(--mute)}
+.input{height:52px;border-radius:16px;border:1.5px solid var(--line);background:#fff;display:flex;align-items:center;gap:10px;padding:0 14px;color:var(--ink);font-size:14px}
+.input.f{border-color:var(--navy)}
+.login .ring{position:absolute;width:320px;height:320px;border-radius:50%;border:36px solid oklch(1 0 0/.05);inset-block-start:-90px;inset-inline-start:-110px}
+/* task detail */
+.steps{display:grid;gap:0;margin-top:6px}
+.step{display:flex;gap:12px;position:relative;padding-bottom:14px}
+.step::before{content:"";position:absolute;inset-inline-start:7px;top:18px;bottom:0;width:2px;background:var(--line)}
+.step:last-child::before{display:none}
+.step i{width:16px;height:16px;border-radius:50%;border:3px solid var(--em);background:#fff;flex:none;margin-top:3px;z-index:1}
+.step.cur i{background:var(--em)}.step.todo i{border-color:var(--line)}
+.step b{font-weight:600;font-size:13px;display:block}.step span{font-size:12px;color:var(--mute)}
+.attach{display:flex;gap:8px;margin-top:8px}.attach div{width:64px;height:64px;border-radius:14px;background:linear-gradient(135deg,oklch(.88 .03 250),oklch(.8 .05 255));display:grid;place-items:center;color:var(--navy)}
+/* chat */
+.chathead{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:#fff}
+.av{width:40px;height:40px;border-radius:13px;background:var(--navy);color:#fff;display:grid;place-items:center;font:600 16px "Reem Kufi"}
+.msgs{padding:14px;display:grid;gap:8px}
+.m{max-width:78%;padding:9px 12px;border-radius:18px;font-size:13px;position:relative}
+.m.in{background:#fff;border:1px solid var(--line);border-end-start-radius:6px;justify-self:start}
+.m.out{background:var(--navy);color:#fff;border-end-end-radius:6px;justify-self:end}
+.m time{display:flex;gap:4px;align-items:center;font-size:10px;opacity:.7;margin-top:2px;justify-content:flex-end}
+.m.out .tick{color:var(--em)}
+.voice{display:flex;align-items:center;gap:10px;min-width:210px}
+.voice .pl{width:34px;height:34px;border-radius:50%;background:var(--em);color:var(--ink);display:grid;place-items:center;flex:none}
+.wave{display:flex;gap:2px;align-items:center;height:28px;flex:1}.wave i{width:3px;border-radius:2px;background:currentColor;opacity:.55}
+.transcribe{font-size:11px;color:var(--em-d);font-weight:600;margin-top:4px;display:block}
+.m.out .transcribe{color:var(--em)}
+.pinned{margin:8px 14px 0;display:flex;gap:8px;align-items:center;background:oklch(.95 .04 80);border-radius:14px;padding:8px 12px;font-size:12px;color:var(--amber-d);font-weight:500}
+.composer{position:absolute;inset:auto 0 0 0;padding:10px 12px 22px;background:#fff;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center}
+.composer .tx{flex:1;height:48px;border-radius:24px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;padding:0 16px;color:var(--mute)}
+.composer .rb{width:48px;height:48px;border-radius:50%;display:grid;place-items:center}
+.composer .mic{background:var(--em);color:var(--ink)}
+/* sos */
+.sev{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sev div{height:48px;border-radius:14px;border:1.5px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px}
+.sev .a{border-color:var(--amber);background:oklch(.96 .05 85);color:var(--amber-d)}
+.sev .r{border-color:var(--red);background:oklch(.95 .05 25);color:var(--red-d)}
+.sev .on{box-shadow:0 0 0 3px oklch(.6 .21 25/.2)}
+.map{height:110px;border-radius:16px;background:linear-gradient(135deg,oklch(.93 .02 150),oklch(.9 .03 200));position:relative;overflow:hidden;border:1px solid var(--line)}
+.map::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(35deg,transparent 0 22px,oklch(1 0 0/.55) 22px 24px),repeating-linear-gradient(-30deg,transparent 0 30px,oklch(1 0 0/.45) 30px 32px)}
+.map .pin{position:absolute;inset-inline-start:48%;top:30%;color:var(--red)}
+/* more */
+.rowi{display:flex;align-items:center;gap:14px;padding:13px 14px;background:#fff;border:1px solid var(--line);border-radius:16px;min-height:56px}
+.rowi+.rowi{margin-top:8px}
+.rowi .ic{width:40px;height:40px;border-radius:12px;background:oklch(.95 .02 255);color:var(--navy);display:grid;place-items:center;flex:none}
+.rowi b{font-weight:600;display:block;font-size:13px}.rowi span{font-size:12px;color:var(--mute)}
+.rowi .ch{margin-inline-start:auto;color:var(--mute);transform:scaleX(-1)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="home" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="tasks" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="m8.5 12.2 2.5 2.5 4.5-5"/></symbol>
+  <symbol id="chat" viewBox="0 0 24 24"><path d="M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-7l-4.5 3.5V16H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 9.5h8M8 12.5h5"/></symbol>
+  <symbol id="more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></symbol>
+  <symbol id="back" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol>
+  <symbol id="user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></symbol>
+  <symbol id="lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="3"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></symbol>
+  <symbol id="sos" viewBox="0 0 24 24"><path d="M12 3.5 21 19.5H3z"/><path d="M12 10v4.2"/><circle cx="12" cy="17" r=".6"/></symbol>
+  <symbol id="mic" viewBox="0 0 24 24"><rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/></symbol>
+  <symbol id="send" viewBox="0 0 24 24"><path d="M20 4 10 14M20 4l-6.5 16-3-6-6-3z"/></symbol>
+  <symbol id="clip" viewBox="0 0 24 24"><path d="m18.5 11-6.7 6.7a4 4 0 0 1-5.6-5.6l7-7a2.7 2.7 0 0 1 3.8 3.8l-7 7a1.3 1.3 0 0 1-1.9-1.9L14 8.7"/></symbol>
+  <symbol id="play" viewBox="0 0 24 24"><path d="M9 6.5v11l9-5.5z"/></symbol>
+  <symbol id="meet" viewBox="0 0 24 24"><rect x="3.5" y="6.5" width="12" height="11" rx="3"/><path d="m15.5 11 5-3v8l-5-3z"/></symbol>
+  <symbol id="report" viewBox="0 0 24 24"><path d="M6 3.5h9l4 4V20H6z"/><path d="M9.5 15v-2.5M12.5 15v-5M15.5 15v-3.5"/></symbol>
+  <symbol id="map" viewBox="0 0 24 24"><path d="M12 21s6.5-5.6 6.5-11a6.5 6.5 0 0 0-13 0c0 5.4 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.2"/></symbol>
+  <symbol id="shield" viewBox="0 0 24 24"><path d="M12 3.5 19 6v5.5c0 4.3-2.8 7.3-7 9-4.2-1.7-7-4.7-7-9V6z"/><path d="m9 12 2.2 2.2L15.5 10"/></symbol>
+  <symbol id="log" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="3"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/></symbol>
+  <symbol id="cloud" viewBox="0 0 24 24"><path d="M7 18.5a4 4 0 0 1-.5-8 5.5 5.5 0 0 1 10.7-1A4.5 4.5 0 0 1 17 18.5z"/><path d="M12 11v5m0 0-2-2m2 2 2-2"/></symbol>
+  <symbol id="gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.3M12 18.2v2.3M3.5 12h2.3M18.2 12h2.3M6 6l1.6 1.6M16.4 16.4 18 18M6 18l1.6-1.6M16.4 7.6 18 6"/></symbol>
+  <symbol id="loc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="7.5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="m6 12.5 4 4 8-9"/></symbol>
+  <symbol id="img" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m5 17 4.5-4 3.5 3 2.5-2 4 3.5"/></symbol>
+</svg>
+
+<h1>إنجاز — الشاشات الداخلية على الهيكل المعتمد</h1>
+<div class="stage">
+
+<!-- 1 دخول -->
+<div class="col"><div class="phone login">
+  <div class="ring"></div>
+  <div class="status"><span class="num">11:45</span><span></span></div>
+  <div class="logo"><svg width="104" height="104" viewBox="0 0 256 256"><path d="M197.47 56.07A100.0 100.0 0 1 0 217.88 171.84A16.0 16.0 0 0 0 189.12 157.81A68.0 68.0 0 1 1 175.24 79.08A16.0 16.0 0 0 0 197.47 56.07Z" fill="#F6F9FC"/><rect x="184.53" y="96.20" width="40" height="40" rx="11" transform="rotate(-8 204.53 116.20)" fill="#24C27D"/></svg></div>
+  <h2>إنجاز</h2><p>منظومة الإدارة والمتابعة الميدانية</p>
+  <div class="form">
+    <div class="field">اسم المستخدم<div class="input f"><svg class="i"><use href="#user"/></svg><span class="num" style="direction:ltr">khaled.sharafi</span></div></div>
+    <div class="field">كلمة المرور<div class="input"><svg class="i"><use href="#lock"/></svg><span>••••••••••</span></div></div>
+    <button class="solid">تسجيل الدخول</button>
+    <p class="muted" style="text-align:center">نسيت كلمة المرور؟ تواصل مع مدير منطقتك لإعادة ضبطها</p>
+  </div>
+</div><div class="cap">1 — الدخول<small>اسم مستخدم وكلمة مرور، والمدير هو من ينشئ الحساب</small></div></div>
+
+<!-- 2 قائمة المهام -->
+<div class="col"><div class="phone">
+  <div class="status"><span class="num">11:45</span><span></span></div>
+  <div class="bar"><h2>المهام</h2><button class="sq" aria-label="بحث"><svg class="i"><use href="#search"/></svg></button></div>
+  <div class="chips"><div class="chip on">الكل <b class="num">27</b></div><div class="chip">جديدة <b class="num">7</b></div><div class="chip">قيد المتابعة <b class="num">12</b></div><div class="chip">بانتظار الاعتماد <b class="num">5</b></div></div>
+  <div class="pad" style="margin-top:6px">
+    <div class="card"><div style="display:flex;justify-content:space-between"><b>حصر الأسر المرشحة لسلة الغذاء</b><span class="muted num">#2041</span></div><div class="muted">مربع النصر · موعد التسليم اليوم 15:00</div><div style="margin-top:8px;display:flex;gap:6px"><span class="tag u">عاجلة</span><span class="tag w">قيد المتابعة</span></div></div>
+    <div class="card"><div style="display:flex;justify-content:space-between"><b>اعتماد تقرير المخيم الشرقي</b><span class="muted num">#2038</span></div><div class="muted">مربع الزيتون · سامي العمصي</div><div style="margin-top:8px;display:flex;gap:6px"><span class="tag w">بانتظار اعتمادك</span></div></div>
+    <div class="card"><div style="display:flex;justify-content:space-between"><b>كشف المخيم الشمالي</b><span class="muted num">#2029</span></div><div class="muted">مربع الزيتون · تأخرت يومين</div><div style="margin-top:8px;display:flex;gap:6px"><span class="tag u">متأخرة</span></div></div>
+    <div class="card"><div style="display:flex;justify-content:space-between"><b>ترشيح مخيمات لتوزيع الطرود</b><span class="muted num">#2024</span></div><div class="muted">كل مربعات الوسط · الأحد 15 نوفمبر</div><div style="margin-top:8px;display:flex;gap:6px"><span class="tag n">جديدة</span></div></div>
+  </div>
+  <div class="navbg"></div><button class="fab"><svg class="i" style="width:28px;height:28px"><use href="#plus"/></svg></button>
+  <nav class="nav"><button><svg class="i"><use href="#home"/></svg>الرئيسية</button><button aria-current="page"><svg class="i"><use href="#tasks"/></svg>المهام</button><span class="gap"></span><button><svg class="i"><use href="#chat"/></svg>الرسائل<span class="badge">3</span></button><button><svg class="i"><use href="#more"/></svg>المزيد</button></nav>
+</div><div class="cap">2 — قائمة المهام<small>فلاتر حالة سريعة وبطاقات واضحة</small></div></div>
+
+<!-- 3 تفاصيل مهمة -->
+<div class="col"><div class="phone">
+  <div class="status"><span class="num">11:45</span><span></span></div>
+  <div class="bar"><button class="sq" aria-label="رجوع"><svg class="i"><use href="#back"/></svg></button><h2>مهمة <span class="num">#2041</span></h2></div>
+  <div class="pad">
+    <div class="card"><b style="font-size:15px">حصر الأسر المرشحة لسلة الغذاء</b><p class="muted" style="margin-top:4px">رفع أسماء الأسر المستحقة مع أرقام الهوية والتواصل، بحد أقصى 50 اسماً لكل مربع.</p>
+      <div style="display:flex;gap:6px;margin-top:10px"><span class="tag u">عاجلة</span><span class="tag n">آخر موعد: اليوم <span class="num">15:00</span></span></div>
+      <div class="attach"><div><svg class="i"><use href="#img"/></svg></div><div><svg class="i"><use href="#log"/></svg></div></div></div>
+    <div class="card"><b>سجل الحالة</b>
+      <div class="steps">
+        <div class="step"><i></i><div><b>جديدة</b><span>خالد الشرافي · <span class="num">08:10</span></span></div></div>
+        <div class="step"><i></i><div><b>تم الاطلاع</b><span>رامي أبو سعدة · <span class="num">08:42</span></span></div></div>
+        <div class="step cur"><i></i><div><b>قيد المتابعة</b><span>رامي أبو سعدة · <span class="num">09:05</span></span></div></div>
+        <div class="step todo"><i></i><div><b>بانتظار الاعتماد</b><span>لم تُرسل بعد</span></div></div>
+      </div></div>
+  </div>
+  <div style="position:absolute;inset:auto 0 0 0;padding:14px 16px 22px;background:linear-gradient(to top,var(--surface) 70%,transparent);display:grid;gap:8px">
+    <button class="solid em"><svg class="i"><use href="#check"/></svg>إرسال الإنجاز للمراجعة</button>
+    <button class="quiet">إضافة رد أو مرفق</button></div>
+</div><div class="cap">3 — تفاصيل المهمة<small>عرض الموظف: زر أساسي واحد وبقية الإجراءات هادئة</small></div></div>
+
+<!-- 4 محادثة -->
+<div class="col"><div class="phone">
+  <div class="status"><span class="num">11:45</span><span></span></div>
+  <div class="chathead"><button class="sq" style="width:40px;height:40px"><svg class="i"><use href="#back"/></svg></button><div class="av">ن</div><div style="flex:1"><b style="display:block;font-size:14px">مجموعة مربع النصر</b><span class="muted">10 أعضاء · 4 متصلون</span></div><button class="sq" style="width:40px;height:40px"><svg class="i"><use href="#search"/></svg></button></div>
+  <div class="pinned"><svg class="i" style="width:18px;height:18px"><use href="#log"/></svg>مثبتة: آخر موعد لحصر الأسر اليوم 15:00</div>
+  <div class="msgs">
+    <div class="m in">وصلتني القائمة الأولية، سأرفع الأسماء خلال ساعة<time class="num">10:41</time></div>
+    <div class="m out">ممتاز، أرسل صور الكشوف أيضاً<time><span class="num">10:43</span><svg class="i tick" style="width:14px;height:14px"><use href="#check"/></svg><svg class="i tick" style="width:14px;height:14px;margin-inline-start:-9px"><use href="#check"/></svg></time></div>
+    <div class="m in"><div class="voice"><span class="pl"><svg class="i" style="width:18px;height:18px"><use href="#play"/></svg></span><div class="wave" id="w1"></div><span class="muted num">0:24</span></div><span class="transcribe">تحويل إلى نص</span><time class="num">10:52</time></div>
+    <div class="m in" style="background:oklch(.97 .02 255)">«في عائلتين جداد ما انضافوا للكشف، بدي أضيفهم قبل ما أرفع»<time><span>نص محوَّل محلياً</span><span class="num">10:52</span></time></div>
+    <div class="m out"><div class="voice"><span class="pl"><svg class="i" style="width:18px;height:18px"><use href="#play"/></svg></span><div class="wave" id="w2"></div><span class="num" style="opacity:.8;font-size:12px">0:09</span></div><time><span class="num">10:55</span><svg class="i tick" style="width:14px;height:14px"><use href="#check"/></svg></time></div>
+  </div>
+  <div class="composer"><button class="rb" style="color:var(--mute)"><svg class="i"><use href="#clip"/></svg></button><div class="tx">اكتب رسالة…</div><button class="rb mic" aria-label="تسجيل صوتي"><svg class="i"><use href="#mic"/></svg></button></div>
+</div><div class="cap">4 — المحادثة<small>رسائل نصية وصوتية، تحويل الصوت إلى نص عند الطلب فقط</small></div></div>
+
+<!-- 5 استغاثة -->
+<div class="col"><div class="phone">
+  <div class="status"><span class="num">11:45</span><span></span></div>
+  <div class="bar"><button class="sq"><svg class="i"><use href="#back"/></svg></button><h2 style="color:var(--red-d)">استغاثة جديدة</h2></div>
+  <div class="pad" style="display:grid;gap:12px">
+    <div class="field">العنوان<div class="input f">انقطاع المياه عن مخيم الصفا</div></div>
+    <div class="field">مستوى الخطورة<div class="sev"><div>منخفضة</div><div class="a">متوسطة</div><div class="r on">عالية</div></div></div>
+    <div class="field">الوصف<div class="input" style="height:78px;align-items:flex-start;padding-top:12px;color:var(--mute)">لا توجد مياه منذ الصباح، نحو 120 أسرة، وفيها أطفال ومرضى…</div></div>
+    <div class="field">الموقع<div class="map"><svg class="i pin" style="width:30px;height:30px;stroke-width:2"><use href="#map"/></svg></div></div>
+    <div style="display:flex;gap:8px"><button class="quiet" style="flex:1"><svg class="i"><use href="#img"/></svg>صورة</button><button class="quiet" style="flex:1"><svg class="i"><use href="#mic"/></svg>تسجيل صوتي</button></div>
+  </div>
+  <div style="position:absolute;inset:auto 0 0 0;padding:14px 16px 24px;background:linear-gradient(to top,var(--surface) 70%,transparent)"><button class="solid red"><svg class="i"><use href="#sos"/></svg>إرسال الاستغاثة</button></div>
+</div><div class="cap">5 — الاستغاثة<small>نموذج مستقل بعيد عن الرسائل العادية، وزر أحمر واحد</small></div></div>
+
+<!-- 6 المزيد -->
+<div class="col"><div class="phone">
+  <div class="status"><span class="num">11:45</span><span></span></div>
+  <div class="bar"><h2>المزيد</h2></div>
+  <div class="pad">
+    <div class="card" style="display:flex;gap:12px;align-items:center"><div class="av" style="width:48px;height:48px;border-radius:15px">خ</div><div style="flex:1"><b>م. خالد الشرافي</b><div class="muted">مدير منطقة الوسط</div></div><span class="tag">متصل</span></div>
+    <div style="margin-top:12px">
+      <div class="rowi"><span class="ic"><svg class="i"><use href="#meet"/></svg></span><div><b>الاجتماعات</b><span>اجتماع تنسيق المربعات اليوم 18:30</span></div><svg class="i ch"><use href="#back"/></svg></div>
+      <div class="rowi"><span class="ic"><svg class="i"><use href="#report"/></svg></span><div><b>التقارير</b><span>يومي · أسبوعي · شهري · تصدير</span></div><svg class="i ch"><use href="#back"/></svg></div>
+      <div class="rowi"><span class="ic"><svg class="i"><use href="#map"/></svg></span><div><b>دليل المناطق والمربعات</b><span>4 مربعات · 12 مخيماً</span></div><svg class="i ch"><use href="#back"/></svg></div>
+      <div class="rowi"><span class="ic"><svg class="i"><use href="#shield"/></svg></span><div><b>المستخدمون والصلاحيات</b><span>38 مستخدماً</span></div><svg class="i ch"><use href="#back"/></svg></div>
+      <div class="rowi"><span class="ic"><svg class="i"><use href="#log"/></svg></span><div><b>سجل العمليات</b><span>كل تغيير مسجّل ومحمي</span></div><svg class="i ch"><use href="#back"/></svg></div>
+      <div class="rowi"><span class="ic"><svg class="i"><use href="#cloud"/></svg></span><div><b>النسخ الاحتياطي</b><span>آخر نسخة: اليوم 03:00</span></div><svg class="i ch"><use href="#back"/></svg></div>
+      <div class="rowi"><span class="ic"><svg class="i"><use href="#gear"/></svg></span><div><b>الإعدادات</b><span>المظهر · الإشعارات · الصوت</span></div><svg class="i ch"><use href="#back"/></svg></div>
+    </div>
+  </div>
+  <div class="navbg"></div><button class="fab"><svg class="i" style="width:28px;height:28px"><use href="#plus"/></svg></button>
+  <nav class="nav"><button><svg class="i"><use href="#home"/></svg>الرئيسية</button><button><svg class="i"><use href="#tasks"/></svg>المهام</button><span class="gap"></span><button><svg class="i"><use href="#chat"/></svg>الرسائل<span class="badge">3</span></button><button aria-current="page"><svg class="i"><use href="#more"/></svg>المزيد</button></nav>
+</div><div class="cap">6 — المزيد<small>كل ما لا يلزم يومياً خلف شاشة واحدة</small></div></div>
+
+</div>
+<script>
+[['w1',[6,14,22,12,26,18,9,24,16,8,20,25,11,17,7,22,13,19,10,6]],['w2',[10,18,8,22,14,26,12,20,9,16,24,11]]].forEach(function(p){
+  var e=document.getElementById(p[0]);e.innerHTML=p[1].map(function(h){return '<i style="height:'+h+'px"></i>'}).join('');
+});
+</script>
+</body>
+</html>

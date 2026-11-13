@@ -1,0 +1,183 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
+package com.anjaz.app.ui.chat
+
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.anjaz.app.core.DayMath
+import com.anjaz.app.data.csv
+import com.anjaz.app.data.db.MessageEntity
+import com.anjaz.app.data.db.MessageState
+import com.anjaz.app.ui.components.AnjazCard
+import com.anjaz.app.ui.components.AnjazIcon
+import com.anjaz.app.ui.components.ScreenTitle
+import com.anjaz.app.ui.icons.AnjazIcons
+import com.anjaz.app.ui.theme.Anjaz
+import kotlinx.coroutines.launch
+
+@Composable
+fun ChatListScreen(onOpenRoom: (String) -> Unit, vm: ChatListViewModel = hiltViewModel()) {
+    val c = Anjaz.colors
+    val rooms by vm.rooms.collectAsStateWithLifecycle()
+    val contacts by vm.contacts.collectAsStateWithLifecycle()
+    var picker by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    Column(Modifier.fillMaxSize().background(c.surface).statusBarsPadding()) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            ScreenTitle("المحادثات")
+            Box(
+                Modifier.size(44.dp).clip(CircleShape).background(c.card).clickable { picker = true }.semantics { contentDescription = "محادثة جديدة" },
+                contentAlignment = Alignment.Center,
+            ) { AnjazIcon(AnjazIcons.Plus, c.ink) }
+        }
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(18.dp, 4.dp, 18.dp, 120.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (rooms.isEmpty()) item {
+                Column(Modifier.fillMaxWidth().padding(top = 48.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AnjazIcon(AnjazIcons.Chat, c.mute, 40.dp)
+                    Text("لا توجد محادثات بعد", color = c.ink, style = MaterialTheme.typography.titleMedium)
+                    Text("ابدأ محادثة مع أحد زملائك من زر +", color = c.mute, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            items(rooms, key = { it.id }) { r ->
+                AnjazCard(Modifier.fillMaxWidth(), onClick = { onOpenRoom(r.id) }) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(r.title, color = c.ink, style = MaterialTheme.typography.titleMedium)
+                            if (r.at > 0) Text(DayMath.time(r.at), color = c.mute, style = MaterialTheme.typography.bodySmall)
+                        }
+                        Text(r.last.ifEmpty { "لا رسائل" }, color = c.mute, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                    }
+                }
+            }
+        }
+    }
+    if (picker) ModalBottomSheet(onDismissRequest = { picker = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = c.surface) {
+        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 20.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            ScreenTitle("محادثة جديدة", Modifier.padding(bottom = 8.dp))
+            if (contacts.isEmpty()) Text("لا توجد جهات اتصال بعد", color = c.mute, style = MaterialTheme.typography.bodyMedium)
+            contacts.forEach { u ->
+                Column(
+                    Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(RoundedCornerShape(14.dp)).clickable {
+                        scope.launch { vm.open(u)?.let { id -> picker = false; onOpenRoom(id) } }
+                    }.padding(horizontal = 8.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(u.displayName, color = c.ink, style = MaterialTheme.typography.titleMedium)
+                    Text(com.anjaz.app.domain.Role.entries.firstOrNull { it.name == u.role }?.label.orEmpty(), color = c.mute, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) {
+    val c = Anjaz.colors
+    val ui by vm.ui.collectAsStateWithLifecycle()
+    var text by remember { mutableStateOf("") }
+    val listState = rememberLazyListState()
+    val msgs = ui?.messages.orEmpty()
+    LaunchedEffect(msgs.size) {
+        if (msgs.isNotEmpty()) { listState.animateScrollToItem(msgs.lastIndex); vm.markRead() }
+    }
+    Column(Modifier.fillMaxSize().background(c.surface).statusBarsPadding().imePadding()) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onBack).semantics { contentDescription = "رجوع" }, contentAlignment = Alignment.Center) {
+                AnjazIcon(AnjazIcons.Back, c.ink)
+            }
+            Text(ui?.title.orEmpty(), color = c.ink, style = MaterialTheme.typography.titleLarge)
+        }
+        LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = listState, contentPadding = PaddingValues(14.dp, 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            items(msgs, key = { it.id }) { m -> Bubble(m, mine = m.senderId == ui?.me) }
+        }
+        Row(
+            Modifier.fillMaxWidth().navigationBarsPadding().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedTextField(
+                value = text, onValueChange = { if (it.length <= 4000) text = it }, placeholder = { Text("اكتب رسالة") },
+                maxLines = 4, shape = RoundedCornerShape(22.dp), modifier = Modifier.weight(1f),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = c.emerald, unfocusedBorderColor = c.line, focusedContainerColor = c.card, unfocusedContainerColor = c.card, cursorColor = c.emerald),
+            )
+            Box(
+                Modifier.size(52.dp).clip(CircleShape).background(if (text.isBlank()) c.line else c.emerald)
+                    .clickable(enabled = text.isNotBlank()) { vm.send(text); text = "" }.semantics { contentDescription = "إرسال" },
+                contentAlignment = Alignment.Center,
+            ) { AnjazIcon(AnjazIcons.Send, if (text.isBlank()) c.mute else c.onEmerald) }
+        }
+    }
+}
+
+@Composable
+private fun Bubble(m: MessageEntity, mine: Boolean) {
+    val c = Anjaz.colors
+    val shape = RoundedCornerShape(18.dp, 18.dp, if (mine) 4.dp else 18.dp, if (mine) 18.dp else 4.dp)
+    Box(Modifier.fillMaxWidth(), contentAlignment = if (mine) Alignment.CenterEnd else Alignment.CenterStart) {
+        Column(
+            Modifier.widthIn(max = 300.dp).clip(shape).background(if (mine) c.navy else c.card).padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(m.text, color = if (mine) c.onNavy else c.ink, style = MaterialTheme.typography.bodyLarge)
+            Row(Modifier.align(Alignment.End), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(DayMath.time(m.createdAt), color = if (mine) c.onNavy.copy(.7f) else c.mute, style = MaterialTheme.typography.labelSmall)
+                if (mine) Receipt(m)
+            }
+        }
+    }
+}
+
+@Composable
+private fun Receipt(m: MessageEntity) {
+    val c = Anjaz.colors
+    val readByOthers = m.readBy.csv().any { it != m.senderId }
+    val tint = if (readByOthers) c.emerald else c.onNavy.copy(.7f)
+    when {
+        m.state == MessageState.LOCAL -> Canvas(Modifier.size(10.dp).semantics { contentDescription = "قيد الإرسال" }) { drawCircle(tint, style = Stroke(1.5.dp.toPx())) }
+        readByOthers -> Box(Modifier.semantics { contentDescription = "تمت القراءة" }) {
+            AnjazIcon(AnjazIcons.Check, tint, 14.dp)
+            Box(Modifier.padding(start = 5.dp)) { AnjazIcon(AnjazIcons.Check, tint, 14.dp) }
+        }
+        else -> AnjazIcon(AnjazIcons.Check, tint, 14.dp, "أُرسلت")
+    }
+}

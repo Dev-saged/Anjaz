@@ -12,6 +12,11 @@
 - الخلفية → backend/firebase (القواعد + اختباراتها) و backend/worker (المسارات في `route` داخل src/index.js، الصلاحيات في policy.js، التصعيد cron.js، النسخ backup.js)
 - الدخول والجلسة → cloud/AuthRepository، ui/login؛ المزامنة → sync/ (`SyncEngine` دفع الصندوق الصادر + سحب، `FirestoreRemoteStore`، `SyncWorker`، `ApiClient` للـ Worker)
 
+## Chat / SOS / Room v2
+- استغاثة: data/SosRepository (send/advance) → ui/sos/SosScreen (HoldButton) ؛ مسار `sos` وزر FAB أحمر لغير القادة.
+- محادثة: data/ChatRepository (directRoomId, send, markRead) → ui/chat/{ChatViewModels,ChatScreens}؛ مسار `room/{roomId}`؛ SyncEngine.listenRoom.
+- Room v2: Migrations.MIGRATION_1_2 + MigrationTest؛ المخططات في app/schemas.
+
 ## Decisions
 - جمعية واحدة تدير مناطق ← مربعات ← مخيمات؛ بلا SaaS الآن، والتصميم يسمح بالتوسع لاحقاً. السبب: طلب ساجد.
 - الحجم الحالي: ~4 مربعات × ~10 مستخدمين، أغلبهم غير متصلين. السبب: يبقى كل شيء ضمن الحصص المجانية.
@@ -30,6 +35,7 @@
 
 ## Solved bugs (never reintroduce)
 - قاعدة readBy في رسائل المحادثة كانت تسمح بإضافة معرّف مستخدم آخر؛ السبب أن الشرط يفحص الحجم فقط. الإصلاح: المقارنة بالاتحاد الدقيق `readBy ∪ {uid}` + اختبار.
+- الإنشاء يدفع الحالة الأولية (NEW/OPEN) وعمليات الحالة تدفع الحالة المسجلة في الحمولة؛ دفع الحالة الحالية محلياً كان يخالف القواعد ويُرفض (SyncEngineTest.offlineChain).
 
 ## Open issues
 - الإجراءات تُسجَّل بمعرّف محلي `Session.LOCAL_ACTOR` حتى يُربط تسجيل الدخول؛ الأدوار معرّفة في domain/Role لكن غير مفروضة على الواجهة بعد.

@@ -1,5 +1,8 @@
 package com.anjaz.app.sync
 
+import com.anjaz.app.data.db.MessageEntity
+import com.anjaz.app.data.db.RoomEntity
+import com.anjaz.app.data.db.SosEntity
 import com.anjaz.app.data.db.TaskEntity
 import com.anjaz.app.data.db.TaskEventEntity
 import com.anjaz.app.data.db.UserEntity
@@ -74,6 +77,100 @@ class FirestoreRemoteStore : RemoteStore {
             }
         }
     }
+
+    override suspend fun createSos(sos: SosEntity) = guard {
+        val data = hashMapOf<String, Any?>(
+            "senderId" to sos.senderId, "senderName" to sos.senderName, "regionId" to sos.regionId, "squareId" to sos.squareId,
+            "status" to sos.status, "note" to sos.note, "lat" to sos.lat, "lng" to sos.lng,
+            "createdAt" to sos.createdAt, "updatedAt" to sos.updatedAt,
+        )
+        fs.collection("sos").document(sos.id).set(data).await()
+        Unit
+    }
+
+    override suspend fun updateSosStatus(id: String, status: String, by: String?, updatedAt: Long) = guard {
+        fs.collection("sos").document(id).update(mapOf("status" to status, "ackBy" to by, "updatedAt" to updatedAt)).await()
+        Unit
+    }
+
+    override suspend fun createRoom(room: RoomEntity) = guard {
+        val data = hashMapOf<String, Any?>(
+            "type" to room.type, "members" to room.members.split(','), "lastMessage" to "", "lastAt" to room.lastAt,
+        )
+        fs.collection("rooms").document(room.id).set(data).await()
+        Unit
+    }
+
+    override suspend fun sendMessage(message: MessageEntity, roomLast: String) = guard {
+        val room = fs.collection("rooms").document(message.roomId)
+        val msg = room.collection("messages").document(message.id)
+        val data = hashMapOf<String, Any?>(
+            "senderId" to message.senderId, "type" to message.type, "text" to message.text,
+            "createdAt" to message.createdAt, "readBy" to message.readBy.split(',').filter { it.isNotEmpty() },
+        )
+        fs.runBatch { b ->
+            b.set(msg, data)
+            b.update(room, mapOf("lastMessage" to roomLast, "lastAt" to message.createdAt))
+        }.await()
+        Unit
+    }
+
+    override suspend fun markRead(roomId: String, messageId: String, uid: String) = guard {
+        fs.collection("rooms").document(roomId).collection("messages").document(messageId)
+            .update("readBy", com.google.firebase.firestore.FieldValue.arrayUnion(uid)).await()
+        Unit
+    }
+
+    override fun sos(profile: Profile): Flow<List<SosEntity>> {
+        val col = fs.collection("sos")
+        val q: Query = when (profile.roleEnum) {
+            Role.CENTRAL -> col
+            Role.REGION_MANAGER, Role.REGION_ADMIN -> col.whereEqualTo("regionId", profile.regionId)
+            Role.SQUARE_MANAGER -> col.whereEqualTo("regionId", profile.regionId).whereEqualTo("squareId", profile.squareId)
+            Role.FIELD_STAFF -> col.whereEqualTo("senderId", profile.uid)
+        }
+        return snapshots(q) { snap ->
+            snap.documents.mapNotNull { d ->
+                d.data?.let {
+                    SosEntity(
+                        id = d.id, senderId = it["senderId"] as? String ?: "", senderName = it["senderName"] as? String ?: "",
+                        regionId = it["regionId"] as? String, squareId = it["squareId"] as? String,
+                        status = it["status"] as? String ?: "OPEN", note = it["note"] as? String ?: "",
+                        lat = (it["lat"] as? Number)?.toDouble(), lng = (it["lng"] as? Number)?.toDouble(),
+                        createdAt = (it["createdAt"] as? Number)?.toLong() ?: 0L, updatedAt = (it["updatedAt"] as? Number)?.toLong() ?: 0L,
+                    )
+                }
+            }
+        }
+    }
+
+    override fun rooms(profile: Profile): Flow<List<RoomEntity>> =
+        snapshots(fs.collection("rooms").whereArrayContains("members", profile.uid)) { snap ->
+            snap.documents.mapNotNull { d ->
+                d.data?.let {
+                    @Suppress("UNCHECKED_CAST")
+                    val members = (it["members"] as? List<String>).orEmpty().sorted()
+                    RoomEntity(
+                        d.id, it["type"] as? String ?: "direct", it["name"] as? String ?: "", members.joinToString(","),
+                        it["lastMessage"] as? String ?: "", (it["lastAt"] as? Number)?.toLong() ?: 0L,
+                    )
+                }
+            }
+        }
+
+    override fun messages(roomId: String): Flow<List<MessageEntity>> =
+        snapshots(fs.collection("rooms").document(roomId).collection("messages").orderBy("createdAt").limitToLast(200)) { snap ->
+            snap.documents.mapNotNull { d ->
+                d.data?.let {
+                    @Suppress("UNCHECKED_CAST")
+                    val readBy = (it["readBy"] as? List<String>).orEmpty()
+                    MessageEntity(
+                        d.id, roomId, it["senderId"] as? String ?: "", it["type"] as? String ?: "text", it["text"] as? String ?: "",
+                        (it["createdAt"] as? Number)?.toLong() ?: 0L, readBy.joinToString(","), "SENT",
+                    )
+                }
+            }
+        }
 
     private fun <T> snapshots(q: Query, map: (QuerySnapshot) -> T): Flow<T> = callbackFlow {
         val reg = q.addSnapshotListener { snap, err ->

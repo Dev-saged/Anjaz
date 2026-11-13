@@ -32,7 +32,9 @@ import com.anjaz.app.ui.components.GlassNavBar
 import com.anjaz.app.ui.components.NavItem
 import com.anjaz.app.ui.home.HomeScreen
 import com.anjaz.app.ui.icons.AnjazIcons
-import com.anjaz.app.ui.more.ChatPlaceholder
+import com.anjaz.app.ui.chat.ChatListScreen
+import com.anjaz.app.ui.chat.ChatRoomScreen
+import com.anjaz.app.ui.sos.SosScreen
 import com.anjaz.app.ui.more.MoreScreen
 import com.anjaz.app.ui.tasks.NewTaskSheet
 import com.anjaz.app.ui.tasks.TasksScreen
@@ -45,6 +47,9 @@ object Routes {
     const val CHAT = "chat"
     const val MORE = "more"
     const val TEST = "test"
+    const val SOS = "sos"
+    const val ROOM = "room/{roomId}"
+    fun room(id: String) = "room/$id"
 }
 
 @Composable
@@ -87,15 +92,23 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
         ) {
             composable(Routes.HOME) { HomeScreen(onOpenTask = { nav.navigateTab(Routes.TASKS) }, onNewTask = tasksVm::openForm) }
             composable(Routes.TASKS) { TasksScreen(tasksVm, onNewTask = tasksVm::openForm) }
-            composable(Routes.CHAT) { ChatPlaceholder() }
+            composable(Routes.CHAT) { ChatListScreen(onOpenRoom = { nav.navigate(Routes.room(it)) }) }
+            composable(Routes.ROOM) { ChatRoomScreen(onBack = { nav.popBackStack() }) }
+            composable(Routes.SOS) { SosScreen() }
             composable(Routes.MORE) { MoreScreen(profile, onSignOut = onSignOut, onOpenSelfTest = { nav.navigate(Routes.TEST) }) }
             composable(Routes.TEST) { SelfTestScreen() }
         }
-        if (route != Routes.TEST) {
+        if (route != Routes.TEST && route != Routes.ROOM) {
             GlassNavBar(
                 items, route, { nav.navigateTab(it) },
-                onFab = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); tasksVm.openForm() },
-                fabIcon = AnjazIcons.Plus, fabLabel = "مهمة جديدة", modifier = Modifier.align(Alignment.BottomCenter),
+                onFab = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    if (profile.canAssign) tasksVm.openForm() else nav.navigateTab(Routes.SOS)
+                },
+                fabIcon = if (profile.canAssign) AnjazIcons.Plus else AnjazIcons.Sos,
+                fabLabel = if (profile.canAssign) "مهمة جديدة" else "نداء استغاثة",
+                fabColor = if (profile.canAssign) null else Anjaz.colors.red,
+                modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
         SnackbarHost(snack, Modifier.align(Alignment.TopCenter))

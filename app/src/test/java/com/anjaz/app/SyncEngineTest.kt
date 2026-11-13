@@ -34,6 +34,7 @@ import org.robolectric.annotation.Config
 private class FakeRemote : RemoteStore {
     override val enabled = true
     val created = mutableListOf<String>()
+    val createdStatus = mutableListOf<String>()
     val statuses = mutableListOf<Pair<String, String>>()
     val events = mutableListOf<String>()
     var failWith: Exception? = null
@@ -43,6 +44,7 @@ private class FakeRemote : RemoteStore {
         failWith?.let { throw it }
         if (task.id == denyTaskId) throw RemoteDenied("denied")
         created += task.id
+        createdStatus += task.status
     }
 
     override suspend fun updateTaskStatus(taskId: String, status: String, updatedAt: Long) {
@@ -97,6 +99,15 @@ class SyncEngineTest {
         engine.pushPending()
         assertEquals(listOf(id to "IN_PROGRESS"), remote.statuses)
         assertEquals(2, remote.events.size)
+    }
+
+    @Test fun offlineChainReplaysEachTransitionInOrder() = runBlocking {
+        val id = create()
+        repo.transition(id, TaskStatus.IN_PROGRESS, "u1")
+        repo.transition(id, TaskStatus.AWAITING_REVIEW, "u1")
+        engine.pushPending()
+        assertEquals(listOf("NEW"), remote.createdStatus)
+        assertEquals(listOf(id to "IN_PROGRESS", id to "AWAITING_REVIEW"), remote.statuses)
     }
 
     @Test fun networkFailureKeepsOrderAndRetries() = runBlocking {

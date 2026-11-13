@@ -1,6 +1,12 @@
 package com.anjaz.app.sync
 
 import com.anjaz.app.data.Clock
+import com.anjaz.app.data.Outbox
+import com.anjaz.app.data.csv
+import com.anjaz.app.data.db.MessageEntity
+import com.anjaz.app.data.db.MessageState
+import com.anjaz.app.data.db.RoomEntity
+import com.anjaz.app.data.db.SosEntity
 import com.anjaz.app.data.db.AnjazDatabase
 import com.anjaz.app.data.db.OutboxEntity
 import com.anjaz.app.data.db.OutboxState
@@ -50,17 +56,74 @@ class SyncEngine @Inject constructor(
     }
 
     private suspend fun dispatch(op: OutboxEntity) {
-        if (op.entity != "task") return
-        val p = json.decodeFromString<TaskOpPayload>(op.payload)
-        when (op.op) {
-            "create" -> db.tasks().byId(p.taskId)?.let { remote.createTask(it) }
-            "status" -> db.tasks().byId(p.taskId)?.let { remote.updateTaskStatus(it.id, p.status, it.updatedAt) }
+        when (op.entity) {
+            "task" -> dispatchTask(op)
+            "sos" -> {
+                val p = Outbox.parse(op.payload)
+                val s = db.sos().byId(p.id) ?: return
+                if (op.op == "create") remote.createSos(s.copy(status = "OPEN", updatedAt = s.createdAt))
+                else remote.updateSosStatus(s.id, p.status ?: s.status, p.by, p.at ?: s.updatedAt)
+            }
+            "room" -> db.chat().roomById(Outbox.parse(op.payload).id)?.let { remote.createRoom(it) }
+            "message" -> {
+                val p = Outbox.parse(op.payload)
+                if (op.op == "send") {
+                    val m = db.chat().messageById(p.id) ?: return
+                    remote.sendMessage(m, m.text.take(200))
+                    db.chat().setState(m.id, MessageState.SENT)
+                } else {
+                    remote.markRead(p.roomId.orEmpty(), p.id, p.by.orEmpty())
+                }
+            }
         }
-        p.eventId?.let { id -> db.taskEvents().byId(id)?.let { remote.appendEvent(it) } }
+    }
+
+    private suspend fun dispatchTask(op: OutboxEntity) {
+        val p = json.decodeFromString<TaskOpPayload>(op.payload)
+        val event = p.eventId?.let { db.taskEvents().byId(it) }
+        when (op.op) {
+            // الإنشاء يُرسل بحالته الأولى ثم تلحقه العمليات بالترتيب، وإلا ترفضه القواعد
+            "create" -> db.tasks().byId(p.taskId)?.let { remote.createTask(it.copy(status = "NEW", updatedAt = it.createdAt)) }
+            "status" -> db.tasks().byId(p.taskId)?.let { remote.updateTaskStatus(it.id, p.status, event?.at ?: it.updatedAt) }
+        }
+        event?.let { remote.appendEvent(it) }
     }
 
     private suspend fun notifyFor(op: OutboxEntity) {
-        if (op.entity == "task") notifier.notify("task", json.decodeFromString<TaskOpPayload>(op.payload).taskId)
+        when {
+            op.entity == "task" -> notifier.notify("task", json.decodeFromString<TaskOpPayload>(op.payload).taskId)
+            op.entity == "sos" && op.op == "create" -> notifier.notify("sos", Outbox.parse(op.payload).id)
+            op.entity == "message" && op.op == "send" -> notifier.notify("chat", Outbox.parse(op.payload).roomId.orEmpty())
+        }
+    }
+
+    suspend fun applySos(list: List<SosEntity>) {
+        list.forEach { r ->
+            val local = db.sos().byId(r.id)
+            if (local == null || (db.outbox().unsyncedFor(r.id) == 0 && r.updatedAt >= local.updatedAt)) db.sos().upsert(r)
+        }
+    }
+
+    suspend fun applyRooms(list: List<RoomEntity>) {
+        list.forEach { r ->
+            val local = db.chat().roomById(r.id)
+            val name = local?.name?.ifEmpty { r.name } ?: r.name
+            if (local == null || r.lastAt >= local.lastAt) db.chat().upsertRoom(r.copy(name = name)) else if (local.name.isEmpty()) db.chat().upsertRoom(local.copy(name = name))
+        }
+    }
+
+    suspend fun applyMessages(list: List<MessageEntity>) {
+        list.forEach { r ->
+            val local = db.chat().messageById(r.id)
+            val merged = ((local?.readBy.orEmpty().csv()) + r.readBy.csv()).distinct().joinToString(",")
+            db.chat().upsertMessage(r.copy(readBy = merged, state = MessageState.SENT))
+            db.chat().touchRoom(r.roomId, r.text.take(200), r.createdAt)
+        }
+    }
+
+    fun listenRoom(scope: CoroutineScope, roomId: String): Job? {
+        if (!remote.enabled) return null
+        return scope.launch { remote.messages(roomId).catch { }.collect { applyMessages(it) } }
     }
 
     suspend fun applyTasks(remoteTasks: List<TaskEntity>) {
@@ -80,6 +143,8 @@ class SyncEngine @Inject constructor(
         return listOf(
             scope.launch { remote.tasks(profile).catch { }.collect { applyTasks(it) } },
             scope.launch { remote.users(profile).catch { }.collect { applyUsers(it) } },
+            scope.launch { remote.sos(profile).catch { }.collect { applySos(it) } },
+            scope.launch { remote.rooms(profile).catch { }.collect { applyRooms(it) } },
         )
     }
 

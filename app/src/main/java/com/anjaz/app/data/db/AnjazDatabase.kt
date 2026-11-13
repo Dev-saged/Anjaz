@@ -8,8 +8,9 @@ import androidx.room.migration.Migration
     entities = [
         RegionEntity::class, SquareEntity::class, CampEntity::class, UserEntity::class,
         TaskEntity::class, TaskEventEntity::class, OutboxEntity::class,
+        SosEntity::class, RoomEntity::class, MessageEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class AnjazDatabase : RoomDatabase() {
@@ -17,11 +18,14 @@ abstract class AnjazDatabase : RoomDatabase() {
     abstract fun taskEvents(): TaskEventDao
     abstract fun outbox(): OutboxDao
     abstract fun directory(): DirectoryDao
+    abstract fun sos(): SosDao
+    abstract fun chat(): ChatDao
+    abstract fun contacts(): ContactDao
 
     companion object {
         const val NAME = "anjaz.db"
 
         // ترحيلات مرقّمة للإضافة فقط، لا يُعدَّل القديم
-        val MIGRATIONS: Array<Migration> = emptyArray()
+        val MIGRATIONS: Array<Migration> = arrayOf(Migrations.MIGRATION_1_2)
     }
 }

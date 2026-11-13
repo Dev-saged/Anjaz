@@ -1,0 +1,94 @@
+package com.anjaz.app.ui.chat
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.anjaz.app.cloud.AuthRepository
+import com.anjaz.app.data.ChatRepository
+import com.anjaz.app.data.csv
+import com.anjaz.app.data.db.MessageEntity
+import com.anjaz.app.data.db.RoomEntity
+import com.anjaz.app.data.db.UserEntity
+import com.anjaz.app.domain.Outcome
+import com.anjaz.app.domain.Profile
+import com.anjaz.app.sync.SyncEngine
+import com.anjaz.app.sync.SyncScheduler
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+data class RoomRow(val id: String, val title: String, val last: String, val at: Long)
+
+@HiltViewModel
+class ChatListViewModel @Inject constructor(
+    private val repo: ChatRepository,
+    auth: AuthRepository,
+    private val scheduler: SyncScheduler,
+) : ViewModel() {
+    private val profile: StateFlow<Profile?> = auth.session.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    private val contactsFlow = profile.filterNotNull().flatMapLatest { repo.contacts(it.uid) }
+
+    val contacts: StateFlow<List<UserEntity>> = contactsFlow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val rooms: StateFlow<List<RoomRow>> = combine(repo.rooms(), contactsFlow, profile) { rooms, contacts, me ->
+        val names = contacts.associate { it.id to it.displayName }
+        rooms.map { r -> RoomRow(r.id, roomTitle(r, me?.uid, names), r.lastMessage, r.lastAt) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    suspend fun open(other: UserEntity): String? {
+        val me = profile.value ?: return null
+        return repo.openDirect(me, other).also { scheduler.kick() }
+    }
+}
+
+fun roomTitle(r: RoomEntity, me: String?, names: Map<String, String>): String {
+    if (r.type != "direct") return r.name.ifEmpty { "مجموعة" }
+    val other = r.members.csv().firstOrNull { it != me }
+    return other?.let { names[it] } ?: r.name.ifEmpty { "محادثة" }
+}
+
+data class RoomUi(val title: String, val messages: List<MessageEntity>, val me: String)
+
+@HiltViewModel
+class ChatRoomViewModel @Inject constructor(
+    saved: SavedStateHandle,
+    private val repo: ChatRepository,
+    private val engine: SyncEngine,
+    private val scheduler: SyncScheduler,
+    auth: AuthRepository,
+) : ViewModel() {
+    val roomId: String = checkNotNull(saved["roomId"])
+    private val profile: StateFlow<Profile?> = auth.session.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val error = MutableStateFlow<String?>(null)
+
+    val ui: StateFlow<RoomUi?> = combine(repo.messages(roomId), repo.rooms(), profile.filterNotNull().flatMapLatest { p -> repo.contacts(p.uid).map { p to it } }) { msgs, rooms, (me, contacts) ->
+        val room = rooms.firstOrNull { it.id == roomId }
+        val title = room?.let { roomTitle(it, me.uid, contacts.associate { c -> c.id to c.displayName }) } ?: "محادثة"
+        RoomUi(title, msgs, me.uid)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    init {
+        engine.listenRoom(viewModelScope, roomId)
+    }
+
+    fun send(text: String) {
+        val me = profile.value ?: return
+        viewModelScope.launch {
+            val r = repo.send(roomId, me, text)
+            if (r is Outcome.Failure) error.value = r.reason else scheduler.kick()
+        }
+    }
+
+    fun markRead() {
+        val me = profile.value ?: return
+        viewModelScope.launch { repo.markRead(roomId, me); scheduler.kick() }
+    }
+}

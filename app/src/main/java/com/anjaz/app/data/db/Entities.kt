@@ -98,3 +98,45 @@ object OutboxState {
     const val FAILED = "FAILED"
     const val NEEDS_ATTENTION = "NEEDS_ATTENTION"
 }
+
+@Entity(tableName = "sos", indices = [Index("createdAt")])
+data class SosEntity(
+    @PrimaryKey val id: String,
+    val senderId: String,
+    val senderName: String,
+    val regionId: String?,
+    val squareId: String?,
+    val status: String,
+    val note: String,
+    val lat: Double?,
+    val lng: Double?,
+    val createdAt: Long,
+    val updatedAt: Long,
+)
+
+@Entity(tableName = "rooms", indices = [Index("lastAt")])
+data class RoomEntity(
+    @PrimaryKey val id: String,
+    val type: String,
+    val name: String,
+    val members: String,
+    val lastMessage: String,
+    val lastAt: Long,
+)
+
+@Entity(tableName = "messages", indices = [Index("roomId", "createdAt")])
+data class MessageEntity(
+    @PrimaryKey val id: String,
+    val roomId: String,
+    val senderId: String,
+    val type: String,
+    val text: String,
+    val createdAt: Long,
+    val readBy: String,
+    val state: String,
+)
+
+object MessageState {
+    const val LOCAL = "LOCAL"
+    const val SENT = "SENT"
+}

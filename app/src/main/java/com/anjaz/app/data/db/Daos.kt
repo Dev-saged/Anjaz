@@ -108,3 +108,60 @@ interface DirectoryDao {
     @Query("SELECT * FROM users WHERE active = 1 AND role <> 'CENTRAL' ORDER BY displayName")
     fun observeTeam(): Flow<List<UserEntity>>
 }
+
+@Dao
+interface SosDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(sos: SosEntity)
+
+    @Query("SELECT * FROM sos WHERE id = :id")
+    suspend fun byId(id: String): SosEntity?
+
+    @Query("SELECT * FROM sos ORDER BY createdAt DESC LIMIT 50")
+    fun observeRecent(): Flow<List<SosEntity>>
+
+    @Query("SELECT COUNT(*) FROM sos WHERE status <> 'RESOLVED'")
+    fun observeOpenCount(): Flow<Int>
+}
+
+@Dao
+interface ChatDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertRoom(room: RoomEntity)
+
+    @Query("SELECT * FROM rooms WHERE id = :id")
+    suspend fun roomById(id: String): RoomEntity?
+
+    @Query("SELECT * FROM rooms ORDER BY lastAt DESC")
+    fun observeRooms(): Flow<List<RoomEntity>>
+
+    @Query("UPDATE rooms SET lastMessage = :text, lastAt = :at WHERE id = :roomId AND lastAt <= :at")
+    suspend fun touchRoom(roomId: String, text: String, at: Long)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMessage(m: MessageEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertMessage(m: MessageEntity)
+
+    @Query("SELECT * FROM messages WHERE id = :id")
+    suspend fun messageById(id: String): MessageEntity?
+
+    @Query("SELECT * FROM messages WHERE roomId = :roomId ORDER BY createdAt")
+    fun observeMessages(roomId: String): Flow<List<MessageEntity>>
+
+    @Query("SELECT * FROM messages WHERE roomId = :roomId AND senderId <> :me AND readBy NOT LIKE '%' || :me || '%'")
+    suspend fun unreadFor(roomId: String, me: String): List<MessageEntity>
+
+    @Query("UPDATE messages SET readBy = :readBy WHERE id = :id")
+    suspend fun setReadBy(id: String, readBy: String)
+
+    @Query("UPDATE messages SET state = :state WHERE id = :id")
+    suspend fun setState(id: String, state: String)
+}
+
+@Dao
+interface ContactDao {
+    @Query("SELECT * FROM users WHERE active = 1 AND id <> :me ORDER BY displayName")
+    fun observeContacts(me: String): Flow<List<UserEntity>>
+}

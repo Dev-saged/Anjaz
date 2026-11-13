@@ -1,0 +1,78 @@
+# عند رفع أي ملف .zip في جذر المستودع يُفكّ تلقائياً ويُحذف ويُكوَّم.
+# يزيل أي غلاف مجلد واحد فائض أولاً (شائع عند ضغط مجلد كامل)، بغض النظر عن نوع المشروع.
+# بعدها: لو كان مشروع Gradle (Android/JVM) يبحث عن settings.gradle.kts كمرجع إضافي.
+# .github/ لا تُنسخ أبداً لحماية الـworkflows الموجودة.
+
+name: Unpack ZIP Upload
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: unpack-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect and unpack zip
+        run: |
+          shopt -s nullglob
+          zips=( *.zip )
+          if [ ${#zips[@]} -eq 0 ]; then
+            echo "No zip found — nothing to do."
+            exit 0
+          fi
+          ZIP="${zips[0]}"
+          echo "Unpacking: $ZIP"
+          rm -rf /tmp/unz && mkdir /tmp/unz
+          unzip -q -o "$ZIP" -d /tmp/unz
+
+          # إزالة أي غلاف مجلد واحد فائض (zip فيه مجلد وحيد يحوي كل شيء)
+          ROOT=/tmp/unz
+          while true; do
+            entries=( "$ROOT"/* "$ROOT"/.[!.]* )
+            real=()
+            for e in "${entries[@]}"; do [ -e "$e" ] && real+=("$e"); done
+            if [ "${#real[@]}" -eq 1 ] && [ -d "${real[0]}" ]; then
+              ROOT="${real[0]}"
+            else
+              break
+            fi
+          done
+
+          SETTINGS=$(find "$ROOT" -maxdepth 4 -name "settings.gradle.kts" | head -n1)
+          if [ -n "$SETTINGS" ]; then
+            SRC=$(dirname "$SETTINGS")
+            echo "Gradle root: $SRC"
+          else
+            SRC="$ROOT"
+            echo "Project root: $SRC"
+          fi
+
+          (cd "$SRC" && tar --exclude='./.github' -cf - .) | tar -xmf -
+          git rm -q "$ZIP"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if [ -f tools/repomap.py ]; then python3 tools/repomap.py || true; git add -A; fi
+          if git diff --cached --quiet; then
+            echo "Nothing changed after unpack."
+          else
+            git commit -m "Unpack $ZIP"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+            echo "Done: pushed unpacked source."
+          fi

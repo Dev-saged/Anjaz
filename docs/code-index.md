@@ -4,8 +4,8 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 10 ملفاً · 670 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
-> الأكبر: repomap.py 146 · apply-to-all-repos.yml 106 · build.yml 104 · new-project.yml 95 · unpack-zip.yml 79 · CLAUDE.md 44 · repomap.yml 41 · repo-map.md 28
+> 21 ملفاً · 978 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> الأكبر: repomap.py 146 · apply-to-all-repos.yml 106 · build.yml 104 · new-project.yml 95 · presentation.html 86 · unpack-zip.yml 79 · build_brand.py 76 · CLAUDE.md 44
 
 ### ./
 - CLAUDE.md (44)
@@ -17,8 +17,24 @@
 - new-project.yml (95)
 - repomap.yml (41)
 - unpack-zip.yml (79)
+### brand/
+- BRAND.md (39)
+- board-spec.json (32)
+- presentation.html (86)
+### brand/android-icons/drawable/
+- ic_launcher_background.xml (6)
+- ic_launcher_foreground.xml (11)
+- ic_launcher_monochrome.xml (11)
+### brand/android-icons/mipmap-anydpi-v26/
+- ic_launcher.xml (7)
+- ic_launcher_round.xml (7)
+### brand/tools/
+- build_brand.py (76): oklch, symbol, svg, wordmark, write
+- outline_text.py (25): outline
+### brand/variants/
+- head-snippet.html (6)
 ### docs/
-- repo-map.md (28)
+- repo-map.md (30)
 ### tools/
 - repomap.py (146): files, symbols, build, main
 <!-- repomap:auto:end -->

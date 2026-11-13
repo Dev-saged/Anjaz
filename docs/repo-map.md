@@ -6,6 +6,10 @@
 ## Quick index (ميزة → ملف → ابحث بـ)
 - هوية الشعار → brand/ → `build_brand.py`، أيقونة أندرويد → brand/android-icons (تُنسخ إلى app/src/main/res)
 
+- ثيم/ألوان/خطوط → app/.../ui/theme → `AnjazTheme`، `Anjaz.colors`؛ المكوّنات → ui/components → `GlassNavBar`، `ProgressRing`، `SchemaForm`
+- الرئيسية → ui/home → `HomeViewModel`؛ المهام → ui/tasks → `TasksViewModel`، `NewTaskSheet`؛ التنقل → ui/nav → `AnjazRoot`
+- المنطق المحلي → data/ → `TaskRepository` (create/transition + outbox)، `DashboardRepository`، `DemoSeeder`؛ اختبار ذاتي → core/SelfTest
+
 ## Decisions
 - جمعية واحدة تدير مناطق ← مربعات ← مخيمات؛ بلا SaaS الآن، والتصميم يسمح بالتوسع لاحقاً. السبب: طلب ساجد.
 - الحجم الحالي: ~4 مربعات × ~10 مستخدمين، أغلبهم غير متصلين. السبب: يبقى كل شيء ضمن الحصص المجانية.
@@ -23,8 +27,10 @@
 - الشاشة الرئيسية معتمدة: اتجاه A (رأس كحلي بحلقة الإنجاز) + شريط أيام الأسبوع من B + تنقل زجاجي عائم بزر + مركزي من C (4 عناصر: الرئيسية، المهام، الرسائل، المزيد). الاجتماعات تحت المزيد. المرجع: brand/prototype/home-a.html. لا يُعاد بناء الهيكل بعد الاعتماد.
 
 ## Solved bugs (never reintroduce)
-- (العَرَض، السبب الجذري، الإصلاح)
+- (لا شيء بعد)
 
 ## Open issues
+- الإجراءات تُسجَّل بمعرّف محلي `Session.LOCAL_ACTOR` حتى يُربط تسجيل الدخول؛ الأدوار معرّفة في domain/Role لكن غير مفروضة على الواجهة بعد.
+- الصندوق الصادر يُكتب ولا يُرسَل بعد (لا Worker متزامن حتى الآن).
 - التحقق من حدود Cloudflare المجانية الحالية (Workers/D1/Cron) قبل التنفيذ.
 - اختبار الصوت والاجتماعات والإنذار يحتاج هواتف حقيقية من ساجد.

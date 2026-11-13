@@ -32,6 +32,8 @@ import com.anjaz.app.ui.components.GlassNavBar
 import com.anjaz.app.ui.components.NavItem
 import com.anjaz.app.ui.home.HomeScreen
 import com.anjaz.app.ui.icons.AnjazIcons
+import com.anjaz.app.push.DeepLink
+import com.anjaz.app.ui.accounts.AccountsScreen
 import com.anjaz.app.ui.chat.ChatListScreen
 import com.anjaz.app.ui.chat.ChatRoomScreen
 import com.anjaz.app.ui.sos.SosScreen
@@ -48,6 +50,7 @@ object Routes {
     const val MORE = "more"
     const val TEST = "test"
     const val SOS = "sos"
+    const val ACCOUNTS = "accounts"
     const val ROOM = "room/{roomId}"
     fun room(id: String) = "room/$id"
 }
@@ -71,6 +74,12 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
     val haptic = LocalHapticFeedback.current
     val sync: SyncViewModel = hiltViewModel()
     LaunchedEffect(profile.uid) { sync.start(profile) }
+    val link by DeepLink.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(link) {
+        val target = link ?: return@LaunchedEffect
+        DeepLink.pending.value = null
+        runCatching { nav.navigate(target) }
+    }
     val snack = remember { SnackbarHostState() }
     val message by tasksVm.message.collectAsStateWithLifecycle()
     LaunchedEffect(message) { message?.let { snack.showSnackbar(it); tasksVm.consumeMessage() } }
@@ -95,10 +104,11 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
             composable(Routes.CHAT) { ChatListScreen(onOpenRoom = { nav.navigate(Routes.room(it)) }) }
             composable(Routes.ROOM) { ChatRoomScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.SOS) { SosScreen() }
-            composable(Routes.MORE) { MoreScreen(profile, onSignOut = onSignOut, onOpenSelfTest = { nav.navigate(Routes.TEST) }) }
+            composable(Routes.MORE) { MoreScreen(profile, onSignOut = onSignOut, onOpenSelfTest = { nav.navigate(Routes.TEST) }, onOpenAccounts = { nav.navigate(Routes.ACCOUNTS) }) }
+            composable(Routes.ACCOUNTS) { AccountsScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.TEST) { SelfTestScreen() }
         }
-        if (route != Routes.TEST && route != Routes.ROOM) {
+        if (route != Routes.TEST && route != Routes.ROOM && route != Routes.ACCOUNTS) {
             GlassNavBar(
                 items, route, { nav.navigateTab(it) },
                 onFab = {

@@ -24,6 +24,12 @@ object SchemaValidator {
     private val phone = Regex("^\\+?[0-9 ]{7,16}$")
     private val digits = Regex("^[0-9]+$")
 
+    fun randomPassword(): String {
+        val alphabet = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789"
+        val rnd = java.security.SecureRandom()
+        return (1..10).map { alphabet[rnd.nextInt(alphabet.length)] }.joinToString("")
+    }
+
     fun sanitize(raw: String): String =
         raw.filter { !it.isISOControl() || it == '\n' }.replace(Regex("[ \\t]{2,}"), " ").trim()
 

@@ -164,4 +164,7 @@ interface ChatDao {
 interface ContactDao {
     @Query("SELECT * FROM users WHERE active = 1 AND id <> :me ORDER BY displayName")
     fun observeContacts(me: String): Flow<List<UserEntity>>
+
+    @Query("SELECT * FROM users WHERE id <> :me ORDER BY active DESC, displayName")
+    fun observeAll(me: String): Flow<List<UserEntity>>
 }

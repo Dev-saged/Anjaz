@@ -16,6 +16,9 @@
 - استغاثة: data/SosRepository (send/advance) → ui/sos/SosScreen (HoldButton) ؛ مسار `sos` وزر FAB أحمر لغير القادة.
 - محادثة: data/ChatRepository (directRoomId, send, markRead) → ui/chat/{ChatViewModels,ChatScreens}؛ مسار `room/{roomId}`؛ SyncEngine.listenRoom.
 - Room v2: Migrations.MIGRATION_1_2 + MigrationTest؛ المخططات في app/schemas.
+- حسابات: data/AccountsRepository + ui/accounts (إنشاء/إعادة ضبط/تعطيل عبر Worker `/v1/users`)؛ الاختيار من الدليل لا معرّفات يدوية.
+- إشعارات: push/{Notifications, DeviceTokens, AnjazMessagingService, DeepLink}؛ قناتا default وsos؛ الرمز يُكتب في devices/{uid}.
+- دليل: data/DirectoryRepository + ui/directory (منطقة/مربع/مخيم، دفع بالترتيب)؛ Room v3 أضاف camps.regionId لأن القواعد تفحصه.
 
 ## Decisions
 - جمعية واحدة تدير مناطق ← مربعات ← مخيمات؛ بلا SaaS الآن، والتصميم يسمح بالتوسع لاحقاً. السبب: طلب ساجد.

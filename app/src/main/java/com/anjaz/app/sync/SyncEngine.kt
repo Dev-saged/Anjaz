@@ -64,6 +64,9 @@ class SyncEngine @Inject constructor(
                 if (op.op == "create") remote.createSos(s.copy(status = "OPEN", updatedAt = s.createdAt))
                 else remote.updateSosStatus(s.id, p.status ?: s.status, p.by, p.at ?: s.updatedAt)
             }
+            "region" -> db.directory().regionById(Outbox.parse(op.payload).id)?.let { remote.createRegion(it) }
+            "square" -> db.directory().squareById(Outbox.parse(op.payload).id)?.let { remote.createSquare(it) }
+            "camp" -> db.directory().campById(Outbox.parse(op.payload).id)?.let { remote.createCamp(it) }
             "room" -> db.chat().roomById(Outbox.parse(op.payload).id)?.let { remote.createRoom(it) }
             "message" -> {
                 val p = Outbox.parse(op.payload)
@@ -143,6 +146,9 @@ class SyncEngine @Inject constructor(
         return listOf(
             scope.launch { remote.tasks(profile).catch { }.collect { applyTasks(it) } },
             scope.launch { remote.users(profile).catch { }.collect { applyUsers(it) } },
+            scope.launch { remote.regions(profile).catch { }.collect { r -> r.forEach { db.directory().upsertRegion(it) } } },
+            scope.launch { remote.squares(profile).catch { }.collect { r -> r.forEach { db.directory().upsertSquare(it) } } },
+            scope.launch { remote.camps(profile).catch { }.collect { r -> r.forEach { db.directory().upsertCamp(it) } } },
             scope.launch { remote.sos(profile).catch { }.collect { applySos(it) } },
             scope.launch { remote.rooms(profile).catch { }.collect { applyRooms(it) } },
         )

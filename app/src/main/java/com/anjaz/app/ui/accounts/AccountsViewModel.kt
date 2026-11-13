@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -43,7 +44,7 @@ class AccountsViewModel @Inject constructor(
     val users: StateFlow<List<UserEntity>> = profile.filterNotNull().flatMapLatest { repo.users(it.uid) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val schema: StateFlow<ModuleSchema?> = profile.map { p -> p?.let(repo::schema) }
+    val schema: StateFlow<ModuleSchema?> = combine(profile, repo.regions(), repo.squares()) { p, r, s -> p?.let { repo.schema(it, r, s) } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun openForm() = ui.update { AccountsUi(formOpen = true, values = mapOf("role" to repo.creatableRoles(profile.value ?: return).firstOrNull()?.key.orEmpty())) }
@@ -57,11 +58,12 @@ class AccountsViewModel @Inject constructor(
     fun submit() {
         val me = profile.value ?: return
         val cur = ui.value
-        val errors = SchemaValidator.validate(repo.schema(me), cur.values)
+        val sch = schema.value ?: return
+        val errors = SchemaValidator.validate(sch, cur.values)
         if (errors.isNotEmpty()) { ui.update { it.copy(errors = errors) }; return }
         ui.update { it.copy(busy = true) }
         viewModelScope.launch {
-            when (val r = repo.create(me, cur.values)) {
+            when (val r = repo.create(me, cur.values, sch)) {
                 is Outcome.Ok -> {
                     val name = cur.values["displayName"].orEmpty()
                     ui.update { AccountsUi(message = "أُنشئ حساب $name", revealedPassword = cur.values["username"].orEmpty() to cur.values["password"].orEmpty()) }

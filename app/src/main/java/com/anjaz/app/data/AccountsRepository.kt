@@ -1,7 +1,10 @@
 package com.anjaz.app.data
 
 import com.anjaz.app.data.db.AnjazDatabase
+import com.anjaz.app.data.db.RegionEntity
+import com.anjaz.app.data.db.SquareEntity
 import com.anjaz.app.data.db.UserEntity
+import com.anjaz.app.schema.ModuleSchema
 import com.anjaz.app.domain.Outcome
 import com.anjaz.app.domain.Profile
 import com.anjaz.app.domain.Role
@@ -28,18 +31,22 @@ class AccountsRepository @Inject constructor(private val db: AnjazDatabase, priv
     fun creatableRoles(p: Profile): List<Choice> =
         Role.entries.filter { p.roleEnum.canCreate(it) }.map { Choice(it.name, it.label) }
 
-    fun schema(p: Profile) = Schemas.account(
+    fun schema(p: Profile, regions: List<RegionEntity> = emptyList(), squares: List<SquareEntity> = emptyList()) = Schemas.account(
         creatableRoles(p),
-        askRegion = p.roleEnum == Role.CENTRAL,
-        askSquare = p.roleEnum.rank >= Role.REGION_ADMIN.rank,
+        regions = if (p.roleEnum == Role.CENTRAL) regions.map { Choice(it.id, it.name) } else null,
+        squares = if (p.roleEnum.rank >= Role.REGION_ADMIN.rank) squares.map { Choice(it.id, it.name) } else null,
     )
 
-    suspend fun create(actor: Profile, values: Map<String, String>): Outcome<String> {
-        val errors = SchemaValidator.validate(schema(actor), values)
+    fun regions(): Flow<List<RegionEntity>> = db.directory().observeRegions()
+    fun squares(): Flow<List<SquareEntity>> = db.directory().observeSquares()
+
+    suspend fun create(actor: Profile, values: Map<String, String>, schema: ModuleSchema = schema(actor)): Outcome<String> {
+        val errors = SchemaValidator.validate(schema, values)
         if (errors.isNotEmpty()) return Outcome.Failure(errors.values.first())
         val role = Role.entries.firstOrNull { it.name == values["role"] } ?: return Outcome.Failure("الدور غير صالح")
-        val region = values["regionId"]?.trim().takeUnless { it.isNullOrEmpty() } ?: actor.regionId
         val square = values["squareId"]?.trim().takeUnless { it.isNullOrEmpty() } ?: actor.squareId
+        val region = values["regionId"]?.trim().takeUnless { it.isNullOrEmpty() }
+            ?: values["squareId"]?.let { db.directory().squareById(it)?.regionId } ?: actor.regionId
         val body = buildJsonObject {
             put("username", values.getValue("username").trim().lowercase())
             put("displayName", SchemaValidator.sanitize(values.getValue("displayName")))

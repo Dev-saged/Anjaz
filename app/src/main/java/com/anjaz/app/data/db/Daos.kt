@@ -99,6 +99,24 @@ interface DirectoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertUser(user: UserEntity)
 
+    @Query("SELECT * FROM regions ORDER BY name")
+    fun observeRegions(): Flow<List<RegionEntity>>
+
+    @Query("SELECT * FROM squares ORDER BY name")
+    fun observeSquares(): Flow<List<SquareEntity>>
+
+    @Query("SELECT * FROM camps ORDER BY name")
+    fun observeCamps(): Flow<List<CampEntity>>
+
+    @Query("SELECT * FROM regions WHERE id = :id")
+    suspend fun regionById(id: String): RegionEntity?
+
+    @Query("SELECT * FROM squares WHERE id = :id")
+    suspend fun squareById(id: String): SquareEntity?
+
+    @Query("SELECT * FROM camps WHERE id = :id")
+    suspend fun campById(id: String): CampEntity?
+
     @Query("SELECT COUNT(*) FROM squares")
     fun observeSquareCount(): Flow<Int>
 

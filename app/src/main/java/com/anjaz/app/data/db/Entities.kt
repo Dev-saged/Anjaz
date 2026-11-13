@@ -29,6 +29,7 @@ data class SquareEntity(
 @Entity(tableName = "camps", indices = [Index("squareId")])
 data class CampEntity(
     @PrimaryKey val id: String,
+    @ColumnInfo(defaultValue = "''") val regionId: String,
     val squareId: String,
     val name: String,
     val managerName: String?,

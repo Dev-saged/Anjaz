@@ -22,15 +22,15 @@ object Schemas {
         if (team.isEmpty()) task
         else task.copy(fields = task.fields + FieldSchema("assigneeId", "المكلّف بالمهمة", FieldType.CHOICE, choices = team))
 
-    fun account(roles: List<Choice>, askRegion: Boolean, askSquare: Boolean): ModuleSchema = ModuleSchema(
+    fun account(roles: List<Choice>, regions: List<Choice>?, squares: List<Choice>?): ModuleSchema = ModuleSchema(
         id = "accounts", title = "حساب جديد",
         fields = buildList {
             add(FieldSchema("displayName", "الاسم", FieldType.TEXT, required = true, maxLength = 80))
             add(FieldSchema("username", "اسم المستخدم (لاتيني)", FieldType.TEXT, required = true, maxLength = 32))
             add(FieldSchema("password", "كلمة المرور (8 أحرف فأكثر)", FieldType.TEXT, required = true, maxLength = 64))
             add(FieldSchema("role", "الدور", FieldType.CHOICE, required = true, choices = roles))
-            if (askRegion) add(FieldSchema("regionId", "معرّف المنطقة", FieldType.TEXT, maxLength = 40))
-            if (askSquare) add(FieldSchema("squareId", "معرّف المربع", FieldType.TEXT, maxLength = 40))
+            if (!regions.isNullOrEmpty()) add(FieldSchema("regionId", "المنطقة", FieldType.CHOICE, choices = regions))
+            if (!squares.isNullOrEmpty()) add(FieldSchema("squareId", "المربع", FieldType.CHOICE, choices = squares))
         },
         listColumns = listOf("displayName", "role"),
     )

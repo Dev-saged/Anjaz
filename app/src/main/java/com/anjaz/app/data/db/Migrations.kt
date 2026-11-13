@@ -15,4 +15,10 @@ object Migrations {
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_messages_roomId_createdAt` ON `messages` (`roomId`, `createdAt`)")
         }
     }
+
+    val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `camps` ADD COLUMN `regionId` TEXT NOT NULL DEFAULT ''")
+        }
+    }
 }

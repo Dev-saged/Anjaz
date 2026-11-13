@@ -39,11 +39,11 @@ private data class Entry(val title: String, val icon: ImageVector)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Unit, onOpenAccounts: () -> Unit) {
+fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Unit, onOpenAccounts: () -> Unit, onOpenDirectory: () -> Unit) {
     val c = Anjaz.colors
     val haptic = LocalHapticFeedback.current
     val upcoming = listOf(
-        Entry("المناطق والمربعات والمخيمات", AnjazIcons.Map), Entry("التقارير والتصدير", AnjazIcons.Report),
+        Entry("التقارير والتصدير", AnjazIcons.Report),
         Entry("النسخ الاحتياطي", AnjazIcons.Cloud), Entry("سجل العمليات", AnjazIcons.Log), Entry("الأمان والحساب", AnjazIcons.Lock),
     )
     Column(
@@ -59,6 +59,12 @@ fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Un
                     Text(profile.roleEnum.label, color = c.mute, style = MaterialTheme.typography.bodySmall)
                 }
                 Text("خروج", color = c.redDeep, style = MaterialTheme.typography.labelLarge, modifier = Modifier.heightIn(min = 44.dp).clickable(onClick = onSignOut).padding(8.dp))
+            }
+        }
+        AnjazCard(Modifier.fillMaxWidth(), onClick = onOpenDirectory) {
+            Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                AnjazIcon(AnjazIcons.Map, c.ink)
+                Text("المربعات والمخيمات", color = c.ink, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
             }
         }
         if (profile.canAssign) AnjazCard(Modifier.fillMaxWidth(), onClick = onOpenAccounts) {

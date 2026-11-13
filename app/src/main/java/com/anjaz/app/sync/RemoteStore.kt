@@ -24,6 +24,12 @@ interface RemoteStore {
     suspend fun createRoom(room: RoomEntity) = Unit
     suspend fun sendMessage(message: MessageEntity, roomLast: String) = Unit
     suspend fun markRead(roomId: String, messageId: String, uid: String) = Unit
+    suspend fun createRegion(region: com.anjaz.app.data.db.RegionEntity) = Unit
+    suspend fun createSquare(square: com.anjaz.app.data.db.SquareEntity) = Unit
+    suspend fun createCamp(camp: com.anjaz.app.data.db.CampEntity) = Unit
+    fun regions(profile: Profile): Flow<List<com.anjaz.app.data.db.RegionEntity>> = kotlinx.coroutines.flow.emptyFlow()
+    fun squares(profile: Profile): Flow<List<com.anjaz.app.data.db.SquareEntity>> = kotlinx.coroutines.flow.emptyFlow()
+    fun camps(profile: Profile): Flow<List<com.anjaz.app.data.db.CampEntity>> = kotlinx.coroutines.flow.emptyFlow()
     fun sos(profile: Profile): Flow<List<SosEntity>> = kotlinx.coroutines.flow.emptyFlow()
     fun rooms(profile: Profile): Flow<List<RoomEntity>> = kotlinx.coroutines.flow.emptyFlow()
     fun messages(roomId: String): Flow<List<MessageEntity>> = kotlinx.coroutines.flow.emptyFlow()

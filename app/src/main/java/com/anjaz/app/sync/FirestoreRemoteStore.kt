@@ -1,6 +1,9 @@
 package com.anjaz.app.sync
 
+import com.anjaz.app.data.db.CampEntity
 import com.anjaz.app.data.db.MessageEntity
+import com.anjaz.app.data.db.RegionEntity
+import com.anjaz.app.data.db.SquareEntity
 import com.anjaz.app.data.db.RoomEntity
 import com.anjaz.app.data.db.SosEntity
 import com.anjaz.app.data.db.TaskEntity
@@ -73,6 +76,73 @@ class FirestoreRemoteStore : RemoteStore {
                         role = it["role"] as? String ?: "FIELD_STAFF", regionId = it["regionId"] as? String, squareId = it["squareId"] as? String,
                         active = it["active"] as? Boolean ?: false, updatedAt = (it["updatedAt"] as? Number)?.toLong() ?: 0L,
                     )
+                }
+            }
+        }
+    }
+
+    override suspend fun createRegion(region: RegionEntity) = guard {
+        val data = hashMapOf<String, Any?>("name" to region.name, "active" to region.active, "updatedAt" to region.updatedAt)
+        region.phone?.let { data["phone"] = it }
+        fs.collection("regions").document(region.id).set(data).await()
+        Unit
+    }
+
+    override suspend fun createSquare(square: SquareEntity) = guard {
+        val data = hashMapOf<String, Any?>("regionId" to square.regionId, "name" to square.name, "updatedAt" to square.updatedAt)
+        square.idNumber?.let { data["idNumber"] = it }
+        square.phone?.let { data["phone"] = it }
+        fs.collection("squares").document(square.id).set(data).await()
+        Unit
+    }
+
+    override suspend fun createCamp(camp: CampEntity) = guard {
+        val data = hashMapOf<String, Any?>("regionId" to camp.regionId, "squareId" to camp.squareId, "name" to camp.name, "updatedAt" to camp.updatedAt)
+        camp.managerName?.let { data["managerName"] = it }
+        camp.idNumber?.let { data["idNumber"] = it }
+        camp.phone?.let { data["phone"] = it }
+        fs.collection("camps").document(camp.id).set(data).await()
+        Unit
+    }
+
+    override fun regions(profile: Profile): Flow<List<RegionEntity>> {
+        val col = fs.collection("regions")
+        val q: Query = if (profile.roleEnum == Role.CENTRAL) col else col.whereEqualTo(com.google.firebase.firestore.FieldPath.documentId(), profile.regionId ?: "-")
+        return snapshots(q) { snap ->
+            snap.documents.mapNotNull { d ->
+                d.data?.let {
+                    RegionEntity(d.id, it["name"] as? String ?: "", it["managerId"] as? String, it["phone"] as? String, it["active"] as? Boolean ?: true, (it["updatedAt"] as? Number)?.toLong() ?: 0L)
+                }
+            }
+        }
+    }
+
+    override fun squares(profile: Profile): Flow<List<SquareEntity>> {
+        val col = fs.collection("squares")
+        val q: Query = when (profile.roleEnum) {
+            Role.CENTRAL -> col
+            else -> col.whereEqualTo("regionId", profile.regionId ?: "-")
+        }
+        return snapshots(q) { snap ->
+            snap.documents.mapNotNull { d ->
+                d.data?.let {
+                    SquareEntity(d.id, it["regionId"] as? String ?: "", it["name"] as? String ?: "", it["managerId"] as? String, it["idNumber"] as? String, it["phone"] as? String, (it["updatedAt"] as? Number)?.toLong() ?: 0L)
+                }
+            }
+        }
+    }
+
+    override fun camps(profile: Profile): Flow<List<CampEntity>> {
+        val col = fs.collection("camps")
+        val q: Query = when (profile.roleEnum) {
+            Role.CENTRAL -> col
+            Role.REGION_MANAGER, Role.REGION_ADMIN -> col.whereEqualTo("regionId", profile.regionId ?: "-")
+            else -> col.whereEqualTo("regionId", profile.regionId ?: "-").whereEqualTo("squareId", profile.squareId ?: "-")
+        }
+        return snapshots(q) { snap ->
+            snap.documents.mapNotNull { d ->
+                d.data?.let {
+                    CampEntity(d.id, it["regionId"] as? String ?: "", it["squareId"] as? String ?: "", it["name"] as? String ?: "", it["managerName"] as? String, it["idNumber"] as? String, it["phone"] as? String, (it["updatedAt"] as? Number)?.toLong() ?: 0L)
                 }
             }
         }

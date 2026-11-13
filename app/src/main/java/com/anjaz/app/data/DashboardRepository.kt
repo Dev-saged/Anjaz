@@ -34,5 +34,7 @@ class DashboardRepository @Inject constructor(
 
     fun unsynced(): Flow<Int> = db.outbox().observeUnsynced()
 
+    fun openSos(): Flow<Int> = db.sos().observeOpenCount()
+
     fun now(): Long = clock.now()
 }

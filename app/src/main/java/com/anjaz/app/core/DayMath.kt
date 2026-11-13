@@ -22,6 +22,8 @@ object DayMath {
 
     fun dayOfMonth(ms: Long): String = SimpleDateFormat("d", arLatinDigits).format(Date(ms))
 
+    fun date(ms: Long): String = SimpleDateFormat("yyyy-MM-dd", arLatinDigits).format(Date(ms))
+
     fun time(ms: Long): String = SimpleDateFormat("HH:mm", arLatinDigits).format(Date(ms))
 
     fun dueLabel(deadline: Long?, now: Long): String? {

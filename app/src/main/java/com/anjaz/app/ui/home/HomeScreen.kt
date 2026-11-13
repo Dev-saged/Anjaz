@@ -1,6 +1,8 @@
 package com.anjaz.app.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,7 +47,7 @@ import com.anjaz.app.ui.theme.ReemKufi
 import com.anjaz.app.ui.theme.ltr
 
 @Composable
-fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, vm: HomeViewModel = hiltViewModel()) {
+fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSos: () -> Unit, canAssign: Boolean, vm: HomeViewModel = hiltViewModel()) {
     val s by vm.state.collectAsStateWithLifecycle()
     val c = Anjaz.colors
     Box(Modifier.fillMaxSize().background(c.surface)) {
@@ -56,6 +58,7 @@ fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, vm: Home
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item { Stagger(0) { Header(s.unsynced) } }
+            if (s.openSos > 0) item { SosBanner(s.openSos, onOpenSos) }
             item { Stagger(1) { Hero(s.counts.done, s.counts.total, s.counts.progress) } }
             item {
                 Stagger(2) {
@@ -71,7 +74,7 @@ fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, vm: Home
             if (s.loading) {
                 items(2) { Skeleton() }
             } else if (s.dayTasks.isEmpty()) {
-                item { EmptyDay(s.counts.total == 0, onNewTask) }
+                item { EmptyDay(s.counts.total == 0, canAssign, onNewTask) }
             } else {
                 items(s.dayTasks, key = { it.id }) { t -> TaskCard(t, s.now, { onOpenTask(t) }) }
             }
@@ -117,17 +120,29 @@ private fun Hero(done: Int, total: Int, progress: Float) {
 }
 
 @Composable
-private fun EmptyDay(noTasksAtAll: Boolean, onNewTask: () -> Unit) {
+private fun EmptyDay(noTasksAtAll: Boolean, canAssign: Boolean, onNewTask: () -> Unit) {
     val c = Anjaz.colors
-    AnjazCard(Modifier.fillMaxWidth(), if (noTasksAtAll) onNewTask else null) {
+    AnjazCard(Modifier.fillMaxWidth(), if (noTasksAtAll && canAssign) onNewTask else null) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             AnjazIcon(AnjazIcons.Tasks, c.mute, 32.dp)
-            Text(if (noTasksAtAll) "ابدأ بإنشاء أول مهمة" else "لا مهام في هذا اليوم", color = c.ink, style = MaterialTheme.typography.titleMedium)
+            Text(if (noTasksAtAll && canAssign) "ابدأ بإنشاء أول مهمة" else if (noTasksAtAll) "لا مهام مُسندة إليك بعد" else "لا مهام في هذا اليوم", color = c.ink, style = MaterialTheme.typography.titleMedium)
             Text(
-                if (noTasksAtAll) "اضغط على الزر الأخضر في الأسفل" else "اختر يوماً آخر من الشريط أعلاه",
+                if (noTasksAtAll && canAssign) "اضغط على الزر الأخضر في الأسفل" else if (noTasksAtAll) "ستظهر هنا حين يكلّفك مديرك" else "اختر يوماً آخر من الشريط أعلاه",
                 color = c.mute, style = MaterialTheme.typography.bodySmall,
             )
         }
+    }
+}
+
+@Composable
+private fun SosBanner(open: Int, onClick: () -> Unit) {
+    val c = Anjaz.colors
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.card).border(androidx.compose.foundation.BorderStroke(2.dp, c.red), RoundedCornerShape(18.dp)).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AnjazIcon(AnjazIcons.Sos, c.redDeep)
+        Text("${ltr(open.toString())} نداء استغاثة مفتوح", color = c.ink, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
     }
 }
 

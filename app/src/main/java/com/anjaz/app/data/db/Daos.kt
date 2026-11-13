@@ -41,6 +41,9 @@ interface TaskDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(task: TaskEntity)
+
+    @Query("SELECT * FROM tasks")
+    suspend fun all(): List<TaskEntity>
 }
 
 @Dao
@@ -56,6 +59,9 @@ interface TaskEventDao {
 
     @Query("SELECT * FROM task_events WHERE id = :id")
     suspend fun byId(id: String): TaskEventEntity?
+
+    @Query("SELECT * FROM task_events")
+    suspend fun all(): List<TaskEventEntity>
 }
 
 @Dao
@@ -117,6 +123,18 @@ interface DirectoryDao {
     @Query("SELECT * FROM camps WHERE id = :id")
     suspend fun campById(id: String): CampEntity?
 
+    @Query("SELECT * FROM regions")
+    suspend fun allRegions(): List<RegionEntity>
+
+    @Query("SELECT * FROM squares")
+    suspend fun allSquares(): List<SquareEntity>
+
+    @Query("SELECT * FROM camps")
+    suspend fun allCamps(): List<CampEntity>
+
+    @Query("SELECT * FROM users")
+    suspend fun allUsers(): List<UserEntity>
+
     @Query("SELECT COUNT(*) FROM squares")
     fun observeSquareCount(): Flow<Int>
 
@@ -138,6 +156,9 @@ interface SosDao {
     @Query("SELECT * FROM sos ORDER BY createdAt DESC LIMIT 50")
     fun observeRecent(): Flow<List<SosEntity>>
 
+    @Query("SELECT * FROM sos")
+    suspend fun all(): List<SosEntity>
+
     @Query("SELECT COUNT(*) FROM sos WHERE status <> 'RESOLVED'")
     fun observeOpenCount(): Flow<Int>
 }
@@ -152,6 +173,12 @@ interface ChatDao {
 
     @Query("SELECT * FROM rooms ORDER BY lastAt DESC")
     fun observeRooms(): Flow<List<RoomEntity>>
+
+    @Query("SELECT * FROM rooms")
+    suspend fun allRooms(): List<RoomEntity>
+
+    @Query("SELECT * FROM messages")
+    suspend fun allMessages(): List<MessageEntity>
 
     @Query("UPDATE rooms SET lastMessage = :text, lastAt = :at WHERE id = :roomId AND lastAt <= :at")
     suspend fun touchRoom(roomId: String, text: String, at: Long)

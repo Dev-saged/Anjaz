@@ -23,6 +23,7 @@ data class HomeUiState(
     val dayTasks: List<TaskEntity> = emptyList(),
     val unsynced: Int = 0,
     val now: Long = 0L,
+    val openSos: Int = 0,
 )
 
 @HiltViewModel
@@ -31,8 +32,8 @@ class HomeViewModel @Inject constructor(private val repo: DashboardRepository) :
     private val start = DayMath.startOfDay(repo.now())
 
     val state: StateFlow<HomeUiState> = combine(
-        repo.counts(), repo.week(start), repo.unsynced(), selected,
-    ) { counts, week, unsynced, sel ->
+        repo.counts(), repo.week(start), repo.unsynced(), selected, repo.openSos(),
+    ) { counts, week, unsynced, sel, openSos ->
         val chips = (0..6).map { i ->
             val day = DayMath.addDays(start, i)
             val next = DayMath.addDays(start, i + 1)
@@ -42,7 +43,7 @@ class HomeViewModel @Inject constructor(private val repo: DashboardRepository) :
         val to = DayMath.addDays(start, sel + 1)
         HomeUiState(
             loading = false, counts = counts, days = chips, selectedDay = sel,
-            dayTasks = week.filter { (it.deadline ?: 0L) in from until to }, unsynced = unsynced, now = repo.now(),
+            dayTasks = week.filter { (it.deadline ?: 0L) in from until to }, unsynced = unsynced, now = repo.now(), openSos = openSos,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 

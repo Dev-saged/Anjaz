@@ -34,8 +34,10 @@ import com.anjaz.app.ui.home.HomeScreen
 import com.anjaz.app.ui.icons.AnjazIcons
 import com.anjaz.app.push.DeepLink
 import com.anjaz.app.ui.accounts.AccountsScreen
+import com.anjaz.app.ui.audit.AuditScreen
 import com.anjaz.app.ui.chat.ChatListScreen
 import com.anjaz.app.ui.directory.DirectoryScreen
+import com.anjaz.app.ui.reports.ReportsScreen
 import com.anjaz.app.ui.chat.ChatRoomScreen
 import com.anjaz.app.ui.sos.SosScreen
 import com.anjaz.app.ui.more.MoreScreen
@@ -53,6 +55,8 @@ object Routes {
     const val SOS = "sos"
     const val ACCOUNTS = "accounts"
     const val DIRECTORY = "directory"
+    const val REPORTS = "reports"
+    const val AUDIT = "audit"
     const val ROOM = "room/{roomId}"
     fun room(id: String) = "room/$id"
 }
@@ -101,17 +105,19 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
             popEnterTransition = { fadeIn(tween(240)) },
             popExitTransition = { fadeOut(tween(160)) },
         ) {
-            composable(Routes.HOME) { HomeScreen(onOpenTask = { nav.navigateTab(Routes.TASKS) }, onNewTask = tasksVm::openForm) }
+            composable(Routes.HOME) { HomeScreen(onOpenTask = { nav.navigateTab(Routes.TASKS) }, onNewTask = tasksVm::openForm, onOpenSos = { nav.navigateTab(Routes.SOS) }, canAssign = profile.canAssign) }
             composable(Routes.TASKS) { TasksScreen(tasksVm, onNewTask = tasksVm::openForm) }
             composable(Routes.CHAT) { ChatListScreen(onOpenRoom = { nav.navigate(Routes.room(it)) }) }
             composable(Routes.ROOM) { ChatRoomScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.SOS) { SosScreen() }
-            composable(Routes.MORE) { MoreScreen(profile, onSignOut = onSignOut, onOpenSelfTest = { nav.navigate(Routes.TEST) }, onOpenAccounts = { nav.navigate(Routes.ACCOUNTS) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }) }
+            composable(Routes.MORE) { MoreScreen(profile, onSignOut = onSignOut, onOpenSelfTest = { nav.navigate(Routes.TEST) }, onOpenAccounts = { nav.navigate(Routes.ACCOUNTS) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, onOpenReports = { nav.navigate(Routes.REPORTS) }, onOpenAudit = { nav.navigate(Routes.AUDIT) }) }
+            composable(Routes.AUDIT) { AuditScreen(onBack = { nav.popBackStack() }) }
+            composable(Routes.REPORTS) { ReportsScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.DIRECTORY) { DirectoryScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.ACCOUNTS) { AccountsScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.TEST) { SelfTestScreen() }
         }
-        if (route != Routes.TEST && route != Routes.ROOM && route != Routes.ACCOUNTS && route != Routes.DIRECTORY) {
+        if (route != Routes.TEST && route != Routes.ROOM && route != Routes.ACCOUNTS && route != Routes.DIRECTORY && route != Routes.REPORTS && route != Routes.AUDIT) {
             GlassNavBar(
                 items, route, { nav.navigateTab(it) },
                 onFab = {

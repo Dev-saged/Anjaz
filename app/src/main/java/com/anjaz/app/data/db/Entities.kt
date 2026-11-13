@@ -4,8 +4,10 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
 @Entity(tableName = "regions")
+@Serializable
 data class RegionEntity(
     @PrimaryKey val id: String,
     val name: String,
@@ -16,6 +18,7 @@ data class RegionEntity(
 )
 
 @Entity(tableName = "squares", indices = [Index("regionId")])
+@Serializable
 data class SquareEntity(
     @PrimaryKey val id: String,
     val regionId: String,
@@ -27,6 +30,7 @@ data class SquareEntity(
 )
 
 @Entity(tableName = "camps", indices = [Index("squareId")])
+@Serializable
 data class CampEntity(
     @PrimaryKey val id: String,
     @ColumnInfo(defaultValue = "''") val regionId: String,
@@ -39,6 +43,7 @@ data class CampEntity(
 )
 
 @Entity(tableName = "users", indices = [Index("username", unique = true)])
+@Serializable
 data class UserEntity(
     @PrimaryKey val id: String,
     val username: String,
@@ -51,6 +56,7 @@ data class UserEntity(
 )
 
 @Entity(tableName = "tasks", indices = [Index("status"), Index("deadline"), Index("assigneeId")])
+@Serializable
 data class TaskEntity(
     @PrimaryKey val id: String,
     val number: Long?,
@@ -69,6 +75,7 @@ data class TaskEntity(
 )
 
 @Entity(tableName = "task_events", indices = [Index("taskId")])
+@Serializable
 data class TaskEventEntity(
     @PrimaryKey val id: String,
     val taskId: String,
@@ -101,6 +108,7 @@ object OutboxState {
 }
 
 @Entity(tableName = "sos", indices = [Index("createdAt")])
+@Serializable
 data class SosEntity(
     @PrimaryKey val id: String,
     val senderId: String,
@@ -116,6 +124,7 @@ data class SosEntity(
 )
 
 @Entity(tableName = "rooms", indices = [Index("lastAt")])
+@Serializable
 data class RoomEntity(
     @PrimaryKey val id: String,
     val type: String,
@@ -126,6 +135,7 @@ data class RoomEntity(
 )
 
 @Entity(tableName = "messages", indices = [Index("roomId", "createdAt")])
+@Serializable
 data class MessageEntity(
     @PrimaryKey val id: String,
     val roomId: String,

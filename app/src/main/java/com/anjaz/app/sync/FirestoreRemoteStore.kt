@@ -148,6 +148,20 @@ class FirestoreRemoteStore : RemoteStore {
         }
     }
 
+    override fun audit(profile: Profile): Flow<List<AuditEntry>> {
+        val col = fs.collection("audit")
+        val q: Query = when (profile.roleEnum) {
+            Role.CENTRAL -> col.orderBy("at", Query.Direction.DESCENDING).limit(200)
+            Role.REGION_MANAGER, Role.REGION_ADMIN -> col.whereEqualTo("regionId", profile.regionId ?: "-").limit(200)
+            else -> return kotlinx.coroutines.flow.emptyFlow()
+        }
+        return snapshots(q) { snap ->
+            snap.documents.mapNotNull { d ->
+                d.data?.let { AuditEntry(d.id, it["actorId"] as? String ?: "", it["action"] as? String ?: "", it["targetId"] as? String ?: "", (it["at"] as? Number)?.toLong() ?: 0L) }
+            }.sortedByDescending { it.at }
+        }
+    }
+
     override suspend fun createSos(sos: SosEntity) = guard {
         val data = hashMapOf<String, Any?>(
             "senderId" to sos.senderId, "senderName" to sos.senderName, "regionId" to sos.regionId, "squareId" to sos.squareId,

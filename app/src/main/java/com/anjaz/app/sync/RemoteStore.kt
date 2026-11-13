@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.Flow
 
 class RemoteDenied(message: String) : Exception(message)
 
+data class AuditEntry(val id: String, val actorId: String, val action: String, val targetId: String, val at: Long)
+
 interface RemoteStore {
     val enabled: Boolean
     suspend fun createTask(task: TaskEntity)
@@ -30,6 +32,7 @@ interface RemoteStore {
     fun regions(profile: Profile): Flow<List<com.anjaz.app.data.db.RegionEntity>> = kotlinx.coroutines.flow.emptyFlow()
     fun squares(profile: Profile): Flow<List<com.anjaz.app.data.db.SquareEntity>> = kotlinx.coroutines.flow.emptyFlow()
     fun camps(profile: Profile): Flow<List<com.anjaz.app.data.db.CampEntity>> = kotlinx.coroutines.flow.emptyFlow()
+    fun audit(profile: Profile): Flow<List<AuditEntry>> = kotlinx.coroutines.flow.emptyFlow()
     fun sos(profile: Profile): Flow<List<SosEntity>> = kotlinx.coroutines.flow.emptyFlow()
     fun rooms(profile: Profile): Flow<List<RoomEntity>> = kotlinx.coroutines.flow.emptyFlow()
     fun messages(roomId: String): Flow<List<MessageEntity>> = kotlinx.coroutines.flow.emptyFlow()

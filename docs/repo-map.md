@@ -19,6 +19,8 @@
 - حسابات: data/AccountsRepository + ui/accounts (إنشاء/إعادة ضبط/تعطيل عبر Worker `/v1/users`)؛ الاختيار من الدليل لا معرّفات يدوية.
 - إشعارات: push/{Notifications, DeviceTokens, AnjazMessagingService, DeepLink}؛ قناتا default وsos؛ الرمز يُكتب في devices/{uid}.
 - دليل: data/DirectoryRepository + ui/directory (منطقة/مربع/مخيم، دفع بالترتيب)؛ Room v3 أضاف camps.regionId لأن القواعد تفحصه.
+- نسخ/تقارير: backup/BackupManager (JSON، دمج)، report/{ReportData,PdfLayout,PdfExporter,XlsxExporter} ← ui/reports؛ سجل العمليات ui/audit.
+- PdfDocument لا يعمل تحت Robolectric (document is closed) فالتخطيط PdfLayout منفصل ومختبر على JVM.
 
 ## Decisions
 - جمعية واحدة تدير مناطق ← مربعات ← مخيمات؛ بلا SaaS الآن، والتصميم يسمح بالتوسع لاحقاً. السبب: طلب ساجد.

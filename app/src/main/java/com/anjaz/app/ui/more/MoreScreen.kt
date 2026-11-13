@@ -39,12 +39,11 @@ private data class Entry(val title: String, val icon: ImageVector)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Unit, onOpenAccounts: () -> Unit, onOpenDirectory: () -> Unit) {
+fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Unit, onOpenAccounts: () -> Unit, onOpenDirectory: () -> Unit, onOpenReports: () -> Unit, onOpenAudit: () -> Unit) {
     val c = Anjaz.colors
     val haptic = LocalHapticFeedback.current
     val upcoming = listOf(
-        Entry("التقارير والتصدير", AnjazIcons.Report),
-        Entry("النسخ الاحتياطي", AnjazIcons.Cloud), Entry("سجل العمليات", AnjazIcons.Log), Entry("الأمان والحساب", AnjazIcons.Lock),
+        Entry("الأمان والحساب", AnjazIcons.Lock),
     )
     Column(
         Modifier.fillMaxSize().background(c.surface).statusBarsPadding().verticalScroll(rememberScrollState()).padding(18.dp).padding(bottom = 110.dp),
@@ -65,6 +64,18 @@ fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Un
             Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 AnjazIcon(AnjazIcons.Map, c.ink)
                 Text("المربعات والمخيمات", color = c.ink, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            }
+        }
+        AnjazCard(Modifier.fillMaxWidth(), onClick = onOpenReports) {
+            Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                AnjazIcon(AnjazIcons.Report, c.ink)
+                Text("التقارير والنسخ الاحتياطي", color = c.ink, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            }
+        }
+        if (profile.roleEnum.rank >= com.anjaz.app.domain.Role.REGION_ADMIN.rank) AnjazCard(Modifier.fillMaxWidth(), onClick = onOpenAudit) {
+            Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                AnjazIcon(AnjazIcons.Log, c.ink)
+                Text("سجل العمليات", color = c.ink, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
             }
         }
         if (profile.canAssign) AnjazCard(Modifier.fillMaxWidth(), onClick = onOpenAccounts) {

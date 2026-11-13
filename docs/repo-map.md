@@ -4,7 +4,7 @@
 > حافظ على هذا الملف تحت 5KB: بلا كود، وحدّثه بسطرين بعد كل تغيير.
 
 ## Quick index (ميزة → ملف → ابحث بـ)
-- هوية الشعار → brand/ → `build_brand.py`، أيقونة أندرويد → brand/android-icons (تُنسخ إلى app/src/main/res)
+- هوية → brand/ (`build_brand.py`، أيقونات في brand/android-icons)
 - ثيم → ui/theme (`AnjazTheme`، `Anjaz.colors`)؛ مكوّنات → ui/components (`GlassNavBar`، `SchemaForm`)
 - الرئيسية → ui/home → `HomeViewModel`؛ المهام → ui/tasks → `TasksViewModel`، `NewTaskSheet`؛ التنقل → ui/nav → `AnjazRoot`
 - المنطق المحلي → data/ → `TaskRepository` (create/transition + outbox)، `DashboardRepository`، `DemoSeeder`؛ اختبار ذاتي → core/SelfTest

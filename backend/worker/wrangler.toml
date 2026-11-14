@@ -11,7 +11,7 @@ ALLOWED_ORIGIN = ""
 [[d1_databases]]
 binding = "DB"
 database_name = "anjaz"
-database_id = "REPLACE_WITH_D1_ID"
+database_id = "ccf78650-7f00-46d5-9f4a-8d851a234b9f"
 
 [triggers]
 crons = ["*/15 * * * *", "0 21 * * *"]

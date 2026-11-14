@@ -1,9 +1,7 @@
 # repo-map — Anjaz (إنجاز)
 
-> ابدأ بهذا الملف ثم `.claude/session-handoff.md`؛ الرموز بـ `Grep` في `docs/code-index.md`؛ ≤5KB بلا كود.
-
 ## Quick index (ميزة → ملف → ابحث بـ)
-- هوية → brand/ (`build_brand.py`، أيقونات في brand/android-icons)
+- هوية → brand/ (`build_brand.py`)
 - ثيم → ui/theme (`AnjazTheme`، `Anjaz.colors`)؛ مكوّنات → ui/components (`GlassNavBar`، `SchemaForm`)
 - الرئيسية → ui/home → `HomeViewModel`؛ المهام → ui/tasks → `TasksViewModel`، `NewTaskSheet`؛ التنقل → ui/nav → `AnjazRoot`
 - المنطق المحلي → data/ (`TaskRepository`، `DashboardRepository`، `DemoSeeder`)؛ اختبار ذاتي → core/SelfTest

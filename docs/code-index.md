@@ -4,7 +4,7 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 144 ملفاً · 23851 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> 145 ملفاً · 23880 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
 > الأكبر: package-lock.json 10702 · package-lock.json 1552 · 3.json 742 · 2.json 735 · 1.json 519 · FirestoreRemoteStore.kt 283 · home-directions.html 271 · screens.html 240
 
 ### ./
@@ -23,6 +23,7 @@
 - unpack-zip.yml (79)
 ### app/
 - build.gradle.kts (117)
+- google-services.json (29)
 ### app/schemas/com.anjaz.app.data.db.AnjazDatabase/
 - 1.json (519)
 - 2.json (735)

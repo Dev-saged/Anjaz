@@ -248,6 +248,18 @@ class FirestoreRemoteStore : RemoteStore {
             }
         }
 
+    override fun events(taskId: String): Flow<List<TaskEventEntity>> =
+        snapshots(fs.collection("tasks").document(taskId).collection("events").orderBy("at").limitToLast(100)) { snap ->
+            snap.documents.mapNotNull { d ->
+                d.data?.let {
+                    TaskEventEntity(
+                        d.id, taskId, it["fromStatus"] as? String, it["toStatus"] as? String ?: return@let null,
+                        it["actorId"] as? String ?: "", it["note"] as? String, (it["at"] as? Number)?.toLong() ?: 0L,
+                    )
+                }
+            }
+        }
+
     override fun messages(roomId: String): Flow<List<MessageEntity>> =
         snapshots(fs.collection("rooms").document(roomId).collection("messages").orderBy("createdAt").limitToLast(200)) { snap ->
             snap.documents.mapNotNull { d ->

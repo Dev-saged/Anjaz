@@ -134,6 +134,13 @@ class SyncEngine @Inject constructor(
         return scope.launch { remote.messages(roomId).catch { }.collect { applyMessages(it) } }
     }
 
+    suspend fun applyEvents(list: List<com.anjaz.app.data.db.TaskEventEntity>) = list.forEach { db.taskEvents().insert(it) }
+
+    fun listenTask(scope: CoroutineScope, taskId: String): Job? {
+        if (!remote.enabled) return null
+        return scope.launch { remote.events(taskId).catch { }.collect { applyEvents(it) } }
+    }
+
     suspend fun applyTasks(remoteTasks: List<TaskEntity>) {
         remoteTasks.forEach { r ->
             val local = db.tasks().byId(r.id)

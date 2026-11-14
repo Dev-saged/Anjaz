@@ -20,6 +20,7 @@ interface RemoteStore {
     suspend fun appendEvent(event: TaskEventEntity)
     fun tasks(profile: Profile): Flow<List<TaskEntity>>
     fun users(profile: Profile): Flow<List<UserEntity>>
+    fun events(taskId: String): Flow<List<TaskEventEntity>> = kotlinx.coroutines.flow.emptyFlow()
 
     suspend fun createSos(sos: SosEntity) = Unit
     suspend fun updateSosStatus(id: String, status: String, by: String?, updatedAt: Long) = Unit

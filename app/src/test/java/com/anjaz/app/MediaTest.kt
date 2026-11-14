@@ -118,4 +118,13 @@ class MediaTest {
         assertTrue(after.readBy.contains("u1"))
         db.close()
     }
+
+    @Test fun pulledTaskEventsAreIdempotent() = runBlocking {
+        val db = Room.inMemoryDatabaseBuilder(ctx, AnjazDatabase::class.java).build()
+        val engine = SyncEngine(db, BareRemote(), Notifier { _, _ -> }, Clock { 10 }, FakeMedia())
+        val e = com.anjaz.app.data.db.TaskEventEntity("e1", "t1", "NEW", "IN_PROGRESS", "u2", null, 5)
+        engine.applyEvents(listOf(e)); engine.applyEvents(listOf(e, e.copy(id = "e2", at = 6)))
+        assertEquals(2, db.taskEvents().countAll())
+        db.close()
+    }
 }

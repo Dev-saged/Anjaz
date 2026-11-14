@@ -124,6 +124,10 @@ fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) 
     val ui by vm.ui.collectAsStateWithLifecycle()
     var text by remember { mutableStateOf("") }
     var attach by remember { mutableStateOf(false) }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val dictate = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { r ->
+        r.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.let { text = (text + " " + it).trim().take(4000) }
+    }
     val listState = rememberLazyListState()
     val msgs = ui?.messages.orEmpty()
     LaunchedEffect(msgs.size) {
@@ -145,6 +149,15 @@ fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) 
             Box(Modifier.size(44.dp).clip(CircleShape).clickable { attach = true }.semantics { contentDescription = "إرفاق" }, contentAlignment = Alignment.Center) { AnjazIcon(AnjazIcons.Clip, c.mute) }
             OutlinedTextField(
                 value = text, onValueChange = { if (it.length <= 4000) text = it }, placeholder = { Text("اكتب رسالة") },
+                trailingIcon = {
+                    Box(Modifier.size(44.dp).clip(CircleShape).clickable {
+                        val i = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                            .putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                            .putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, "ar")
+                            .putExtra(android.speech.RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+                        runCatching { dictate.launch(i) }.onFailure { android.widget.Toast.makeText(ctx, "الإملاء الصوتي غير متاح على هذا الجهاز", android.widget.Toast.LENGTH_SHORT).show() }
+                    }.semantics { contentDescription = "إملاء صوتي" }, contentAlignment = Alignment.Center) { AnjazIcon(AnjazIcons.Mic, c.mute, 20.dp) }
+                },
                 maxLines = 4, shape = RoundedCornerShape(22.dp), modifier = Modifier.weight(1f),
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = c.emerald, unfocusedBorderColor = c.line, focusedContainerColor = c.card, unfocusedContainerColor = c.card, cursorColor = c.emerald),
             )

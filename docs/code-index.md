@@ -4,8 +4,8 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 192 ملفاً · 28599 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
-> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · MediaUi.kt 313 · FirestoreRemoteStore.kt 309
+> 192 ملفاً · 28717 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · MediaUi.kt 313 · FirestoreRemoteStore.kt 310
 
 ### ./
 - CLAUDE.md (44)
@@ -44,7 +44,7 @@
 - Oklch.kt (36): Oklch, Color.toHex
 - SelfTest.kt (96): Check, SelfTest
 ### app/src/main/java/com/anjaz/app/data/
-- AccountsRepository.kt (75): AccountsRepository
+- AccountsRepository.kt (89): AccountsRepository
 - ChatRepository.kt (85): directRoomId, String.csv, ChatRepository
 - Clock.kt (10): interface, SystemClock
 - DashboardRepository.kt (41): DashboardCounts, DashboardRepository
@@ -59,8 +59,8 @@
 ### app/src/main/java/com/anjaz/app/data/db/
 - AnjazDatabase.kt (32): AnjazDatabase
 - Daos.kt (231): TaskDao, TaskEventDao, OutboxDao, DirectoryDao, SosDao, ChatDao, ContactDao
-- Entities.kt (177): RegionEntity, SquareEntity, CampEntity, UserEntity, TaskEntity, TaskEventEntity, OutboxEntity +6
-- Migrations.kt (36): Migrations
+- Entities.kt (178): RegionEntity, SquareEntity, CampEntity, UserEntity, TaskEntity, TaskEventEntity, OutboxEntity +6
+- Migrations.kt (42): Migrations
 ### app/src/main/java/com/anjaz/app/di/
 - DataModule.kt (37): DataModule
 ### app/src/main/java/com/anjaz/app/domain/
@@ -98,16 +98,16 @@
 ### app/src/main/java/com/anjaz/app/sync/
 - ApiClient.kt (82): ApiClient
 - CleanupWorker.kt (19): CleanupWorker
-- FirestoreRemoteStore.kt (309): FirestoreRemoteStore
+- FirestoreRemoteStore.kt (310): FirestoreRemoteStore
 - RemoteStore.kt (54): RemoteDenied, AuditEntry, RemoteStore, NoRemoteStore, interface
 - SyncEngine.kt (192): PushResult, SyncEngine
 - SyncWorker.kt (54): SyncWorker, SyncScheduler
 ### app/src/main/java/com/anjaz/app/ui/about/
 - AboutCard.kt (83): AboutCard
-- Changelog.kt (44): ChangelogSheet
+- Changelog.kt (45): ChangelogSheet
 ### app/src/main/java/com/anjaz/app/ui/accounts/
-- AccountsScreen.kt (134): AccountsScreen
-- AccountsViewModel.kt (94): AccountsUi, AccountsViewModel
+- AccountsScreen.kt (158): AccountsScreen
+- AccountsViewModel.kt (127): AccountsUi, AccountsViewModel
 ### app/src/main/java/com/anjaz/app/ui/audit/
 - AuditScreen.kt (99): AuditRow, actionLabel, AuditViewModel, AuditScreen
 ### app/src/main/java/com/anjaz/app/ui/chat/
@@ -219,8 +219,8 @@
 - cron.js (28): escalate
 - firestore.js (97): encodeValue, encodeFields, decodeValue, decodeFields, decodeDoc, Firestore
 - google.js (45): serviceAccount, signJwt, accessToken, resetTokenCache
-- identity.js (37): Identity
-- index.js (193): json, limited, body, str, profile, audit, createUser +9
+- identity.js (42): Identity
+- index.js (226): json, limited, body, str, profile, audit, createUser +11
 - media.js (91): roomOf, putMedia, getMedia, ackMedia, purgeMedia
 - notify.js (57): sendFcm, leadsFor, targetsFor
 - policy.js (55): validUsername, validPassword, isActive, isLead, inScope, shapeOk, canCreateUser +3

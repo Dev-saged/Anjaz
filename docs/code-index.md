@@ -4,12 +4,12 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 156 ملفاً · 25204 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> 165 ملفاً · 25424 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
 > الأكبر: package-lock.json 10702 · package-lock.json 1552 · 3.json 742 · 2.json 735 · 1.json 519 · FirestoreRemoteStore.kt 283 · UpdateManager.kt 279 · home-directions.html 271
 
 ### ./
 - CLAUDE.md (44)
-- README.md (175)
+- README.md (62)
 - build.gradle.kts (10)
 - settings.gradle.kts (17)
 - version.json (5)
@@ -32,7 +32,7 @@
 - AndroidManifest.xml (60)
 ### app/src/main/java/com/anjaz/app/
 - AnjazApp.kt (24): AnjazApp
-- BrandConfig.kt (40): BrandConfig
+- BrandConfig.kt (53): BrandConfig
 - MainActivity.kt (64): MainActivity
 ### app/src/main/java/com/anjaz/app/backup/
 - BackupManager.kt (84): BackupFile, RestoreSummary, BackupManager
@@ -86,6 +86,8 @@
 - RemoteStore.kt (53): RemoteDenied, AuditEntry, RemoteStore, NoRemoteStore, interface
 - SyncEngine.kt (159): PushResult, SyncEngine
 - SyncWorker.kt (48): SyncWorker, SyncScheduler
+### app/src/main/java/com/anjaz/app/ui/about/
+- AboutCard.kt (80): AboutCard
 ### app/src/main/java/com/anjaz/app/ui/accounts/
 - AccountsScreen.kt (111): AccountsScreen
 - AccountsViewModel.kt (91): AccountsUi, AccountsViewModel
@@ -109,11 +111,11 @@
 ### app/src/main/java/com/anjaz/app/ui/icons/
 - Icons.kt (170): AnjazIcons
 ### app/src/main/java/com/anjaz/app/ui/login/
-- LoginScreen.kt (87): LoginScreen
+- LoginScreen.kt (100): LoginScreen
 - LoginViewModel.kt (66): SessionState, LoginUiState, AppSessionViewModel, LoginViewModel
 ### app/src/main/java/com/anjaz/app/ui/more/
 - ChatPlaceholder.kt (29): ChatPlaceholder
-- MoreScreen.kt (138): MoreScreen
+- MoreScreen.kt (139): MoreScreen
 ### app/src/main/java/com/anjaz/app/ui/nav/
 - AnjazNav.kt (143): Routes, AnjazRoot
 - SyncViewModel.kt (35): SyncViewModel
@@ -142,10 +144,17 @@
 - UpdateUi.kt (230): UpdateLayer
 - UpdateViewModel.kt (9): UpdateViewModel
 ### app/src/main/res/drawable/
+- ic_flag_ps.xml (13)
+- ic_heart.xml (11)
 - ic_launcher_background.xml (6)
 - ic_launcher_foreground.xml (11)
 - ic_launcher_monochrome.xml (11)
 - ic_notification.xml (6)
+- ic_social_facebook.xml (11)
+- ic_social_github.xml (11)
+- ic_social_instagram.xml (15)
+- ic_social_whatsapp.xml (13)
+- ic_social_x.xml (13)
 ### app/src/main/res/mipmap-anydpi-v26/
 - ic_launcher.xml (7)
 - ic_launcher_round.xml (7)
@@ -208,12 +217,13 @@
 ### brand/tools/
 - build_brand.py (76): oklch, symbol, svg, wordmark, write
 - gen_icons.py (42): num, conv
+- make_readme_assets.py (137): t, social_paths, icon_g, defs, wrap, face
 - make_update_demo.py (82): ring, banner, main
 - outline_text.py (25): outline
 ### brand/variants/
 - head-snippet.html (6)
 ### docs/
-- repo-map.md (43)
+- repo-map.md (45)
 ### tools/
 - repomap.py (146): files, symbols, build, main
 <!-- repomap:auto:end -->

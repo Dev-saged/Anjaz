@@ -18,6 +18,8 @@
 - Room v3: Migrations 1→2→3 (camps.regionId تفحصه القواعد)؛ PdfLayout منفصل لأن PdfDocument لا يعمل تحت Robolectric.
 - تحديث ذاتي: update/{UpdateChecker (3 طبقات من GitHub Releases)، UpdateManager (تنزيل Range + تثبيت PackageInstaller)، UpdateDownloadService، UpdateUi (بانر علوي + ورقة)، AppFolder (updates/backups/exports)}؛ build.yml ينشر Release + version.json؛ versionCode=VERSION_CODE*10000+BUILD_NUMBER.
 
+- حول المطوّر: ui/about/AboutCard (في الدخول والمزيد) وبياناته في BrandConfig.Dev؛ أصول README تُولَّد بـ brand/tools/make_readme_assets.py إلى docs/readme.
+
 ## Decisions
 - كل شيء مجاني وبلا بطاقة: Firebase Spark (Auth + Firestore + FCM) + Cloudflare Workers/D1/Cron. السبب: قرار ساجد.
 - Storage/Functions تحتاج Blaze، فالبديل Worker (FCM، التصعيد، النسخ) و D1.

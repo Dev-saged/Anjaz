@@ -17,6 +17,19 @@ object BrandConfig {
     const val UPDATE_CHECK_HOURS = 6L
     const val EMAIL_DOMAIN = "users.anjaz.local"
 
+    object Dev {
+        const val TITLE = "المهندس ساجد العبادلة"
+        const val PLACE = "صُنع بكل حب من فلسطين — غزة"
+        const val YEAR = 2026
+        val LINKS = listOf(
+            "whatsapp" to "https://wa.me/972597857250",
+            "instagram" to "https://instagram.com/sajedd.0",
+            "facebook" to "https://facebook.com/saged.t",
+            "x" to "https://x.com/saged_al",
+            "github" to "https://github.com/Dev-saged",
+        )
+    }
+
     data class Pair(val light: Oklch, val dark: Oklch)
 
     object Palette {

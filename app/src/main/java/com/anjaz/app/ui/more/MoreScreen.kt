@@ -97,10 +97,11 @@ fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Un
                 }
             }
         }
+        com.anjaz.app.ui.about.AboutCard(Modifier.padding(top = 18.dp))
         Text(
             "${BrandConfig.NAME} ${ltr(BuildConfig.VERSION_NAME)}",
             color = c.mute, style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.fillMaxWidth().padding(top = 18.dp).combinedClickable(
+            modifier = Modifier.fillMaxWidth().padding(top = 2.dp).combinedClickable(
                 onClick = {}, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onOpenSelfTest() },
             ),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,

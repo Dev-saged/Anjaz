@@ -6,9 +6,9 @@
 - هوية → brand/ (`build_brand.py`، أيقونات في brand/android-icons)
 - ثيم → ui/theme (`AnjazTheme`، `Anjaz.colors`)؛ مكوّنات → ui/components (`GlassNavBar`، `SchemaForm`)
 - الرئيسية → ui/home → `HomeViewModel`؛ المهام → ui/tasks → `TasksViewModel`، `NewTaskSheet`؛ التنقل → ui/nav → `AnjazRoot`
-- المنطق المحلي → data/ → `TaskRepository` (create/transition + outbox)، `DashboardRepository`، `DemoSeeder`؛ اختبار ذاتي → core/SelfTest
+- المنطق المحلي → data/ (`TaskRepository`، `DashboardRepository`، `DemoSeeder`)؛ اختبار ذاتي → core/SelfTest
 - الخلفية → backend/firebase (القواعد + اختباراتها) و backend/worker (المسارات في `route` داخل src/index.js، الصلاحيات في policy.js، التصعيد cron.js، النسخ backup.js)
-- الدخول والجلسة → cloud/AuthRepository، ui/login؛ المزامنة → sync/ (`SyncEngine` دفع الصندوق الصادر + سحب، `FirestoreRemoteStore`، `SyncWorker`، `ApiClient` للـ Worker)
+- الدخول → cloud/AuthRepository، ui/login؛ المزامنة → sync/ (`SyncEngine`، `FirestoreRemoteStore`، `SyncWorker`، `ApiClient`)
 
 ## Features (v0.5.0)
 - SOS: data/SosRepository → ui/sos؛ محادثة: data/ChatRepository → ui/chat (مسار room/{roomId}، SyncEngine.listenRoom).
@@ -28,7 +28,7 @@
 - اجتماعات WebRTC غير منفّذة.
 - المستخدم: اسم بسيط أو بريد كامل (domain/Username + Worker policy.validUsername).
 
-- الرئيسية معتمدة: A + شريط أيام B + تنقل زجاجي C (الرئيسية، المهام، الرسائل، المزيد). المرجع brand/prototype/home-a.html. لا يُعاد بناء الهيكل.
+- الرئيسية معتمدة (brand/prototype/home-a.html): لا يُعاد بناء الهيكل.
 
 ## Solved bugs (never reintroduce)
 - رسالة صوتية فاشلة (Worker غير منشور) كانت توقف الصندوق الصادر كله؛ الإصلاح: SyncEngine.pushPending يتجاوز الفاشل ويكمل (تتوقف الجولة فقط عند انقطاع الشبكة)، وFAILED + إعادة إرسال/حذف بالضغط المطول.

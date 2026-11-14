@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1065226139506",
+    "project_id": "anjaz-gaza",
+    "storage_bucket": "anjaz-gaza.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1065226139506:android:dbe8a88edad3ed7684cfeb",
+        "android_client_info": {
+          "package_name": "com.anjaz.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBclo6oHvNMZcbf_BmPbeGRstt3t8EAgK4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -3,7 +3,7 @@ main = "src/index.js"
 compatibility_date = "2025-07-01"
 
 [vars]
-FIREBASE_PROJECT_ID = "REPLACE_WITH_PROJECT_ID"
+FIREBASE_PROJECT_ID = "anjaz-gaza"
 EMAIL_DOMAIN = "users.anjaz.local"
 MEDIA_TTL_DAYS = "90"
 ALLOWED_ORIGIN = ""

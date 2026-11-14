@@ -4,7 +4,7 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 192 ملفاً · 28717 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> 207 ملفاً · 30718 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
 > الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · MediaUi.kt 313 · FirestoreRemoteStore.kt 310
 
 ### ./
@@ -22,7 +22,7 @@
 - repomap.yml (41)
 - unpack-zip.yml (79)
 ### app/
-- build.gradle.kts (143)
+- build.gradle.kts (146)
 - google-services.json (29)
 ### app/schemas/com.anjaz.app.data.db.AnjazDatabase/
 - 1.json (519)
@@ -30,13 +30,16 @@
 - 3.json (742)
 - 4.json (812)
 ### app/src/main/
-- AndroidManifest.xml (68)
+- AndroidManifest.xml (69)
 ### app/src/main/java/com/anjaz/app/
 - AnjazApp.kt (24): AnjazApp
 - BrandConfig.kt (53): BrandConfig
-- MainActivity.kt (64): MainActivity
+- MainActivity.kt (79): MainActivity
 ### app/src/main/java/com/anjaz/app/backup/
 - BackupManager.kt (84): BackupFile, RestoreSummary, BackupManager
+### app/src/main/java/com/anjaz/app/call/
+- CallManager.kt (306): CallPhase, CallPeer, CallState, CallManager
+- CallScreen.kt (146): CallViewModel, CallScreen
 ### app/src/main/java/com/anjaz/app/cloud/
 - AuthRepository.kt (75): CloudState, AuthRepository
 ### app/src/main/java/com/anjaz/app/core/
@@ -57,10 +60,11 @@
 - TaskQueries.kt (17): TaskQueries
 - TaskRepository.kt (96): TaskOpPayload, TaskRepository
 ### app/src/main/java/com/anjaz/app/data/db/
-- AnjazDatabase.kt (32): AnjazDatabase
-- Daos.kt (231): TaskDao, TaskEventDao, OutboxDao, DirectoryDao, SosDao, ChatDao, ContactDao
+- AnjazDatabase.kt (33): AnjazDatabase
+- Daos.kt (239): SquareCount, TaskDao, TaskEventDao, OutboxDao, DirectoryDao, SosDao, ChatDao +1
 - Entities.kt (178): RegionEntity, SquareEntity, CampEntity, UserEntity, TaskEntity, TaskEventEntity, OutboxEntity +6
 - Migrations.kt (42): Migrations
+- SearchDao.kt (23): SearchDao
 ### app/src/main/java/com/anjaz/app/di/
 - DataModule.kt (37): DataModule
 ### app/src/main/java/com/anjaz/app/domain/
@@ -70,6 +74,10 @@
 - Role.kt (12): Role
 - TaskStatus.kt (39): TaskStatus, Priority
 - Username.kt (14): Username
+### app/src/main/java/com/anjaz/app/geo/
+- GeoModels.kt (42): Place, Presence, PulseKind, Pulse, MapFilter, GeoMath
+- GeoRepository.kt (97): GeoRepository
+- LocationProvider.kt (45): LocationProvider
 ### app/src/main/java/com/anjaz/app/media/
 - MediaCompressor.kt (62): Compressed, MediaCompressor
 - MediaRepository.kt (173): previewOf, extensionFor, MediaRepository
@@ -77,7 +85,7 @@
 - VideoCompressor.kt (76): CompressedVideo, VideoCompressor
 - VoiceRecorder.kt (71): VoiceRecorder, VoicePlayer
 ### app/src/main/java/com/anjaz/app/push/
-- AnjazMessagingService.kt (33): AnjazMessagingService
+- AnjazMessagingService.kt (35): AnjazMessagingService
 - DeepLink.kt (8): DeepLink
 - DeviceTokens.kt (26): DeviceTokens
 - Notifications.kt (49): Notifications
@@ -89,6 +97,8 @@
 ### app/src/main/java/com/anjaz/app/schema/
 - Schema.kt (54): FieldType, Choice, FieldSchema, ModuleSchema, SchemaValidator
 - Schemas.kt (68): Schemas
+### app/src/main/java/com/anjaz/app/security/
+- AppLock.kt (29): AppLock
 ### app/src/main/java/com/anjaz/app/stt/
 - AudioPcm.kt (84): AudioPcm
 - PcmRecorder.kt (39): PcmRecorder
@@ -104,20 +114,21 @@
 - SyncWorker.kt (54): SyncWorker, SyncScheduler
 ### app/src/main/java/com/anjaz/app/ui/about/
 - AboutCard.kt (83): AboutCard
-- Changelog.kt (45): ChangelogSheet
+- Changelog.kt (46): ChangelogSheet
 ### app/src/main/java/com/anjaz/app/ui/accounts/
 - AccountsScreen.kt (158): AccountsScreen
 - AccountsViewModel.kt (127): AccountsUi, AccountsViewModel
 ### app/src/main/java/com/anjaz/app/ui/audit/
 - AuditScreen.kt (99): AuditRow, actionLabel, AuditViewModel, AuditScreen
 ### app/src/main/java/com/anjaz/app/ui/chat/
-- ChatScreens.kt (299): ChatListScreen, ChatRoomScreen
+- ChatScreens.kt (303): ChatListScreen, ChatRoomScreen
 - ChatViewModels.kt (133): RoomRow, ChatListViewModel, roomTitle, RoomUi, ChatRoomViewModel
 - MediaUi.kt (313): MediaContent, AttachSheet, RecorderState, RecordingBar, HoldToRecord
 ### app/src/main/java/com/anjaz/app/ui/components/
 - AnimatedLogo.kt (79): AnimatedLogo, SplashOverlay
 - Components.kt (218): Tone, toneColors, Tag, AnjazCard, AnjazIcon, PrimaryButton, QuietButton +7
 - DayStrip.kt (53): DayChip, DayStrip
+- LockLayer.kt (34): LockLayer
 - Motion.kt (69): rememberReduceMotion, Stagger, AmbientBackground
 - Notice.kt (54): Notice
 - SchemaForm.kt (114): SchemaForm
@@ -129,28 +140,37 @@
 - DirectoryScreen.kt (104): DirectoryScreen
 - DirectoryViewModel.kt (89): DirKind, SquareRow, DirectoryUi, DirForm, DirectoryViewModel
 ### app/src/main/java/com/anjaz/app/ui/home/
-- HomeScreen.kt (184): HomeScreen
+- HomeScreen.kt (187): HomeScreen
 - HomeViewModel.kt (52): HomeUiState, HomeViewModel
 ### app/src/main/java/com/anjaz/app/ui/icons/
 - Icons.kt (170): AnjazIcons
 ### app/src/main/java/com/anjaz/app/ui/login/
 - LoginScreen.kt (100): LoginScreen
 - LoginViewModel.kt (66): SessionState, LoginUiState, AppSessionViewModel, LoginViewModel
+### app/src/main/java/com/anjaz/app/ui/map/
+- LiveMapScreen.kt (227): LiveMapScreen
+- LiveOverlay.kt (139): MapPalette, LiveOverlay
+- MapViewModel.kt (181): MapUi, MapViewModel
 ### app/src/main/java/com/anjaz/app/ui/more/
 - ChatPlaceholder.kt (29): ChatPlaceholder
-- MoreScreen.kt (153): MoreScreen
+- MoreScreen.kt (192): MoreScreen
 ### app/src/main/java/com/anjaz/app/ui/nav/
-- AnjazNav.kt (145): Routes, AnjazRoot
+- AnjazNav.kt (166): Routes, AnjazRoot
 - SyncViewModel.kt (36): SyncViewModel
 ### app/src/main/java/com/anjaz/app/ui/reports/
-- ReportsScreen.kt (75): ReportsScreen
-- ReportsViewModel.kt (67): ReportsUi, ReportsViewModel
+- ReportsScreen.kt (83): ReportsScreen
+- ReportsViewModel.kt (74): ReportsUi, ReportsViewModel
+### app/src/main/java/com/anjaz/app/ui/search/
+- SearchScreen.kt (127): HitKind, Hit, likeArg, SearchViewModel, SearchScreen
 ### app/src/main/java/com/anjaz/app/ui/sos/
 - SosScreen.kt (188): SosScreen
 - SosViewModel.kt (50): SosViewModel
 ### app/src/main/java/com/anjaz/app/ui/tasks/
-- TasksScreen.kt (170): TasksScreen, NewTaskSheet
+- TaskPhotos.kt (145): TaskPhoto, TaskPhotosViewModel, TaskPhotosSection
+- TasksScreen.kt (171): TasksScreen, NewTaskSheet
 - TasksViewModel.kt (129): TaskFilter, TasksUiState, NewTaskState, TasksViewModel
+### app/src/main/java/com/anjaz/app/ui/templates/
+- Templates.kt (223): Template, TemplatesRepository, TemplatesUi, TemplatesViewModel, TemplatesScreen
 ### app/src/main/java/com/anjaz/app/ui/test/
 - SelfTestScreen.kt (86): SeedViewModel, SelfTestScreen
 ### app/src/main/java/com/anjaz/app/ui/theme/
@@ -186,7 +206,7 @@
 - themes.xml (10)
 ### app/src/main/res/xml/
 - data_extraction_rules.xml (16)
-- file_paths.xml (6)
+- file_paths.xml (7)
 ### app/src/test/java/com/anjaz/app/
 - BackupReportTest.kt (112): BackupReportTest
 - ChatSosTest.kt (131): ChatSosTest
@@ -204,7 +224,7 @@
 - README.md (28)
 ### backend/firebase/
 - firebase.json (5)
-- firestore.rules (202)
+- firestore.rules (256)
 - package-lock.json (10702)
 - package.json (8)
 ### backend/firebase/test/
@@ -220,10 +240,11 @@
 - firestore.js (97): encodeValue, encodeFields, decodeValue, decodeFields, decodeDoc, Firestore
 - google.js (45): serviceAccount, signJwt, accessToken, resetTokenCache
 - identity.js (42): Identity
-- index.js (226): json, limited, body, str, profile, audit, createUser +11
+- index.js (241): json, limited, body, str, profile, audit, createUser +12
 - media.js (91): roomOf, putMedia, getMedia, ackMedia, purgeMedia
 - notify.js (57): sendFcm, leadsFor, targetsFor
 - policy.js (55): validUsername, validPassword, isActive, isLead, inScope, shapeOk, canCreateUser +3
+- recurring.js (56): localTime, due, runRecurring, weeklyReport
 ### backend/worker/test/
 - harness.js (117): keys, idToken, d1, world
 - worker.test.js (224): newUser
@@ -253,7 +274,7 @@
 ### docs/
 - DEPLOY.md (18)
 - media.md (7)
-- repo-map.md (43)
+- repo-map.md (40)
 ### tools/
 - repomap.py (146): files, symbols, build, main
 <!-- repomap:auto:end -->

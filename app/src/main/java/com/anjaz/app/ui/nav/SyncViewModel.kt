@@ -26,6 +26,7 @@ class SyncViewModel @Inject constructor(
         jobs.forEach { it.cancel() }
         jobs = engine.listen(scope, profile)
         scheduler.schedulePeriodic()
+        scheduler.scheduleCleanup()
         scheduler.kick()
         scope.launch { tokens.register() }
     }

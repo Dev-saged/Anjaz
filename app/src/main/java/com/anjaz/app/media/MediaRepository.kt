@@ -156,8 +156,9 @@ class MediaRepository @Inject constructor(
     suspend fun cleanOrphans(): Int = withContext(Dispatchers.IO) {
         val live = db.chat().localMedia().map { File(it.localPath).absolutePath }.toSet()
         val root = File(AppFolder.root(ctx), "media")
+        val stale = System.currentTimeMillis() - 3_600_000L
         var n = 0
-        root.walkTopDown().filter { it.isFile }.forEach { if (it.absolutePath !in live || it.name.endsWith(".part")) { it.delete(); n++ } }
+        root.walkTopDown().filter { it.isFile && it.lastModified() < stale }.forEach { if (it.absolutePath !in live || it.name.endsWith(".part")) { it.delete(); n++ } }
         n
     }
 

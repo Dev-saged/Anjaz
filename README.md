@@ -59,3 +59,5 @@
 <sub>© 2026 ساجد العبادلة — جميع الحقوق محفوظة</sub>
 
 </div>
+
+<sub>للنشر: [docs/DEPLOY.md](docs/DEPLOY.md) · سجل الإصدارات: [docs/releases](docs/releases)</sub>

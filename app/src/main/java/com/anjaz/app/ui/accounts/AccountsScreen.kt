@@ -2,6 +2,7 @@
 
 package com.anjaz.app.ui.accounts
 
+import com.anjaz.app.ui.components.EmptyState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -70,7 +71,7 @@ fun AccountsScreen(onBack: () -> Unit, vm: AccountsViewModel = hiltViewModel()) 
         }
         if (!ui.formOpen) Notice(ui.message, ui.isError, vm::dismissMessage, Modifier.padding(horizontal = 18.dp, vertical = 4.dp))
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(18.dp, 8.dp, 18.dp, 40.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (users.isEmpty()) item { Text("لا توجد حسابات ضمن نطاقك بعد", color = c.mute, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 32.dp)) }
+            if (users.isEmpty()) item { EmptyState(AnjazIcons.User, "لا توجد حسابات بعد", "الحسابات التي تنشئها ضمن نطاقك تظهر هنا") }
             items(users, key = { it.id }) { u ->
                 AnjazCard(Modifier.fillMaxWidth()) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

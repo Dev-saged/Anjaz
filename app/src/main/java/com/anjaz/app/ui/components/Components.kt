@@ -203,3 +203,15 @@ fun SectionTitle(title: String, trailing: String? = null) {
 fun ScreenTitle(text: String, modifier: Modifier = Modifier) {
     Text(text, color = Anjaz.colors.navy.let { if (Anjaz.colors.dark) Anjaz.colors.ink else it }, fontFamily = Display, style = MaterialTheme.typography.titleLarge, modifier = modifier)
 }
+
+@Composable
+fun EmptyState(icon: ImageVector, title: String, hint: String, modifier: Modifier = Modifier) {
+    val c = Anjaz.colors
+    Column(modifier.fillMaxWidth().padding(top = 48.dp, start = 24.dp, end = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Box(Modifier.size(72.dp).clip(RoundedCornerShape(24.dp)).background(c.card).border(BorderStroke(1.dp, c.line), RoundedCornerShape(24.dp)), contentAlignment = Alignment.Center) {
+            AnjazIcon(icon, c.mute, 32.dp)
+        }
+        Text(title, color = c.ink, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+        Text(hint, color = c.mute, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+    }
+}

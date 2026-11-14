@@ -94,6 +94,14 @@ fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Un
             }
         }
         UpdateEntry()
+        var showLog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+        AnjazCard(Modifier.fillMaxWidth(), onClick = { showLog = true }) {
+            Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                AnjazIcon(AnjazIcons.Log, c.ink)
+                Text("ما الجديد", color = c.ink, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            }
+        }
+        if (showLog) com.anjaz.app.ui.about.ChangelogSheet { showLog = false }
         upcoming.forEach { e ->
             AnjazCard(Modifier.fillMaxWidth()) {
                 Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -2,6 +2,7 @@
 
 package com.anjaz.app.ui.directory
 
+import com.anjaz.app.ui.components.EmptyState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -65,7 +66,7 @@ fun DirectoryScreen(onBack: () -> Unit, vm: DirectoryViewModel = hiltViewModel()
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(18.dp, 8.dp, 18.dp, 40.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (ui.canRegion) item { QuietButton("منطقة جديدة") { vm.open(DirKind.REGION) } }
             if (ui.canSquare) item { QuietButton("مربع جديد") { vm.open(DirKind.SQUARE, ui.profile?.regionId) } }
-            if (ui.squares.isEmpty()) item { Text("لا توجد مربعات بعد", color = c.mute, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 24.dp)) }
+            if (ui.squares.isEmpty()) item { EmptyState(AnjazIcons.Map, "لا توجد مربعات بعد", "أضف منطقة ثم مربعاً ليظهر هنا") }
             items(ui.squares, key = { it.square.id }) { row ->
                 AnjazCard(Modifier.fillMaxWidth()) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

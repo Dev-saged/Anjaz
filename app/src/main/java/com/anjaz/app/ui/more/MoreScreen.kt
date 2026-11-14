@@ -42,7 +42,7 @@ private data class Entry(val title: String, val icon: ImageVector)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Unit, onOpenAccounts: () -> Unit, onOpenDirectory: () -> Unit, onOpenReports: () -> Unit, onOpenDashboard: () -> Unit, onOpenAudit: () -> Unit, onOpenMap: () -> Unit = {}) {
+fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Unit, onOpenAccounts: () -> Unit, onOpenDirectory: () -> Unit, onOpenReports: () -> Unit, onOpenDashboard: () -> Unit, onOpenAudit: () -> Unit, onOpenMap: () -> Unit = {}, onOpenTemplates: () -> Unit = {}) {
     val c = Anjaz.colors
     val haptic = LocalHapticFeedback.current
     val upcoming = listOf(
@@ -82,6 +82,12 @@ fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Un
             Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 AnjazIcon(AnjazIcons.Shield, c.ink)
                 Text(if (profile.canAssign) "لوحة المتابعة والتصعيد" else "لوحة مهامي", color = c.ink, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            }
+        }
+        if (profile.canAssign) AnjazCard(Modifier.fillMaxWidth(), onClick = onOpenTemplates) {
+            Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                AnjazIcon(AnjazIcons.Tasks, c.ink)
+                Text("المهام المتكررة", color = c.ink, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
             }
         }
         AnjazCard(Modifier.fillMaxWidth(), onClick = onOpenReports) {

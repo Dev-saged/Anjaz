@@ -59,6 +59,7 @@ object Routes {
     const val DASHBOARD = "dashboard"
     const val AUDIT = "audit"
     const val MAP = "map"
+    const val TEMPLATES = "templates"
     const val ROOM = "room/{roomId}"
     fun room(id: String) = "room/$id"
 }
@@ -112,7 +113,8 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
             composable(Routes.CHAT) { ChatListScreen(onOpenRoom = { nav.navigate(Routes.room(it)) }) }
             composable(Routes.ROOM) { ChatRoomScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.SOS) { SosScreen() }
-            composable(Routes.MORE) { MoreScreen(profile, onSignOut = onSignOut, onOpenSelfTest = { nav.navigate(Routes.TEST) }, onOpenAccounts = { nav.navigate(Routes.ACCOUNTS) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, onOpenReports = { nav.navigate(Routes.REPORTS) }, onOpenDashboard = { nav.navigate(Routes.DASHBOARD) }, onOpenAudit = { nav.navigate(Routes.AUDIT) }, onOpenMap = { nav.navigate(Routes.MAP) }) }
+            composable(Routes.MORE) { MoreScreen(profile, onSignOut = onSignOut, onOpenSelfTest = { nav.navigate(Routes.TEST) }, onOpenAccounts = { nav.navigate(Routes.ACCOUNTS) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, onOpenReports = { nav.navigate(Routes.REPORTS) }, onOpenDashboard = { nav.navigate(Routes.DASHBOARD) }, onOpenAudit = { nav.navigate(Routes.AUDIT) }, onOpenMap = { nav.navigate(Routes.MAP) }, onOpenTemplates = { nav.navigate(Routes.TEMPLATES) }) }
+            composable(Routes.TEMPLATES) { com.anjaz.app.ui.templates.TemplatesScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.MAP) { com.anjaz.app.ui.map.LiveMapScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.AUDIT) { AuditScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.DASHBOARD) { com.anjaz.app.ui.dashboard.DashboardScreen(onBack = { nav.popBackStack() }) }
@@ -121,7 +123,7 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
             composable(Routes.ACCOUNTS) { AccountsScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.TEST) { SelfTestScreen() }
         }
-        if (route != Routes.TEST && route != Routes.ROOM && route != Routes.ACCOUNTS && route != Routes.DIRECTORY && route != Routes.REPORTS && route != Routes.DASHBOARD && route != Routes.AUDIT && route != Routes.MAP) {
+        if (route != Routes.TEST && route != Routes.ROOM && route != Routes.ACCOUNTS && route != Routes.DIRECTORY && route != Routes.REPORTS && route != Routes.DASHBOARD && route != Routes.AUDIT && route != Routes.MAP && route != Routes.TEMPLATES) {
             GlassNavBar(
                 items, route, { nav.navigateTab(it) },
                 onFab = {

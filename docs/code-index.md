@@ -4,36 +4,36 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 145 ملفاً · 23881 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
-> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 3.json 742 · 2.json 735 · 1.json 519 · FirestoreRemoteStore.kt 283 · home-directions.html 271 · screens.html 240
+> 156 ملفاً · 25204 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 3.json 742 · 2.json 735 · 1.json 519 · FirestoreRemoteStore.kt 283 · UpdateManager.kt 279 · home-directions.html 271
 
 ### ./
 - CLAUDE.md (44)
-- README.md (22)
+- README.md (175)
 - build.gradle.kts (10)
 - settings.gradle.kts (17)
 - version.json (5)
 ### .github/workflows/
 - apply-to-all-repos.yml (106)
 - backend-tests.yml (21)
-- build.yml (104)
+- build.yml (115)
 - deploy-worker.yml (17)
 - new-project.yml (95)
 - repomap.yml (41)
 - unpack-zip.yml (79)
 ### app/
-- build.gradle.kts (117)
+- build.gradle.kts (120)
 - google-services.json (29)
 ### app/schemas/com.anjaz.app.data.db.AnjazDatabase/
 - 1.json (519)
 - 2.json (735)
 - 3.json (742)
 ### app/src/main/
-- AndroidManifest.xml (47)
+- AndroidManifest.xml (60)
 ### app/src/main/java/com/anjaz/app/
-- AnjazApp.kt (21): AnjazApp
-- BrandConfig.kt (38): BrandConfig
-- MainActivity.kt (33): MainActivity
+- AnjazApp.kt (24): AnjazApp
+- BrandConfig.kt (40): BrandConfig
+- MainActivity.kt (64): MainActivity
 ### app/src/main/java/com/anjaz/app/backup/
 - BackupManager.kt (84): BackupFile, RestoreSummary, BackupManager
 ### app/src/main/java/com/anjaz/app/cloud/
@@ -113,7 +113,7 @@
 - LoginViewModel.kt (66): SessionState, LoginUiState, AppSessionViewModel, LoginViewModel
 ### app/src/main/java/com/anjaz/app/ui/more/
 - ChatPlaceholder.kt (29): ChatPlaceholder
-- MoreScreen.kt (106): MoreScreen
+- MoreScreen.kt (138): MoreScreen
 ### app/src/main/java/com/anjaz/app/ui/nav/
 - AnjazNav.kt (143): Routes, AnjazRoot
 - SyncViewModel.kt (35): SyncViewModel
@@ -131,6 +131,16 @@
 ### app/src/main/java/com/anjaz/app/ui/theme/
 - Theme.kt (62): AnjazColors, Anjaz, AnjazTheme
 - Type.kt (35): ltr
+### app/src/main/java/com/anjaz/app/update/
+- AppFolder.kt (21): AppFolder
+- UpdateCheckWorker.kt (52): UpdateCheckWorker
+- UpdateChecker.kt (172): AppRelease, UpdateChecker
+- UpdateDownloadService.kt (65): UpdateDownloadService
+- UpdateInstallReceiver.kt (36): UpdateInstallReceiver, PackageReplacedReceiver
+- UpdateManager.kt (279): UpdateManager
+- UpdateNotifications.kt (82): UpdateNotifications
+- UpdateUi.kt (230): UpdateLayer
+- UpdateViewModel.kt (9): UpdateViewModel
 ### app/src/main/res/drawable/
 - ic_launcher_background.xml (6)
 - ic_launcher_foreground.xml (11)
@@ -152,6 +162,8 @@
 - MigrationTest.kt (64): MigrationTest
 - RoomSelfTestTest.kt (22): RoomSelfTestTest
 - SyncEngineTest.kt (181): SyncEngineTest
+### app/src/test/java/com/anjaz/app/update/
+- UpdateCheckerTest.kt (49): UpdateCheckerTest
 ### backend/
 - README.md (28)
 ### backend/firebase/
@@ -196,11 +208,12 @@
 ### brand/tools/
 - build_brand.py (76): oklch, symbol, svg, wordmark, write
 - gen_icons.py (42): num, conv
+- make_update_demo.py (82): ring, banner, main
 - outline_text.py (25): outline
 ### brand/variants/
 - head-snippet.html (6)
 ### docs/
-- repo-map.md (45)
+- repo-map.md (43)
 ### tools/
 - repomap.py (146): files, symbols, build, main
 <!-- repomap:auto:end -->

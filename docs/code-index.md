@@ -4,8 +4,8 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 143 ملفاً · 22299 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
-> الأكبر: package-lock.json 10702 · 3.json 742 · 2.json 735 · 1.json 519 · FirestoreRemoteStore.kt 283 · home-directions.html 271 · screens.html 240 · index.js 230
+> 144 ملفاً · 23851 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 3.json 742 · 2.json 735 · 1.json 519 · FirestoreRemoteStore.kt 283 · home-directions.html 271 · screens.html 240
 
 ### ./
 - CLAUDE.md (44)
@@ -161,6 +161,7 @@
 ### backend/firebase/test/
 - rules.test.js (208): db, task
 ### backend/worker/
+- package-lock.json (1552)
 - package.json (8)
 ### backend/worker/src/
 - auth.js (41): HttpError, keys, resetKeyCache, verifyIdToken

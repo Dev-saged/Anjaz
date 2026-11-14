@@ -18,6 +18,7 @@ export class Identity {
     if (!res.ok) {
       const msg = j?.error?.message || '';
       if (msg.includes('EMAIL_EXISTS') || msg.includes('DUPLICATE')) return { error: 'exists' };
+      if (msg.includes('USER_NOT_FOUND')) return { error: 'missing' };
       throw new Error(`identity ${res.status}`);
     }
     return j;
@@ -31,6 +32,10 @@ export class Identity {
   }
 
   setPassword(uid, password) { return this.call('/accounts:update', { localId: uid, password }); }
+
+  setDisplayName(uid, displayName) { return this.call('/accounts:update', { localId: uid, displayName }); }
+
+  remove(uid) { return this.call('/accounts:delete', { localId: uid }); }
 
   setDisabled(uid, disabled) { return this.call('/accounts:update', { localId: uid, disableUser: disabled }); }
 }

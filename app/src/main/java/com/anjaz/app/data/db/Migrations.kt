@@ -32,4 +32,10 @@ object Migrations {
             ).forEach { db.execSQL("ALTER TABLE `messages` ADD COLUMN $it") }
         }
     }
+
+    val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `users` ADD COLUMN `deleted` INTEGER NOT NULL DEFAULT 0")
+        }
+    }
 }

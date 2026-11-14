@@ -53,6 +53,7 @@ data class UserEntity(
     val squareId: String?,
     val active: Boolean,
     val updatedAt: Long,
+    val deleted: Boolean = false,
 )
 
 @Entity(tableName = "tasks", indices = [Index("status"), Index("deadline"), Index("assigneeId")])

@@ -1,7 +1,7 @@
-# Session handoff — Anjaz (v0.6.0)
+# Session handoff — Anjaz (v0.7.0)
 
 ## الحالة
-- v0.5.0 منشور (build 29). الفرع feature/v060-launch: CleanupWorker يومي، EmptyState موحّد، ما الجديد، دليل docs/DEPLOY.md، إصدار 0.6.0.
+- v0.6.0 على main. الفرع feature/v070-accounts: تعديل/حذف الحسابات (Worker + Room v5 + واجهة)، إصدار 0.7.0.
 - لم يُشغَّل بناء ولا اختبارات محلياً في هذه الجلسة بطلب المستخدم؛ الاعتماد على CI.
 
 ## قرارات

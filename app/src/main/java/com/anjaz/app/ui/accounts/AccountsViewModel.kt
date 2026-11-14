@@ -31,6 +31,8 @@ data class AccountsUi(
     val message: String? = null,
     val isError: Boolean = false,
     val revealedPassword: Pair<String, String>? = null,
+    val edit: UserEntity? = null,
+    val deleting: UserEntity? = null,
 )
 
 @HiltViewModel
@@ -81,6 +83,37 @@ class AccountsViewModel @Inject constructor(
         when (val r = repo.resetPassword(u.id)) {
             is Outcome.Ok -> ui.update { it.copy(revealedPassword = u.username to r.value) }
             is Outcome.Failure -> ui.update { it.copy(message = r.reason, isError = true) }
+        }
+    }
+
+    fun openEdit(u: UserEntity) = ui.update {
+        AccountsUi(edit = u, values = mapOf("displayName" to u.displayName, "role" to u.role, "regionId" to u.regionId.orEmpty(), "squareId" to u.squareId.orEmpty()))
+    }
+    fun closeEdit() = ui.update { it.copy(edit = null, errors = emptyMap(), busy = false) }
+
+    fun submitEdit() {
+        val cur = ui.value
+        val target = cur.edit ?: return
+        if (cur.values["displayName"].orEmpty().isBlank()) { ui.update { it.copy(errors = mapOf("displayName" to "الاسم مطلوب")) }; return }
+        ui.update { it.copy(busy = true) }
+        viewModelScope.launch {
+            when (val r = repo.update(target.id, cur.values)) {
+                is Outcome.Ok -> { ui.update { AccountsUi(message = "حُدّثت بيانات ${cur.values["displayName"].orEmpty()}", isError = false) }; scheduler.kick() }
+                is Outcome.Failure -> ui.update { it.copy(busy = false, message = r.reason, isError = true) }
+            }
+        }
+    }
+
+    fun askDelete(u: UserEntity) = ui.update { it.copy(deleting = u) }
+    fun cancelDelete() = ui.update { it.copy(deleting = null) }
+    fun confirmDelete() {
+        val u = ui.value.deleting ?: return
+        ui.update { it.copy(deleting = null) }
+        viewModelScope.launch {
+            when (val r = repo.delete(u.id)) {
+                is Outcome.Ok -> { ui.update { it.copy(message = "حُذف حساب ${u.displayName}", isError = false) }; scheduler.kick() }
+                is Outcome.Failure -> ui.update { it.copy(message = r.reason, isError = true) }
+            }
         }
     }
 

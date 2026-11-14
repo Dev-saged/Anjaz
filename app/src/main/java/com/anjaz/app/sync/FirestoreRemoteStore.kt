@@ -76,6 +76,7 @@ class FirestoreRemoteStore : RemoteStore {
                         id = d.id, username = it["username"] as? String ?: "", displayName = it["displayName"] as? String ?: "",
                         role = it["role"] as? String ?: "FIELD_STAFF", regionId = it["regionId"] as? String, squareId = it["squareId"] as? String,
                         active = it["active"] as? Boolean ?: false, updatedAt = (it["updatedAt"] as? Number)?.toLong() ?: 0L,
+                        deleted = it["deleted"] as? Boolean ?: false,
                     )
                 }
             }

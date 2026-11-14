@@ -10,12 +10,13 @@
 - الخلفية → backend/firebase (القواعد + اختباراتها) و backend/worker (المسارات في `route` داخل src/index.js، الصلاحيات في policy.js، التصعيد cron.js، النسخ backup.js)
 - الدخول → cloud/AuthRepository، ui/login؛ المزامنة → sync/ (`SyncEngine`، `FirestoreRemoteStore`، `SyncWorker`، `ApiClient`)
 
-## Features (v0.6.0)
+## Features (v0.7.0)
 - SOS: data/SosRepository → ui/sos؛ محادثة: data/ChatRepository → ui/chat (مسار room/{roomId}، SyncEngine.listenRoom).
 - حسابات: data/AccountsRepository → ui/accounts؛ دليل: ui/directory؛ حول: ui/about/AboutCard (BrandConfig.Dev)؛ أصول README: brand/tools/make_readme_assets.py.
 - Room v4: Migrations 1→4 (camps.regionId تفحصه القواعد؛ 3→4 حقول وسائط الرسائل)؛ PdfLayout منفصل لأن PdfDocument لا يعمل تحت Robolectric.
 - وسائط: media/{MediaCompressor، MediaRepository (إرسال/تنزيل/تأكيد/تنظيف)، VoiceRecorder، MediaTransport}؛ الـ Worker جسر مؤقت backend/worker/src/media.js (يُحذف بعد ساعة من تأكيد الجميع أو 14 يوماً)؛ واجهة ui/chat/MediaUi.
 - صوت→نص: stt/{WhisperModel (تنزيل 160MB مرة واحدة)، Transcriber (sherpa-onnx)، AudioPcm، SttViewModel}؛ الـ AAR يُنزَّل ببصمة في app/build.gradle.kts (fetchSherpa) وليس في Git. فيديو: media/VideoCompressor (Media3، تحت 9MB). تسجيل: RecorderState/HoldToRecord/RecordingBar في ui/chat/MediaUi.
+- حسابات: Worker POST /v1/users/:uid/{update,delete} (حذف ناعم deleted=true + حذف Auth)؛ Room v5 users.deleted؛ ui/accounts (openEdit، askDelete).
 - تنظيف: sync/CleanupWorker (يومي، MediaRepository.cleanOrphans)؛ ما الجديد: ui/about/Changelog؛ حالة فارغة: components/EmptyState؛ النشر: docs/DEPLOY.md.
 - مجموعات: ChatListViewModel.createGroup → Worker /v1/rooms/group (للقادة)؛ لوحة أدوار: domain/DashboardBuilder → ui/dashboard (تذكير بالمتأخرة).
 - تحديث ذاتي: update/ (UpdateChecker، UpdateManager، UpdateDownloadService، UpdateUi، AppFolder)؛ build.yml ينشر Release + version.json؛ versionCode=VERSION_CODE*10000+BUILD_NUMBER.

@@ -4,12 +4,12 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 189 ملفاً · 28486 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> 192 ملفاً · 28599 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
 > الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · MediaUi.kt 313 · FirestoreRemoteStore.kt 309
 
 ### ./
 - CLAUDE.md (44)
-- README.md (62)
+- README.md (64)
 - build.gradle.kts (10)
 - settings.gradle.kts (17)
 - version.json (5)
@@ -42,7 +42,7 @@
 ### app/src/main/java/com/anjaz/app/core/
 - DayMath.kt (43): DayMath
 - Oklch.kt (36): Oklch, Color.toHex
-- SelfTest.kt (88): Check, SelfTest
+- SelfTest.kt (96): Check, SelfTest
 ### app/src/main/java/com/anjaz/app/data/
 - AccountsRepository.kt (75): AccountsRepository
 - ChatRepository.kt (85): directRoomId, String.csv, ChatRepository
@@ -72,7 +72,7 @@
 - Username.kt (14): Username
 ### app/src/main/java/com/anjaz/app/media/
 - MediaCompressor.kt (62): Compressed, MediaCompressor
-- MediaRepository.kt (172): previewOf, extensionFor, MediaRepository
+- MediaRepository.kt (173): previewOf, extensionFor, MediaRepository
 - MediaTransport.kt (27): HttpFailure, Download, MediaTransport, NoMedia
 - VideoCompressor.kt (76): CompressedVideo, VideoCompressor
 - VoiceRecorder.kt (71): VoiceRecorder, VoicePlayer
@@ -97,24 +97,26 @@
 - WhisperModel.kt (92): ModelState, WhisperModel
 ### app/src/main/java/com/anjaz/app/sync/
 - ApiClient.kt (82): ApiClient
+- CleanupWorker.kt (19): CleanupWorker
 - FirestoreRemoteStore.kt (309): FirestoreRemoteStore
 - RemoteStore.kt (54): RemoteDenied, AuditEntry, RemoteStore, NoRemoteStore, interface
 - SyncEngine.kt (192): PushResult, SyncEngine
-- SyncWorker.kt (48): SyncWorker, SyncScheduler
+- SyncWorker.kt (54): SyncWorker, SyncScheduler
 ### app/src/main/java/com/anjaz/app/ui/about/
 - AboutCard.kt (83): AboutCard
+- Changelog.kt (44): ChangelogSheet
 ### app/src/main/java/com/anjaz/app/ui/accounts/
-- AccountsScreen.kt (133): AccountsScreen
+- AccountsScreen.kt (134): AccountsScreen
 - AccountsViewModel.kt (94): AccountsUi, AccountsViewModel
 ### app/src/main/java/com/anjaz/app/ui/audit/
-- AuditScreen.kt (98): AuditRow, actionLabel, AuditViewModel, AuditScreen
+- AuditScreen.kt (99): AuditRow, actionLabel, AuditViewModel, AuditScreen
 ### app/src/main/java/com/anjaz/app/ui/chat/
-- ChatScreens.kt (304): ChatListScreen, ChatRoomScreen
+- ChatScreens.kt (299): ChatListScreen, ChatRoomScreen
 - ChatViewModels.kt (133): RoomRow, ChatListViewModel, roomTitle, RoomUi, ChatRoomViewModel
 - MediaUi.kt (313): MediaContent, AttachSheet, RecorderState, RecordingBar, HoldToRecord
 ### app/src/main/java/com/anjaz/app/ui/components/
 - AnimatedLogo.kt (79): AnimatedLogo, SplashOverlay
-- Components.kt (206): Tone, toneColors, Tag, AnjazCard, AnjazIcon, PrimaryButton, QuietButton +6
+- Components.kt (218): Tone, toneColors, Tag, AnjazCard, AnjazIcon, PrimaryButton, QuietButton +7
 - DayStrip.kt (53): DayChip, DayStrip
 - Motion.kt (69): rememberReduceMotion, Stagger, AmbientBackground
 - Notice.kt (54): Notice
@@ -124,7 +126,7 @@
 - DashboardScreen.kt (151): DashboardScreen
 - DashboardViewModel.kt (44): DashboardViewModel
 ### app/src/main/java/com/anjaz/app/ui/directory/
-- DirectoryScreen.kt (103): DirectoryScreen
+- DirectoryScreen.kt (104): DirectoryScreen
 - DirectoryViewModel.kt (89): DirKind, SquareRow, DirectoryUi, DirForm, DirectoryViewModel
 ### app/src/main/java/com/anjaz/app/ui/home/
 - HomeScreen.kt (184): HomeScreen
@@ -136,10 +138,10 @@
 - LoginViewModel.kt (66): SessionState, LoginUiState, AppSessionViewModel, LoginViewModel
 ### app/src/main/java/com/anjaz/app/ui/more/
 - ChatPlaceholder.kt (29): ChatPlaceholder
-- MoreScreen.kt (145): MoreScreen
+- MoreScreen.kt (153): MoreScreen
 ### app/src/main/java/com/anjaz/app/ui/nav/
 - AnjazNav.kt (145): Routes, AnjazRoot
-- SyncViewModel.kt (35): SyncViewModel
+- SyncViewModel.kt (36): SyncViewModel
 ### app/src/main/java/com/anjaz/app/ui/reports/
 - ReportsScreen.kt (75): ReportsScreen
 - ReportsViewModel.kt (67): ReportsUi, ReportsViewModel
@@ -147,7 +149,7 @@
 - SosScreen.kt (188): SosScreen
 - SosViewModel.kt (50): SosViewModel
 ### app/src/main/java/com/anjaz/app/ui/tasks/
-- TasksScreen.kt (175): TasksScreen, NewTaskSheet
+- TasksScreen.kt (170): TasksScreen, NewTaskSheet
 - TasksViewModel.kt (129): TaskFilter, TasksUiState, NewTaskState, TasksViewModel
 ### app/src/main/java/com/anjaz/app/ui/test/
 - SelfTestScreen.kt (86): SeedViewModel, SelfTestScreen
@@ -249,8 +251,9 @@
 ### brand/variants/
 - head-snippet.html (6)
 ### docs/
+- DEPLOY.md (18)
 - media.md (7)
-- repo-map.md (42)
+- repo-map.md (43)
 ### tools/
 - repomap.py (146): files, symbols, build, main
 <!-- repomap:auto:end -->

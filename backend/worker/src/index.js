@@ -1,15 +1,14 @@
 import { HttpError, verifyIdToken } from './auth.js';
 import { readBackup, runBackup } from './backup.js';
 import { escalate } from './cron.js';
+import { ackMedia, getMedia, purgeMedia, putMedia } from './media.js';
 import { Firestore } from './firestore.js';
 import { Identity } from './identity.js';
 import { sendFcm, targetsFor } from './notify.js';
 import {
-  canCreateUser, canManageUser, isActive, isLead, randomPassword, shapeOk, taskReader, validPassword, validUsername,
+  canCreateUser, canManageUser, isActive, isLead, randomPassword, shapeOk, validPassword, validUsername,
 } from './policy.js';
 
-const MEDIA_MAX = 1_500_000;
-const MEDIA_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'audio/ogg', 'audio/mp4', 'audio/aac', 'audio/webm', 'application/pdf']);
 const buckets = new Map();
 
 function json(body, status = 200) {
@@ -130,42 +129,6 @@ async function notify(ctx) {
   return json({ sent });
 }
 
-async function scopeAllowed(ctx, scope) {
-  const [kind, id] = String(scope).split(':');
-  if (kind === 'room') {
-    const r = await ctx.fs.get(`rooms/${id}`);
-    return !!r && r.members.includes(ctx.uid);
-  }
-  if (kind === 'task') {
-    const t = await ctx.fs.get(`tasks/${id}`);
-    return !!t && taskReader(ctx.actor, t, ctx.uid);
-  }
-  return false;
-}
-
-async function putMedia(ctx) {
-  const scope = ctx.request.headers.get('x-scope') || '';
-  const mime = (ctx.request.headers.get('content-type') || '').split(';')[0].trim();
-  if (!MEDIA_TYPES.has(mime)) throw new HttpError(415, 'نوع الملف غير مدعوم');
-  if (!(await scopeAllowed(ctx, scope))) throw new HttpError(403, 'غير مسموح');
-  if (limited(ctx.uid, 'media', 30, ctx.now)) throw new HttpError(429, 'محاولات كثيرة');
-  const buf = new Uint8Array(await ctx.request.arrayBuffer());
-  if (buf.length === 0 || buf.length > MEDIA_MAX) throw new HttpError(413, 'حجم الملف غير مقبول');
-  const id = ctx.request.headers.get('x-idempotency-key') || crypto.randomUUID();
-  if (!/^[A-Za-z0-9-]{8,64}$/.test(id)) throw new HttpError(400, 'مفتاح غير صالح');
-  await ctx.env.DB.prepare('INSERT OR IGNORE INTO media (id, scope, owner, mime, size, created_at, data) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .bind(id, scope, ctx.uid, mime, buf.length, ctx.now, buf).run();
-  return json({ id }, 201);
-}
-
-async function getMedia(ctx, id) {
-  const m = await ctx.env.DB.prepare('SELECT scope, mime, data FROM media WHERE id = ?').bind(id).first();
-  if (!m || !(await scopeAllowed(ctx, m.scope))) throw new HttpError(404, 'غير موجود');
-  return new Response(new Uint8Array(m.data), {
-    headers: { 'content-type': m.mime, 'cache-control': 'private, max-age=86400', 'x-content-type-options': 'nosniff', 'content-disposition': 'attachment' },
-  });
-}
-
 function centralOnly(ctx) {
   if (ctx.actor.role !== 'CENTRAL') throw new HttpError(403, 'للإدارة المركزية فقط');
 }
@@ -178,8 +141,9 @@ export async function route(ctx, method, path) {
   if (method === 'POST' && path === '/v1/rooms/group') return createGroup(ctx, 'room');
   if (method === 'POST' && path === '/v1/meetings') return createGroup(ctx, 'meeting');
   if (method === 'POST' && path === '/v1/notify') return notify(ctx);
-  if (method === 'PUT' && path === '/v1/media') return putMedia(ctx);
+  if (method === 'PUT' && path === '/v1/media') return json(await putMedia(ctx, limited), 201);
   if (method === 'GET' && (m = path.match(/^\/v1\/media\/([A-Za-z0-9-]+)$/))) return getMedia(ctx, m[1]);
+  if (method === 'POST' && (m = path.match(/^\/v1\/media\/([A-Za-z0-9-]+)\/ack$/))) return json(await ackMedia(ctx, m[1]));
   if (method === 'POST' && path === '/v1/backups/run') { centralOnly(ctx); return json(await runBackup(ctx.env, ctx.fetch, ctx.now)); }
   if (method === 'GET' && path === '/v1/backups') {
     centralOnly(ctx);
@@ -219,11 +183,10 @@ export default {
     if (event.cron === '0 21 * * *') {
       ctx.waitUntil((async () => {
         await runBackup(env);
-        const cutoff = Date.now() - Number(env.MEDIA_TTL_DAYS || 90) * 86_400_000;
-        await env.DB.prepare('DELETE FROM media WHERE created_at < ?').bind(cutoff).run();
+        await purgeMedia(env);
       })());
     } else {
-      ctx.waitUntil(escalate(env));
+      ctx.waitUntil((async () => { await escalate(env); await purgeMedia(env); })());
     }
   },
 };

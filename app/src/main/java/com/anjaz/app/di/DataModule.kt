@@ -30,5 +30,7 @@ object DataModule {
     fun remote(cloud: com.anjaz.app.cloud.CloudState): com.anjaz.app.sync.RemoteStore =
         if (cloud.available) com.anjaz.app.sync.FirestoreRemoteStore() else com.anjaz.app.sync.NoRemoteStore
 
+    @Provides fun mediaTransport(api: com.anjaz.app.sync.ApiClient): com.anjaz.app.media.MediaTransport = api
+
     @Provides fun notifier(api: com.anjaz.app.sync.ApiClient): com.anjaz.app.sync.Notifier = api
 }

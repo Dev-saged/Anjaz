@@ -92,12 +92,14 @@ fun TasksScreen(vm: TasksViewModel, onNewTask: () -> Unit) {
     }
     selected?.let { t ->
         val live = s.tasks.firstOrNull { it.id == t.id } ?: t
-        TaskDetailSheet(live, s.now, onMove = { vm.move(live, it) }, onDismiss = { selected = null })
+        val history by vm.history.collectAsStateWithLifecycle()
+        androidx.compose.runtime.DisposableEffect(live.id) { vm.watch(live.id); onDispose { vm.watch(null) } }
+        TaskDetailSheet(live, s.now, history, onMove = { vm.move(live, it) }, onDismiss = { selected = null })
     }
 }
 
 @Composable
-private fun TaskDetailSheet(task: TaskEntity, now: Long, onMove: (TaskStatus) -> Unit, onDismiss: () -> Unit) {
+private fun TaskDetailSheet(task: TaskEntity, now: Long, history: List<com.anjaz.app.data.db.TaskEventEntity>, onMove: (TaskStatus) -> Unit, onDismiss: () -> Unit) {
     val c = Anjaz.colors
     val status = TaskStatus.parse(task.status)
     val primary = when (status) {
@@ -117,6 +119,15 @@ private fun TaskDetailSheet(task: TaskEntity, now: Long, onMove: (TaskStatus) ->
             }
             if (task.description.isNotBlank()) Text(task.description, color = c.ink, style = MaterialTheme.typography.bodyLarge)
             if (primary != null) PrimaryButton(primaryLabel(primary), { onMove(primary) })
+            if (history.isNotEmpty()) Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("سجل المهمة", color = c.mute, style = MaterialTheme.typography.labelLarge)
+                history.takeLast(8).asReversed().forEach { e ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(DayMath.time(e.at), color = c.mute, style = MaterialTheme.typography.bodySmall)
+                        Text(TaskStatus.parse(e.toStatus).label + (e.note?.takeIf { it.isNotBlank() }?.let { " — $it" } ?: ""), color = c.ink, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
             quiet.forEach { to ->
                 Text(
                     quietLabel(to), color = if (to == TaskStatus.CANCELLED || to == TaskStatus.REJECTED) c.redDeep else c.ink,

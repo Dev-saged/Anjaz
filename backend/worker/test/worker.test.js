@@ -5,6 +5,7 @@ import { handle } from '../src/index.js';
 import { verifyIdToken, resetKeyCache } from '../src/auth.js';
 import { canCreateUser, canManageUser } from '../src/policy.js';
 import { escalate } from '../src/cron.js';
+import { purgeMedia } from '../src/media.js';
 import { runBackup, readBackup } from '../src/backup.js';
 import { world, idToken, PROJECT, NOW } from './harness.js';
 
@@ -128,8 +129,9 @@ test('الوسائط: النطاق والنوع والحجم وعدم التكر
   const put = (who, scope, type = 'image/jpeg', body = bytes, extra = {}) => w.call(handle, who, 'PUT', '/v1/media', body, { 'x-scope': scope, 'content-type': type, ...extra });
   assert.equal((await put('staffA2', 'room:r1')).status, 403);
   assert.equal((await put('rmA', 'room:r1')).status, 403);
+  assert.equal((await put('staffA1', 'task:t1')).status, 403);
   assert.equal((await put('staffA1', 'room:r1', 'text/html')).status, 415);
-  assert.equal((await put('staffA1', 'room:r1', 'image/jpeg', new Uint8Array(1_500_001))).status, 413);
+  assert.equal((await put('staffA1', 'room:r1', 'image/jpeg', new Uint8Array(6_000_001))).status, 413);
   const ok = await put('staffA1', 'room:r1', 'image/jpeg', bytes, { 'x-idempotency-key': 'abcdef123456' });
   assert.equal(ok.status, 201);
   const { id } = await ok.json();
@@ -141,6 +143,41 @@ test('الوسائط: النطاق والنوع والحجم وعدم التكر
   assert.equal(g.headers.get('content-disposition'), 'attachment');
   assert.equal((await w.call(handle, 'staffA2', 'GET', `/v1/media/${id}`)).status, 404);
   assert.equal((await w.call(handle, 'central', 'GET', `/v1/media/${id}`)).status, 404);
+});
+
+test('الوسائط: ملف كبير مجزأ يُعاد كما هو', async () => {
+  const w = await world(users);
+  w.put('rooms/r1', { type: 'direct', members: ['staffA1', 'smA1'] });
+  const big = new Uint8Array(2_000_000).map((_, i) => i % 251);
+  const r = await w.call(handle, 'staffA1', 'PUT', '/v1/media', big, { 'x-scope': 'room:r1', 'content-type': 'application/pdf' });
+  const { id } = await r.json();
+  assert.equal(w.env.DB.raw.prepare('SELECT chunks FROM media WHERE id = ?').get(id).chunks, 3);
+  const g = new Uint8Array(await (await w.call(handle, 'smA1', 'GET', `/v1/media/${id}`)).arrayBuffer());
+  assert.equal(g.length, big.length);
+  assert.ok(g.every((v, i) => v === big[i]));
+});
+
+test('الوسائط: الحذف بعد تأكيد كل الأعضاء وساعة، وانتهاء 14 يومًا', async () => {
+  const w = await world(users);
+  w.put('rooms/g1', { type: 'group', members: ['staffA1', 'smA1', 'rmA'] });
+  const up = async (key) => (await (await w.call(handle, 'staffA1', 'PUT', '/v1/media', new Uint8Array([9, 9]), { 'x-scope': 'room:g1', 'content-type': 'audio/mp4', 'x-idempotency-key': key })).json()).id;
+  const id = await up('media-key-0001');
+  const ack = (who) => w.call(handle, who, 'POST', `/v1/media/${id}/ack`);
+  assert.equal((await ack('staffA1')).status, 400);
+  assert.equal((await ack('staffA2')).status, 404);
+  const first = await (await ack('smA1')).json();
+  assert.equal(first.remaining, 1);
+  assert.equal(w.env.DB.raw.prepare('SELECT delete_at FROM media WHERE id = ?').get(id).delete_at, null);
+  await ack('rmA');
+  const at = w.env.DB.raw.prepare('SELECT delete_at FROM media WHERE id = ?').get(id).delete_at;
+  assert.equal(at, NOW + 3_600_000);
+  assert.equal(await purgeMedia(w.env, NOW + 3_599_000), 0);
+  assert.equal(await purgeMedia(w.env, NOW + 3_600_000), 1);
+  for (const t of ['media', 'media_chunks', 'media_acks']) assert.equal(w.env.DB.raw.prepare(`SELECT COUNT(*) c FROM ${t}`).get().c, 0);
+  const old = await up('media-key-0002');
+  assert.equal(await purgeMedia(w.env, NOW + 13 * 86_400_000), 0);
+  assert.equal(await purgeMedia(w.env, NOW + 15 * 86_400_000), 1);
+  assert.equal((await w.call(handle, 'smA1', 'GET', `/v1/media/${old}`)).status, 404);
 });
 
 test('النسخ الاحتياطي: الإنشاء والاستعادة والاحتفاظ', async () => {

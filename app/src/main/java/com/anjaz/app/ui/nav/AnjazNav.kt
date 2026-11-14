@@ -56,6 +56,7 @@ object Routes {
     const val ACCOUNTS = "accounts"
     const val DIRECTORY = "directory"
     const val REPORTS = "reports"
+    const val DASHBOARD = "dashboard"
     const val AUDIT = "audit"
     const val ROOM = "room/{roomId}"
     fun room(id: String) = "room/$id"
@@ -110,14 +111,15 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
             composable(Routes.CHAT) { ChatListScreen(onOpenRoom = { nav.navigate(Routes.room(it)) }) }
             composable(Routes.ROOM) { ChatRoomScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.SOS) { SosScreen() }
-            composable(Routes.MORE) { MoreScreen(profile, onSignOut = onSignOut, onOpenSelfTest = { nav.navigate(Routes.TEST) }, onOpenAccounts = { nav.navigate(Routes.ACCOUNTS) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, onOpenReports = { nav.navigate(Routes.REPORTS) }, onOpenAudit = { nav.navigate(Routes.AUDIT) }) }
+            composable(Routes.MORE) { MoreScreen(profile, onSignOut = onSignOut, onOpenSelfTest = { nav.navigate(Routes.TEST) }, onOpenAccounts = { nav.navigate(Routes.ACCOUNTS) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, onOpenReports = { nav.navigate(Routes.REPORTS) }, onOpenDashboard = { nav.navigate(Routes.DASHBOARD) }, onOpenAudit = { nav.navigate(Routes.AUDIT) }) }
             composable(Routes.AUDIT) { AuditScreen(onBack = { nav.popBackStack() }) }
+            composable(Routes.DASHBOARD) { com.anjaz.app.ui.dashboard.DashboardScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.REPORTS) { ReportsScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.DIRECTORY) { DirectoryScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.ACCOUNTS) { AccountsScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.TEST) { SelfTestScreen() }
         }
-        if (route != Routes.TEST && route != Routes.ROOM && route != Routes.ACCOUNTS && route != Routes.DIRECTORY && route != Routes.REPORTS && route != Routes.AUDIT) {
+        if (route != Routes.TEST && route != Routes.ROOM && route != Routes.ACCOUNTS && route != Routes.DIRECTORY && route != Routes.REPORTS && route != Routes.DASHBOARD && route != Routes.AUDIT) {
             GlassNavBar(
                 items, route, { nav.navigateTab(it) },
                 onFab = {

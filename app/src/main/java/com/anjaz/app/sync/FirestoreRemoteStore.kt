@@ -1,6 +1,7 @@
 package com.anjaz.app.sync
 
 import com.anjaz.app.data.db.CampEntity
+import com.anjaz.app.data.db.MediaState
 import com.anjaz.app.data.db.MessageEntity
 import com.anjaz.app.data.db.RegionEntity
 import com.anjaz.app.data.db.SquareEntity
@@ -192,6 +193,11 @@ class FirestoreRemoteStore : RemoteStore {
             "senderId" to message.senderId, "type" to message.type, "text" to message.text,
             "createdAt" to message.createdAt, "readBy" to message.readBy.split(',').filter { it.isNotEmpty() },
         )
+        if (message.mediaId.isNotEmpty()) data["media"] = mapOf(
+            "id" to message.mediaId, "mime" to message.mediaMime, "name" to message.mediaName, "size" to message.mediaSize,
+            "durMs" to message.durMs, "w" to message.width, "h" to message.height,
+        )
+        if (message.lat != null && message.lng != null) { data["lat"] = message.lat; data["lng"] = message.lng }
         fs.runBatch { b ->
             b.set(msg, data)
             b.update(room, mapOf("lastMessage" to roomLast, "lastAt" to message.createdAt))
@@ -242,15 +248,35 @@ class FirestoreRemoteStore : RemoteStore {
             }
         }
 
+    override fun events(taskId: String): Flow<List<TaskEventEntity>> =
+        snapshots(fs.collection("tasks").document(taskId).collection("events").orderBy("at").limitToLast(100)) { snap ->
+            snap.documents.mapNotNull { d ->
+                d.data?.let {
+                    TaskEventEntity(
+                        d.id, taskId, it["fromStatus"] as? String, it["toStatus"] as? String ?: return@let null,
+                        it["actorId"] as? String ?: "", it["note"] as? String, (it["at"] as? Number)?.toLong() ?: 0L,
+                    )
+                }
+            }
+        }
+
     override fun messages(roomId: String): Flow<List<MessageEntity>> =
         snapshots(fs.collection("rooms").document(roomId).collection("messages").orderBy("createdAt").limitToLast(200)) { snap ->
             snap.documents.mapNotNull { d ->
                 d.data?.let {
                     @Suppress("UNCHECKED_CAST")
                     val readBy = (it["readBy"] as? List<String>).orEmpty()
+                    @Suppress("UNCHECKED_CAST")
+                    val media = it["media"] as? Map<String, Any?>
                     MessageEntity(
                         d.id, roomId, it["senderId"] as? String ?: "", it["type"] as? String ?: "text", it["text"] as? String ?: "",
                         (it["createdAt"] as? Number)?.toLong() ?: 0L, readBy.joinToString(","), "SENT",
+                        mediaId = media?.get("id") as? String ?: "", mediaMime = media?.get("mime") as? String ?: "",
+                        mediaName = media?.get("name") as? String ?: "", mediaSize = (media?.get("size") as? Number)?.toLong() ?: 0L,
+                        durMs = (media?.get("durMs") as? Number)?.toLong() ?: 0L, width = (media?.get("w") as? Number)?.toInt() ?: 0,
+                        height = (media?.get("h") as? Number)?.toInt() ?: 0,
+                        lat = (it["lat"] as? Number)?.toDouble(), lng = (it["lng"] as? Number)?.toDouble(),
+                        mediaState = if (media?.get("id") is String) MediaState.REMOTE else MediaState.NONE,
                     )
                 }
             }

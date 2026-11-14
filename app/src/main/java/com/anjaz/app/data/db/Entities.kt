@@ -145,7 +145,29 @@ data class MessageEntity(
     val createdAt: Long,
     val readBy: String,
     val state: String,
+    val mediaId: String = "",
+    val mediaMime: String = "",
+    val mediaName: String = "",
+    val mediaSize: Long = 0,
+    val durMs: Long = 0,
+    val width: Int = 0,
+    val height: Int = 0,
+    val lat: Double? = null,
+    val lng: Double? = null,
+    val localPath: String = "",
+    val mediaState: String = MediaState.NONE,
+    val transcript: String = "",
 )
+
+/** حالة الملف المرفق على هذا الجهاز: المحتوى لا يُخزَّن في السحابة بعد استلام الجميع. */
+object MediaState {
+    const val NONE = "NONE"
+    const val LOCAL = "LOCAL"
+    const val REMOTE = "REMOTE"
+    const val DOWNLOADING = "DOWNLOADING"
+    const val EXPIRED = "EXPIRED"
+    const val FAILED = "FAILED"
+}
 
 object MessageState {
     const val LOCAL = "LOCAL"

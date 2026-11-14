@@ -201,6 +201,18 @@ interface ChatDao {
     @Query("UPDATE messages SET readBy = :readBy WHERE id = :id")
     suspend fun setReadBy(id: String, readBy: String)
 
+    @Query("UPDATE messages SET localPath = :path, mediaState = :state WHERE id = :id")
+    suspend fun setMedia(id: String, path: String, state: String)
+
+    @Query("UPDATE messages SET transcript = :text WHERE id = :id")
+    suspend fun setTranscript(id: String, text: String)
+
+    @Query("SELECT * FROM messages WHERE roomId = :roomId AND senderId <> :me AND mediaState = 'REMOTE'")
+    suspend fun pendingDownloads(roomId: String, me: String): List<MessageEntity>
+
+    @Query("SELECT * FROM messages WHERE mediaState = 'LOCAL' AND localPath <> ''")
+    suspend fun localMedia(): List<MessageEntity>
+
     @Query("UPDATE messages SET state = :state WHERE id = :id")
     suspend fun setState(id: String, state: String)
 }

@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -55,6 +56,7 @@ class TasksViewModel @Inject constructor(
     private val repo: TaskRepository,
     private val auth: AuthRepository,
     private val scheduler: SyncScheduler,
+    private val engine: com.anjaz.app.sync.SyncEngine,
 ) : ViewModel() {
     private val profile: StateFlow<Profile?> = auth.session.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
@@ -75,6 +77,20 @@ class TasksViewModel @Inject constructor(
             tasks = all.filter { f.match(TaskStatus.parse(it.status)) },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TasksUiState())
+
+    private var eventsJob: kotlinx.coroutines.Job? = null
+    private val watched = MutableStateFlow<String?>(null)
+
+    /** سجل أحداث المهمة المفتوحة: يُسحب من السحابة ويُقرأ محلياً. */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val history: StateFlow<List<com.anjaz.app.data.db.TaskEventEntity>> = watched
+        .flatMapLatest { id -> if (id == null) kotlinx.coroutines.flow.flowOf(emptyList()) else queries.events(id) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun watch(taskId: String?) {
+        eventsJob?.cancel(); watched.value = taskId
+        eventsJob = taskId?.let { engine.listenTask(viewModelScope, it) }
+    }
 
     fun setFilter(f: TaskFilter) { filter.value = f }
 

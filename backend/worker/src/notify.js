@@ -1,7 +1,7 @@
 import { accessToken } from './google.js';
 import { isLead, taskReader } from './policy.js';
 
-export async function sendFcm(env, fs, uids, { title, body, kind, id, high = false }, fetchFn = fetch) {
+export async function sendFcm(env, fs, uids, { title, body, kind, id, high = false }, fetchFn = (...a) => fetch(...a)) {
   const unique = [...new Set(uids)];
   const docs = await Promise.all(unique.map((u) => fs.get(`devices/${u}`)));
   const tokens = docs.filter((d) => d?.token).map((d) => d.token);

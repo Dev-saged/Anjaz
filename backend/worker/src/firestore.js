@@ -34,7 +34,7 @@ export function decodeDoc(d) {
 }
 
 export class Firestore {
-  constructor(env, fetchFn = fetch) {
+  constructor(env, fetchFn = (...a) => fetch(...a)) {
     this.env = env;
     this.fetch = fetchFn;
     this.base = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents`;

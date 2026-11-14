@@ -22,7 +22,7 @@ export async function signJwt(claims, pem) {
   return `${header}.${payload}.${b64url(sig)}`;
 }
 
-export async function accessToken(env, now = Date.now(), fetchFn = fetch) {
+export async function accessToken(env, now = Date.now(), fetchFn = (...a) => fetch(...a)) {
   if (cached && cached.exp - 60_000 > now) return cached.token;
   const sa = serviceAccount(env);
   const iat = Math.floor(now / 1000);

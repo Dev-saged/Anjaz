@@ -18,7 +18,7 @@ async function keys(fetchFn, now) {
 
 export function resetKeyCache() { jwks = null; }
 
-export async function verifyIdToken(token, projectId, { fetchFn = fetch, now = Date.now() } = {}) {
+export async function verifyIdToken(token, projectId, { fetchFn = (...a) => fetch(...a), now = Date.now() } = {}) {
   const parts = String(token || '').split('.');
   if (parts.length !== 3) throw new HttpError(401, 'رمز غير صالح');
   let header; let claims;

@@ -9,7 +9,7 @@ async function gzip(text) {
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
-export async function runBackup(env, fetchFn = fetch, now = Date.now()) {
+export async function runBackup(env, fetchFn = (...a) => fetch(...a), now = Date.now()) {
   const fs = new Firestore(env, fetchFn);
   const data = {};
   for (const c of COLLECTIONS) data[c] = await fs.listAll(c);

@@ -1,7 +1,7 @@
 import { accessToken } from './google.js';
 
 export class Identity {
-  constructor(env, fetchFn = fetch) {
+  constructor(env, fetchFn = (...a) => fetch(...a)) {
     this.env = env;
     this.fetch = fetchFn;
     this.base = `https://identitytoolkit.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}`;

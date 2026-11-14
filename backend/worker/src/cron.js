@@ -5,7 +5,7 @@ const OPEN = ['NEW', 'SEEN', 'IN_PROGRESS', 'AWAITING_REVIEW'];
 const HOUR = 3_600_000;
 
 // قراءات محدودة: المهام المفتوحة فقط، والتصفية على الموعد داخل الذاكرة
-export async function escalate(env, fetchFn = fetch, now = Date.now()) {
+export async function escalate(env, fetchFn = (...a) => fetch(...a), now = Date.now()) {
   const fs = new Firestore(env, fetchFn);
   const open = await fs.query('tasks', [['status', 'IN', OPEN]]);
   let escalated = 0; let reminded = 0;

@@ -196,7 +196,7 @@ export async function route(ctx, method, path) {
 }
 
 export async function handle(request, env, deps = {}) {
-  const fetchFn = deps.fetch || fetch;
+  const fetchFn = deps.fetch || ((...a) => fetch(...a));
   const now = deps.now ?? Date.now();
   const url = new URL(request.url);
   try {

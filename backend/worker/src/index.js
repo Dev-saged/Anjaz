@@ -66,6 +66,7 @@ async function createUser(ctx) {
 async function manageTarget(ctx, uid) {
   const t = await ctx.fs.get(`users/${uid}`);
   if (!t || !canManageUser(ctx.actor, t)) throw new HttpError(403, 'ليس لديك صلاحية على هذا الحساب');
+  if (t.deleted === true) throw new HttpError(404, 'الحساب محذوف');
   return t;
 }
 
@@ -88,6 +89,36 @@ async function setActive(ctx, uid) {
   await ctx.identity.setDisabled(uid, !b.active);
   await ctx.fs.patch(`users/${uid}`, { active: b.active, updatedAt: ctx.now });
   await audit(ctx.fs, ctx.uid, b.active ? 'user.enable' : 'user.disable', uid, t.regionId, ctx.now);
+  return json({ ok: true });
+}
+
+async function updateUser(ctx, uid) {
+  const b = await body(ctx.request);
+  const t = await manageTarget(ctx, uid);
+  const displayName = b.displayName ?? t.displayName;
+  if (!str(displayName, 80)) throw new HttpError(400, 'الاسم مطلوب');
+  const next = {
+    role: b.role ?? t.role,
+    regionId: b.regionId === undefined ? t.regionId ?? null : b.regionId,
+    squareId: b.squareId === undefined ? t.squareId ?? null : b.squareId,
+  };
+  const changed = next.role !== t.role || next.regionId !== (t.regionId ?? null) || next.squareId !== (t.squareId ?? null);
+  if (changed) {
+    if (uid === ctx.uid) throw new HttpError(400, 'لا يمكنك تغيير صلاحياتك');
+    if (!shapeOk(next) || !canCreateUser(ctx.actor, next)) throw new HttpError(403, 'ليس لديك صلاحية على هذا الدور أو النطاق');
+  }
+  await ctx.fs.patch(`users/${uid}`, { displayName: displayName.trim(), ...next, updatedAt: ctx.now });
+  await ctx.identity.setDisplayName(uid, displayName.trim());
+  await audit(ctx.fs, ctx.uid, 'user.update', uid, next.regionId, ctx.now);
+  return json({ ok: true });
+}
+
+async function deleteUser(ctx, uid) {
+  if (uid === ctx.uid) throw new HttpError(400, 'لا يمكنك حذف حسابك');
+  const t = await manageTarget(ctx, uid);
+  await ctx.identity.remove(uid);
+  await ctx.fs.patch(`users/${uid}`, { active: false, deleted: true, updatedAt: ctx.now });
+  await audit(ctx.fs, ctx.uid, 'user.delete', uid, t.regionId, ctx.now);
   return json({ ok: true });
 }
 
@@ -138,6 +169,8 @@ export async function route(ctx, method, path) {
   if (method === 'POST' && path === '/v1/users') return createUser(ctx);
   if (method === 'POST' && (m = path.match(/^\/v1\/users\/([^/]+)\/password$/))) return resetPassword(ctx, m[1]);
   if (method === 'POST' && (m = path.match(/^\/v1\/users\/([^/]+)\/active$/))) return setActive(ctx, m[1]);
+  if (method === 'POST' && (m = path.match(/^\/v1\/users\/([^/]+)\/update$/))) return updateUser(ctx, m[1]);
+  if (method === 'POST' && (m = path.match(/^\/v1\/users\/([^/]+)\/delete$/))) return deleteUser(ctx, m[1]);
   if (method === 'POST' && path === '/v1/rooms/group') return createGroup(ctx, 'room');
   if (method === 'POST' && path === '/v1/meetings') return createGroup(ctx, 'meeting');
   if (method === 'POST' && path === '/v1/notify') return notify(ctx);

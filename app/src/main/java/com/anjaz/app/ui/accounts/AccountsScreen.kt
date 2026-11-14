@@ -86,6 +86,10 @@ fun AccountsScreen(onBack: () -> Unit, vm: AccountsViewModel = hiltViewModel()) 
                             QuietButton("إعادة ضبط كلمة المرور", Modifier.weight(1f)) { vm.reset(u) }
                             QuietButton(if (u.active) "تعطيل" else "تفعيل", Modifier.weight(0.6f)) { vm.toggle(u) }
                         }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            QuietButton("تعديل البيانات", Modifier.weight(1f)) { vm.openEdit(u) }
+                            QuietButton("حذف", Modifier.weight(0.6f)) { vm.askDelete(u) }
+                        }
                     }
                 }
             }
@@ -109,6 +113,26 @@ fun AccountsScreen(onBack: () -> Unit, vm: AccountsViewModel = hiltViewModel()) 
             QuietButton("توليد كلمة مرور قوية", onClick = vm::generatePassword)
             PrimaryButton(if (ui.busy) "جارٍ الإنشاء" else "إنشاء الحساب", onClick = vm::submit, enabled = !ui.busy)
         }
+    }
+    val editing = ui.edit
+    if (editing != null && s != null) ModalBottomSheet(onDismissRequest = vm::closeEdit, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = c.surface) {
+        val es = s.copy(title = "تعديل الحساب", fields = s.fields.filter { it.key in setOf("displayName", "role", "regionId", "squareId") })
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 20.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            ScreenTitle(es.title)
+            Text(ltr(editing.username), color = c.mute, style = MaterialTheme.typography.bodySmall)
+            Notice(ui.message, ui.isError, vm::dismissMessage)
+            SchemaForm(es, ui.values, ui.errors, vm::change)
+            PrimaryButton(if (ui.busy) "جارٍ الحفظ" else "حفظ التعديلات", onClick = vm::submitEdit, enabled = !ui.busy)
+        }
+    }
+    ui.deleting?.let { u ->
+        AlertDialog(
+            onDismissRequest = vm::cancelDelete,
+            confirmButton = { TextButton(onClick = vm::confirmDelete, modifier = Modifier.heightIn(min = 48.dp)) { Text("حذف نهائي", color = c.redDeep) } },
+            dismissButton = { TextButton(onClick = vm::cancelDelete, modifier = Modifier.heightIn(min = 48.dp)) { Text("إلغاء") } },
+            title = { Text("حذف الحساب") },
+            text = { Text("سيُحذف دخول ${u.displayName} نهائياً ويُخفى من القوائم، وتبقى مهامه ورسائله السابقة في السجل. لا يمكن التراجع. للإيقاف المؤقت استخدم «تعطيل».") },
+        )
     }
     ui.revealedPassword?.let { (user, pass) ->
         AlertDialog(

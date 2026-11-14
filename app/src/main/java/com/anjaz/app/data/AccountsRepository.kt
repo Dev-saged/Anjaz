@@ -61,6 +61,20 @@ class AccountsRepository @Inject constructor(private val db: AnjazDatabase, priv
     suspend fun resetPassword(uid: String): Outcome<String> =
         call("/v1/users/$uid/password", "{}") { it["password"]?.jsonPrimitive?.contentOrNull.orEmpty() }
 
+    suspend fun update(uid: String, values: Map<String, String>): Outcome<String> {
+        val name = SchemaValidator.sanitize(values["displayName"].orEmpty())
+        if (name.isBlank()) return Outcome.Failure("الاسم مطلوب")
+        val body = buildJsonObject {
+            put("displayName", name)
+            values["role"]?.takeIf { it.isNotBlank() }?.let { put("role", it) }
+            if ("regionId" in values) put("regionId", values["regionId"]?.takeIf { it.isNotBlank() }?.let(::JsonPrimitive) ?: kotlinx.serialization.json.JsonNull)
+            if ("squareId" in values) put("squareId", values["squareId"]?.takeIf { it.isNotBlank() }?.let(::JsonPrimitive) ?: kotlinx.serialization.json.JsonNull)
+        }.toString()
+        return call("/v1/users/$uid/update", body) { "ok" }
+    }
+
+    suspend fun delete(uid: String): Outcome<String> = call("/v1/users/$uid/delete", "{}") { "ok" }
+
     suspend fun setActive(uid: String, active: Boolean): Outcome<String> =
         call("/v1/users/$uid/active", """{"active":$active}""") { "ok" }
 

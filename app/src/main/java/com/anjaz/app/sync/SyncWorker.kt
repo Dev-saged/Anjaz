@@ -44,4 +44,10 @@ class SyncScheduler @Inject constructor(@ApplicationContext private val context:
         val req = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES).setConstraints(net).build()
         WorkManager.getInstance(context).enqueueUniquePeriodicWork("sync-periodic", ExistingPeriodicWorkPolicy.KEEP, req)
     }
+
+    fun scheduleCleanup() {
+        val idle = Constraints.Builder().setRequiresBatteryNotLow(true).build()
+        val req = PeriodicWorkRequestBuilder<CleanupWorker>(1, TimeUnit.DAYS).setConstraints(idle).build()
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork("cleanup-daily", ExistingPeriodicWorkPolicy.KEEP, req)
+    }
 }

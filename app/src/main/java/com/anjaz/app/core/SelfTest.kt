@@ -44,6 +44,12 @@ object SelfTest {
             val clean = SchemaValidator.sanitize("مهمة\u0007   جديدة")
             (bad.containsKey("title") && bad.containsKey("priority") && phone.containsKey("phone") && clean == "مهمة جديدة") to ""
         }
+        check("صيغ اسم المستخدم") {
+            val ok = com.anjaz.app.domain.Username.isValid("sajed") && com.anjaz.app.domain.Username.isValid("sajed@anjaz.ps") &&
+                !com.anjaz.app.domain.Username.isValid("a b") && !com.anjaz.app.domain.Username.isValid("x@y") &&
+                com.anjaz.app.domain.Username.emailFor("sajed@anjaz.ps", "d.local") == "sajed@anjaz.ps"
+            ok to ""
+        }
         check("هوية الألوان (كحلي #102E52)") {
             val hex = BrandConfig.Palette.navy.light.toColor().toHex()
             (hex.equals("#102e52", true)) to hex
@@ -62,6 +68,8 @@ object SelfTest {
             out += Check("انتقال حالة مسموح", moved is Outcome.Ok && db.tasks().byId(id!!)?.status == TaskStatus.IN_PROGRESS.name)
             val blocked = id?.let { repo.transition(it, TaskStatus.APPROVED, "t") }
             out += Check("انتقال غير مسموح يُرفض", blocked is Outcome.Failure && db.tasks().byId(id!!)?.status == TaskStatus.IN_PROGRESS.name)
+            val cur = db.openHelper.readableDatabase.version
+            out += Check("إصدار قاعدة البيانات v$cur", cur >= 4)
             out += Check("سجل أحداث المهمة", db.taskEvents().countAll() == 2)
 
             val op = OutboxEntity("key-1", "task", "create", "{}", OutboxState.LOCAL, 0, null, 1L, null)

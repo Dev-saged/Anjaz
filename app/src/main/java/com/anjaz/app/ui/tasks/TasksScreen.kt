@@ -113,6 +113,7 @@ private fun TaskDetailSheet(task: TaskEntity, now: Long, history: List<com.anjaz
                 DayMath.dueLabel(task.deadline, now)?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodySmall) }
             }
             if (task.description.isNotBlank()) Text(task.description, color = c.ink, style = MaterialTheme.typography.bodyLarge)
+            TaskPhotosSection(task.id)
             if (primary != null) PrimaryButton(primaryLabel(primary), { onMove(primary) })
             if (history.isNotEmpty()) Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("سجل المهمة", color = c.mute, style = MaterialTheme.typography.labelLarge)

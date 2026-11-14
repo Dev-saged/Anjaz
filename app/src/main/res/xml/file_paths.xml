@@ -2,4 +2,5 @@
 <paths>
     <external-files-path name="anjaz" path="Anjaz/" />
     <files-path name="anjaz_internal" path="Anjaz/" />
+    <cache-path name="cache" path="." />
 </paths>

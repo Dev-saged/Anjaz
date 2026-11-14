@@ -41,6 +41,7 @@ fun ReportsScreen(onBack: () -> Unit, vm: ReportsViewModel = hiltViewModel()) {
     val c = Anjaz.colors
     val ui by vm.ui.collectAsStateWithLifecycle()
     val pdf = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { it?.let(vm::exportPdf) }
+    val weekly = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { it?.let(vm::exportWeekly) }
     val xlsx = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) { it?.let(vm::exportXlsx) }
     val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { it?.let(vm::exportBackup) }
     val load = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(vm::importBackup) }
@@ -59,6 +60,13 @@ fun ReportsScreen(onBack: () -> Unit, vm: ReportsViewModel = hiltViewModel()) {
                     Text("كل المهام ضمن نطاقك مع ملخص بالحالات.", color = c.mute, style = MaterialTheme.typography.bodySmall)
                     PrimaryButton("تصدير PDF", onClick = { pdf.launch("anjaz-tasks.pdf") }, enabled = !ui.busy)
                     QuietButton("تصدير Excel") { xlsx.launch("anjaz-tasks.xlsx") }
+                }
+            }
+            AnjazCard(Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("تقرير الأسبوع", color = c.ink, style = MaterialTheme.typography.titleMedium)
+                    Text("ما أُنشئ وما تحرّك خلال آخر 7 أيام. يصل إشعار بملخصه كل خميس.", color = c.mute, style = MaterialTheme.typography.bodySmall)
+                    QuietButton("تصدير تقرير الأسبوع PDF") { weekly.launch("anjaz-weekly.pdf") }
                 }
             }
             AnjazCard(Modifier.fillMaxWidth()) {

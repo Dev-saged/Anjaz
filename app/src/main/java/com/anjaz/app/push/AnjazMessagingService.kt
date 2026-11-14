@@ -27,6 +27,8 @@ class AnjazMessagingService : FirebaseMessagingService() {
         "sos" -> "sos"
         "chat" -> id?.let { "room/$it" }
         "task" -> "tasks"
+        "report" -> "reports"
+        "call" -> id?.let { "call/$it" }
         else -> null
     }
 }

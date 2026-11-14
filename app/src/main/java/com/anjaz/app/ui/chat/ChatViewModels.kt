@@ -73,7 +73,7 @@ fun roomTitle(r: RoomEntity, me: String?, names: Map<String, String>): String {
     return other?.let { names[it] } ?: r.name.ifEmpty { "محادثة" }
 }
 
-data class RoomUi(val title: String, val messages: List<MessageEntity>, val me: String, val group: Boolean = false, val names: Map<String, String> = emptyMap())
+data class RoomUi(val title: String, val messages: List<MessageEntity>, val me: String, val group: Boolean = false, val names: Map<String, String> = emptyMap(), val members: List<String> = emptyList())
 
 @HiltViewModel
 class ChatRoomViewModel @Inject constructor(
@@ -92,7 +92,7 @@ class ChatRoomViewModel @Inject constructor(
         val room = rooms.firstOrNull { it.id == roomId }
         val names = contacts.associate { c -> c.id to c.displayName }
         val title = room?.let { roomTitle(it, me.uid, names) } ?: "محادثة"
-        RoomUi(title, msgs, me.uid, room?.type == "group", names)
+        RoomUi(title, msgs, me.uid, room?.type == "group", names, room?.members?.csv().orEmpty().filter { it != me.uid })
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     init {

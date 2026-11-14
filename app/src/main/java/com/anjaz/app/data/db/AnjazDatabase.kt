@@ -21,6 +21,7 @@ abstract class AnjazDatabase : RoomDatabase() {
     abstract fun sos(): SosDao
     abstract fun chat(): ChatDao
     abstract fun contacts(): ContactDao
+    abstract fun search(): SearchDao
 
     companion object {
         const val NAME = "anjaz.db"

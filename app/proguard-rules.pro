@@ -4,3 +4,8 @@
 
 # JNI يصل إلى هذه الأصناف بالاسم
 -keep class com.k2fsa.sherpa.onnx.** { *; }
+
+-keep class org.webrtc.** { *; }
+-dontwarn org.webrtc.**
+-keep class org.osmdroid.** { *; }
+-dontwarn org.osmdroid.**

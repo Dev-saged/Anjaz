@@ -6,7 +6,9 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import com.anjaz.app.push.DeepLink
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
+import androidx.compose.runtime.mutableStateOf
+import com.anjaz.app.security.AppLock
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.anjaz.app.ui.nav.AnjazRoot
@@ -22,8 +24,10 @@ import javax.inject.Inject
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     @Inject lateinit var updates: UpdateManager
+    private val locked = mutableStateOf(false)
+    private var leftAt = 0L
 
     companion object {
         const val ACTION_OPEN_UPDATE = "com.anjaz.app.OPEN_UPDATE"
@@ -37,12 +41,23 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerForActivityResult(ActivityResultContracts.RequestPermission()) {}.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
-        setContent { AnjazTheme { androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) { AnjazRoot(); UpdateLayer(); com.anjaz.app.ui.components.SplashOverlay() } } }
+        setContent { AnjazTheme { androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) { AnjazRoot(); UpdateLayer(); com.anjaz.app.ui.components.LockLayer(locked.value, onUnlock = ::unlock); com.anjaz.app.ui.components.SplashOverlay() } } }
         handleUpdateIntent(intent)
+    }
+
+    private fun unlock() = AppLock.prompt(this) { locked.value = false }
+
+    override fun onStop() {
+        super.onStop()
+        leftAt = android.os.SystemClock.elapsedRealtime()
     }
 
     override fun onStart() {
         super.onStart()
+        if (AppLock.enabled(this) && AppLock.available(this) && (leftAt == 0L || android.os.SystemClock.elapsedRealtime() - leftAt > AppLock.GRACE_MS)) {
+            locked.value = true
+            unlock()
+        }
         lifecycleScope.launch { updates.check() }
     }
 

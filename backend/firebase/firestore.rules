@@ -110,6 +110,60 @@ service cloud.firestore {
           && optStr(request.resource.data, 'note', 500);
         allow update, delete: if false;
       }
+
+      match /photos/{pid} {
+        allow read: if taskReader(get(/databases/$(db)/documents/tasks/$(tid)).data);
+        allow create: if taskReader(get(/databases/$(db)/documents/tasks/$(tid)).data)
+          && request.resource.data.by == request.auth.uid
+          && request.resource.data.kind in ['BEFORE', 'AFTER']
+          && str(request.resource.data.data, 400000);
+        allow update, delete: if false;
+      }
+    }
+
+    // ---------- places: points, camps and managers' residences ----------
+    function geo(d) { return d.lat is number && d.lng is number && d.lat >= -90 && d.lat <= 90 && d.lng >= -180 && d.lng <= 180; }
+    match /places/{pid} {
+      allow read: if active() && (isCentral() || (inRegion(resource.data.regionId)
+        && (resource.data.kind != 'HOME' || resource.data.ownerId == request.auth.uid || me().role in ['REGION_MANAGER', 'REGION_ADMIN'])));
+      allow create: if active() && me().role != 'FIELD_STAFF' && geo(request.resource.data)
+        && str(request.resource.data.name, 80) && request.resource.data.name.size() > 0
+        && request.resource.data.kind in ['HOME', 'POINT']
+        && request.resource.data.radius is number && request.resource.data.radius >= 20 && request.resource.data.radius <= 5000
+        && (isCentral() || (request.resource.data.regionId == me().regionId
+          && (request.resource.data.kind == 'HOME' ? request.resource.data.ownerId == request.auth.uid : isRegionLead(request.resource.data.regionId))));
+      allow update, delete: if active() && (isCentral() || (inRegion(resource.data.regionId)
+        && (resource.data.ownerId == request.auth.uid || isRegionLead(resource.data.regionId))));
+    }
+
+    // ---------- check-ins: presence points on the live map ----------
+    match /checkins/{cid} {
+      allow read: if active() && (resource.data.userId == request.auth.uid || isCentral()
+        || isRegionLead(resource.data.regionId) || isSquareLead(resource.data.regionId, resource.data.squareId));
+      allow create: if active() && request.resource.data.userId == request.auth.uid
+        && request.resource.data.regionId == me().regionId && geo(request.resource.data)
+        && request.resource.data.day is string && request.resource.data.at is number;
+      allow update, delete: if false;
+    }
+
+    // ---------- recurring task templates (the Worker materialises them) ----------
+    match /templates/{tid} {
+      allow read: if active() && lead(resource.data.regionId, resource.data.squareId);
+      allow create: if active() && me().role != 'FIELD_STAFF' && request.resource.data.createdBy == request.auth.uid
+        && lead(request.resource.data.regionId, request.resource.data.squareId)
+        && str(request.resource.data.title, 120) && request.resource.data.title.size() > 0
+        && str(request.resource.data.description, 1000)
+        && request.resource.data.every in ['DAILY', 'WEEKLY']
+        && request.resource.data.priority in ['NORMAL', 'HIGH', 'URGENT'];
+      allow update: if active() && lead(resource.data.regionId, resource.data.squareId)
+        && only(['active', 'title', 'description', 'priority', 'every', 'weekday', 'hour', 'assigneeId']);
+      allow delete: if active() && lead(resource.data.regionId, resource.data.squareId);
+    }
+
+    // ---------- weekly reports: written by the Worker ----------
+    match /weekly/{wid} {
+      allow read: if active() && (isCentral() || isRegionLead(resource.data.regionId));
+      allow write: if false;
     }
 
     // ---------- chat ----------

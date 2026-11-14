@@ -30,12 +30,12 @@ object MediaCompressor {
         return s
     }
 
-    fun image(ctx: Context, uri: Uri): Compressed {
+    fun image(ctx: Context, uri: Uri, maxSide: Int = MAX_SIDE, quality: Int = QUALITY): Compressed {
         val cr = ctx.contentResolver
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         cr.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
         require(bounds.outWidth > 0 && bounds.outHeight > 0) { "صورة غير صالحة" }
-        val opts = BitmapFactory.Options().apply { inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight) }
+        val opts = BitmapFactory.Options().apply { inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, maxSide) }
         var bmp = cr.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, opts) } ?: error("تعذّر قراءة الصورة")
         val degrees = runCatching {
             cr.openInputStream(uri)?.use {
@@ -47,7 +47,7 @@ object MediaCompressor {
                 }
             }
         }.getOrNull() ?: 0f
-        val (fw, fh) = fit(bmp.width, bmp.height)
+        val (fw, fh) = fit(bmp.width, bmp.height, maxSide)
         if (fw != bmp.width || degrees != 0f) {
             val m = Matrix().apply { postScale(fw.toFloat() / bmp.width, fh.toFloat() / bmp.height); postRotate(degrees) }
             val out = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, m, true)
@@ -55,7 +55,7 @@ object MediaCompressor {
             bmp = out
         }
         val buf = ByteArrayOutputStream()
-        bmp.compress(Bitmap.CompressFormat.JPEG, QUALITY, buf)
+        bmp.compress(Bitmap.CompressFormat.JPEG, quality, buf)
         return Compressed(buf.toByteArray(), bmp.width, bmp.height).also { bmp.recycle() }
     }
 }

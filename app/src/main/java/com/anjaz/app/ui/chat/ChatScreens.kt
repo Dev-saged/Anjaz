@@ -119,7 +119,7 @@ fun ChatListScreen(onOpenRoom: (String) -> Unit, vm: ChatListViewModel = hiltVie
 }
 
 @Composable
-fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) {
+fun ChatRoomScreen(onBack: () -> Unit, onCall: (List<String>) -> Unit = {}, vm: ChatRoomViewModel = hiltViewModel()) {
     val c = Anjaz.colors
     val ui by vm.ui.collectAsStateWithLifecycle()
     var text by remember { mutableStateOf("") }
@@ -142,7 +142,11 @@ fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) 
             Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onBack).semantics { contentDescription = "رجوع" }, contentAlignment = Alignment.Center) {
                 AnjazIcon(AnjazIcons.Back, c.ink)
             }
-            Text(ui?.title.orEmpty(), color = c.ink, style = MaterialTheme.typography.titleLarge)
+            Text(ui?.title.orEmpty(), color = c.ink, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+            val others = ui?.members.orEmpty()
+            if (others.isNotEmpty() && others.size <= 3) Box(Modifier.size(48.dp).clip(CircleShape).clickable { onCall(others) }.semantics { contentDescription = "مكالمة صوتية" }, contentAlignment = Alignment.Center) {
+                AnjazIcon(AnjazIcons.Meet, c.emeraldDeep)
+            }
         }
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = listState, contentPadding = PaddingValues(14.dp, 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             items(msgs, key = { it.id }) { m -> Bubble(m, mine = m.senderId == ui?.me, vm, stt, sttBusy, sender = if (ui?.group == true) ui?.names?.get(m.senderId) else null) }

@@ -51,6 +51,13 @@ class ReportsViewModel @Inject constructor(
     }
 
     fun exportPdf(uri: Uri) = run("حُفظ تقرير PDF") { val t = table(); write(uri) { PdfExporter.write(t, it) }; null }
+    fun exportWeekly(uri: Uri) = run("حُفظ تقرير الأسبوع") {
+        val since = clock.now() - 7 * 86_400_000L
+        val scope = auth.session.first()?.roleEnum?.label ?: "إنجاز"
+        val t = ReportData.tasks(db.tasks().all().filter { it.createdAt >= since || it.updatedAt >= since }, db.directory().allUsers(), clock.now(), scope)
+        write(uri) { PdfExporter.write(t.copy(title = "تقرير الأسبوع", subtitle = "آخر 7 أيام · " + t.subtitle), it) }
+        null
+    }
     fun exportXlsx(uri: Uri) = run("حُفظ ملف Excel") { val t = table(); write(uri) { XlsxExporter.write(t, it) }; null }
     fun exportBackup(uri: Uri) = run("حُفظت النسخة الاحتياطية") { val text = backup.export(); com.anjaz.app.update.AppFolder.saveBackup(ctx, "anjaz-backup-${clock.now()}.json", text.toByteArray()); write(uri) { it.write(text.toByteArray()) }; null }
 

@@ -4,8 +4,8 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 179 ملفاً · 27566 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
-> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · FirestoreRemoteStore.kt 309 · UpdateManager.kt 279
+> 189 ملفاً · 28486 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · MediaUi.kt 313 · FirestoreRemoteStore.kt 309
 
 ### ./
 - CLAUDE.md (44)
@@ -17,12 +17,12 @@
 - apply-to-all-repos.yml (106)
 - backend-tests.yml (21)
 - build.yml (115)
-- deploy-worker.yml (17)
+- deploy-worker.yml (21)
 - new-project.yml (95)
 - repomap.yml (41)
 - unpack-zip.yml (79)
 ### app/
-- build.gradle.kts (120)
+- build.gradle.kts (143)
 - google-services.json (29)
 ### app/schemas/com.anjaz.app.data.db.AnjazDatabase/
 - 1.json (519)
@@ -45,7 +45,7 @@
 - SelfTest.kt (88): Check, SelfTest
 ### app/src/main/java/com/anjaz/app/data/
 - AccountsRepository.kt (75): AccountsRepository
-- ChatRepository.kt (67): directRoomId, String.csv, ChatRepository
+- ChatRepository.kt (85): directRoomId, String.csv, ChatRepository
 - Clock.kt (10): interface, SystemClock
 - DashboardRepository.kt (41): DashboardCounts, DashboardRepository
 - DemoSeeder.kt (39): DemoSeeder
@@ -58,8 +58,8 @@
 - TaskRepository.kt (96): TaskOpPayload, TaskRepository
 ### app/src/main/java/com/anjaz/app/data/db/
 - AnjazDatabase.kt (32): AnjazDatabase
-- Daos.kt (228): TaskDao, TaskEventDao, OutboxDao, DirectoryDao, SosDao, ChatDao, ContactDao
-- Entities.kt (176): RegionEntity, SquareEntity, CampEntity, UserEntity, TaskEntity, TaskEventEntity, OutboxEntity +6
+- Daos.kt (231): TaskDao, TaskEventDao, OutboxDao, DirectoryDao, SosDao, ChatDao, ContactDao
+- Entities.kt (177): RegionEntity, SquareEntity, CampEntity, UserEntity, TaskEntity, TaskEventEntity, OutboxEntity +6
 - Migrations.kt (36): Migrations
 ### app/src/main/java/com/anjaz/app/di/
 - DataModule.kt (37): DataModule
@@ -69,10 +69,12 @@
 - Profile.kt (17): Profile
 - Role.kt (12): Role
 - TaskStatus.kt (39): TaskStatus, Priority
+- Username.kt (14): Username
 ### app/src/main/java/com/anjaz/app/media/
 - MediaCompressor.kt (62): Compressed, MediaCompressor
-- MediaRepository.kt (163): previewOf, extensionFor, MediaRepository
-- MediaTransport.kt (22): Download, MediaTransport, NoMedia
+- MediaRepository.kt (172): previewOf, extensionFor, MediaRepository
+- MediaTransport.kt (27): HttpFailure, Download, MediaTransport, NoMedia
+- VideoCompressor.kt (76): CompressedVideo, VideoCompressor
 - VoiceRecorder.kt (71): VoiceRecorder, VoicePlayer
 ### app/src/main/java/com/anjaz/app/push/
 - AnjazMessagingService.kt (33): AnjazMessagingService
@@ -87,27 +89,35 @@
 ### app/src/main/java/com/anjaz/app/schema/
 - Schema.kt (54): FieldType, Choice, FieldSchema, ModuleSchema, SchemaValidator
 - Schemas.kt (68): Schemas
+### app/src/main/java/com/anjaz/app/stt/
+- AudioPcm.kt (84): AudioPcm
+- PcmRecorder.kt (39): PcmRecorder
+- SttViewModel.kt (47): SttViewModel
+- Transcriber.kt (46): Transcriber
+- WhisperModel.kt (92): ModelState, WhisperModel
 ### app/src/main/java/com/anjaz/app/sync/
 - ApiClient.kt (82): ApiClient
 - FirestoreRemoteStore.kt (309): FirestoreRemoteStore
 - RemoteStore.kt (54): RemoteDenied, AuditEntry, RemoteStore, NoRemoteStore, interface
-- SyncEngine.kt (171): PushResult, SyncEngine
+- SyncEngine.kt (192): PushResult, SyncEngine
 - SyncWorker.kt (48): SyncWorker, SyncScheduler
 ### app/src/main/java/com/anjaz/app/ui/about/
-- AboutCard.kt (80): AboutCard
+- AboutCard.kt (83): AboutCard
 ### app/src/main/java/com/anjaz/app/ui/accounts/
-- AccountsScreen.kt (111): AccountsScreen
-- AccountsViewModel.kt (91): AccountsUi, AccountsViewModel
+- AccountsScreen.kt (133): AccountsScreen
+- AccountsViewModel.kt (94): AccountsUi, AccountsViewModel
 ### app/src/main/java/com/anjaz/app/ui/audit/
 - AuditScreen.kt (98): AuditRow, actionLabel, AuditViewModel, AuditScreen
 ### app/src/main/java/com/anjaz/app/ui/chat/
-- ChatScreens.kt (243): ChatListScreen, ChatRoomScreen
-- ChatViewModels.kt (129): RoomRow, ChatListViewModel, roomTitle, RoomUi, ChatRoomViewModel
-- MediaUi.kt (232): MediaContent, AttachSheet, HoldToRecord
+- ChatScreens.kt (304): ChatListScreen, ChatRoomScreen
+- ChatViewModels.kt (133): RoomRow, ChatListViewModel, roomTitle, RoomUi, ChatRoomViewModel
+- MediaUi.kt (313): MediaContent, AttachSheet, RecorderState, RecordingBar, HoldToRecord
 ### app/src/main/java/com/anjaz/app/ui/components/
+- AnimatedLogo.kt (79): AnimatedLogo, SplashOverlay
 - Components.kt (206): Tone, toneColors, Tag, AnjazCard, AnjazIcon, PrimaryButton, QuietButton +6
 - DayStrip.kt (53): DayChip, DayStrip
 - Motion.kt (69): rememberReduceMotion, Stagger, AmbientBackground
+- Notice.kt (54): Notice
 - SchemaForm.kt (114): SchemaForm
 - TaskCard.kt (61): statusTone, TaskCard
 ### app/src/main/java/com/anjaz/app/ui/dashboard/
@@ -117,7 +127,7 @@
 - DirectoryScreen.kt (103): DirectoryScreen
 - DirectoryViewModel.kt (89): DirKind, SquareRow, DirectoryUi, DirForm, DirectoryViewModel
 ### app/src/main/java/com/anjaz/app/ui/home/
-- HomeScreen.kt (153): HomeScreen
+- HomeScreen.kt (184): HomeScreen
 - HomeViewModel.kt (52): HomeUiState, HomeViewModel
 ### app/src/main/java/com/anjaz/app/ui/icons/
 - Icons.kt (170): AnjazIcons
@@ -181,7 +191,8 @@
 - DashboardTest.kt (40): DashboardTest
 - DirectoryTest.kt (96): DirectoryTest
 - DomainTest.kt (108): RoleTest, TaskStatusTest, SchemaValidatorTest, BrandTest, DayMathTest
-- MediaTest.kt (131): MediaTest
+- MediaMathTest.kt (51): MediaMathTest
+- MediaTest.kt (171): MediaTest
 - MigrationTest.kt (64): MigrationTest
 - RoomSelfTestTest.kt (22): RoomSelfTestTest
 - SyncEngineTest.kt (181): SyncEngineTest
@@ -208,12 +219,12 @@
 - google.js (45): serviceAccount, signJwt, accessToken, resetTokenCache
 - identity.js (37): Identity
 - index.js (193): json, limited, body, str, profile, audit, createUser +9
-- media.js (90): roomOf, putMedia, getMedia, ackMedia, purgeMedia
+- media.js (91): roomOf, putMedia, getMedia, ackMedia, purgeMedia
 - notify.js (57): sendFcm, leadsFor, targetsFor
-- policy.js (53): validUsername, validPassword, isActive, isLead, inScope, shapeOk, canCreateUser +3
+- policy.js (55): validUsername, validPassword, isActive, isLead, inScope, shapeOk, canCreateUser +3
 ### backend/worker/test/
 - harness.js (117): keys, idToken, d1, world
-- worker.test.js (219): newUser
+- worker.test.js (224): newUser
 ### brand/
 - BRAND.md (39)
 - board-spec.json (32)
@@ -239,7 +250,7 @@
 - head-snippet.html (6)
 ### docs/
 - media.md (7)
-- repo-map.md (41)
+- repo-map.md (42)
 ### tools/
 - repomap.py (146): files, symbols, build, main
 <!-- repomap:auto:end -->

@@ -41,7 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.anjaz.app.ui.theme.Anjaz
-import com.anjaz.app.ui.theme.ReemKufi
+import com.anjaz.app.ui.theme.Display
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -201,5 +201,5 @@ fun SectionTitle(title: String, trailing: String? = null) {
 
 @Composable
 fun ScreenTitle(text: String, modifier: Modifier = Modifier) {
-    Text(text, color = Anjaz.colors.navy.let { if (Anjaz.colors.dark) Anjaz.colors.ink else it }, fontFamily = ReemKufi, style = MaterialTheme.typography.titleLarge, modifier = modifier)
+    Text(text, color = Anjaz.colors.navy.let { if (Anjaz.colors.dark) Anjaz.colors.ink else it }, fontFamily = Display, style = MaterialTheme.typography.titleLarge, modifier = modifier)
 }

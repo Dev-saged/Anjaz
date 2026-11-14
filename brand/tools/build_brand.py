@@ -3,7 +3,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from outline_text import outline
 
 OUT = os.path.join(os.path.dirname(__file__), "..")
-FONT = os.path.join(os.path.dirname(__file__), "fonts", "ReemKufi-Bold.ttf")
+FONT = os.path.join(os.path.dirname(__file__), "fonts", "Alexandria-Bold.ttf")
 
 def oklch(l, c, h):
     a, b = c * math.cos(math.radians(h)), c * math.sin(math.radians(h))

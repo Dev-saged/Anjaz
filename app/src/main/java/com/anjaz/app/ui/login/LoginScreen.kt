@@ -35,7 +35,7 @@ import com.anjaz.app.ui.components.AmbientBackground
 import com.anjaz.app.ui.components.PrimaryButton
 import com.anjaz.app.ui.components.ProgressRing
 import com.anjaz.app.ui.theme.Anjaz
-import com.anjaz.app.ui.theme.ReemKufi
+import com.anjaz.app.ui.theme.Display
 
 @Composable
 fun LoginScreen(vm: LoginViewModel = hiltViewModel()) {
@@ -49,7 +49,7 @@ fun LoginScreen(vm: LoginViewModel = hiltViewModel()) {
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
         ) {
             ProgressRing(.78f, Modifier.size(104.dp), stroke = 10.dp, track = c.line, ring = if (c.dark) c.ink else c.navy, square = c.emerald)
-            Text(BrandConfig.NAME, color = if (c.dark) c.ink else c.navy, fontFamily = ReemKufi, style = MaterialTheme.typography.displayLarge, modifier = Modifier.padding(top = 12.dp))
+            Text(BrandConfig.NAME, color = if (c.dark) c.ink else c.navy, fontFamily = Display, style = MaterialTheme.typography.displayLarge, modifier = Modifier.padding(top = 12.dp))
             Text(BrandConfig.TAGLINE, color = c.mute, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 28.dp))
             Field(s.username, vm::username, "اسم المستخدم", KeyboardType.Ascii, ImeAction.Next, false)
             Box(Modifier.size(12.dp))

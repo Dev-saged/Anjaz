@@ -14,6 +14,10 @@
 5. السر: `npx wrangler secret put SERVICE_ACCOUNT_JSON` والصق ملف المفتاح كاملاً، ثم `npx wrangler deploy`.
 6. أول مدير مركزي يُنشأ يدوياً: أضف مستخدماً في Firebase Auth بالبريد `<username>@users.anjaz.local`، وأنشئ وثيقة `users/<uid>` في Firestore بالحقول `role=CENTRAL, active=true, username, displayName` (regionId وsquareId فارغان). كل ما بعده يُنشأ من التطبيق عبر الـ Worker.
 
+## حالة النشر (2026-11-14)
+- D1 باسم `anjaz` أُنشئ في حساب Cloudflare وطُبّق عليه `schema.sql` (المعرّف في `wrangler.toml`).
+- المتبقي يدوياً لأنه يحتاج حسابك: مشروع Firebase، `FIREBASE_PROJECT_ID` في `wrangler.toml`، السر `SERVICE_ACCOUNT_JSON`، ونشر الـ Worker (سر `CLOUDFLARE_API_TOKEN` في GitHub يفعّل `deploy-worker.yml`).
+
 ## حدود الخطة المجانية (تحقق منها قبل الإنتاج، فهي تتغير)
 - Firestore Spark: 50 ألف قراءة و20 ألف كتابة يومياً. القواعد التي تستدعي `get()` تُحتسب قراءات إضافية.
 - التصعيد يقرأ المهام المفتوحة فقط كل 15 دقيقة (96 تشغيلاً يومياً × عدد المهام المفتوحة).

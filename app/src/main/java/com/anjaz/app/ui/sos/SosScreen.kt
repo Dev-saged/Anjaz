@@ -151,7 +151,7 @@ private fun HoldButton(onTrigger: () -> Unit) {
             drawCircle(c.red, radius = size.minDimension / 2 - w * 1.6f)
             drawArc(c.onNavy, -90f, 360f * progress.value, false, Offset(w / 2, w / 2), Size(size.width - w, size.height - w), style = Stroke(w))
         }
-        Text("SOS", color = c.onNavy, fontFamily = com.anjaz.app.ui.theme.ReemKufi, style = MaterialTheme.typography.displayLarge)
+        Text("SOS", color = c.onNavy, fontFamily = com.anjaz.app.ui.theme.Display, style = MaterialTheme.typography.displayLarge)
     }
 }
 

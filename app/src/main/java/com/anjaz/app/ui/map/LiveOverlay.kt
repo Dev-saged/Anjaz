@@ -95,7 +95,7 @@ class LiveOverlay(private val density: Float, private val palette: MapPalette) :
         if (showAlerts) pulses.forEach { u ->
             proj.toPixels(GeoPoint(u.lat, u.lng), pt)
             val x = pt.x.toFloat(); val y = pt.y.toFloat()
-            val color = when (u.kind) { PulseKind.SOS -> palette.red; PulseKind.DONE -> palette.emerald; PulseKind.LATE -> palette.amber }
+            val color = when (u.kind) { PulseKind.SOS -> palette.red; PulseKind.DONE -> palette.emerald; PulseKind.LATE -> palette.amber; PulseKind.HERE -> palette.emerald }
             ripple(c, x, y, dp(14f), color, phase, u.kind == PulseKind.SOS)
             animate = true
             disc(c, x, y, dp(12f), color)

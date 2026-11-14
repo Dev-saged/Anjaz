@@ -82,10 +82,15 @@ class GeoRepository @Inject constructor(private val db: AnjazDatabase) {
     fun sos() = db.sos().observeRecent()
     fun squares() = db.directory().observeSquares()
 
-    private fun place(id: String, m: Map<String, Any?>): Place? = Place(
-        id = id, name = m["name"] as? String ?: return null, kind = m["kind"] as? String ?: "POINT",
-        ownerId = m["ownerId"] as? String, ownerName = m["ownerName"] as? String,
-        lat = (m["lat"] as? Number)?.toDouble() ?: return null, lng = (m["lng"] as? Number)?.toDouble() ?: return null,
-        radius = (m["radius"] as? Number)?.toDouble() ?: 100.0, regionId = m["regionId"] as? String, squareId = m["squareId"] as? String,
-    )
+    private fun place(id: String, m: Map<String, Any?>): Place? {
+        val name = m["name"] as? String ?: return null
+        val lat = (m["lat"] as? Number)?.toDouble() ?: return null
+        val lng = (m["lng"] as? Number)?.toDouble() ?: return null
+        return Place(
+            id = id, name = name, kind = m["kind"] as? String ?: "POINT",
+            ownerId = m["ownerId"] as? String, ownerName = m["ownerName"] as? String,
+            lat = lat, lng = lng,
+            radius = (m["radius"] as? Number)?.toDouble() ?: 100.0, regionId = m["regionId"] as? String, squareId = m["squareId"] as? String,
+        )
+    }
 }

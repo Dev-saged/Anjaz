@@ -212,7 +212,7 @@ private fun SelectionCard(ui: MapUi, onDelete: () -> Unit, onClose: () -> Unit) 
         else -> {
             val s = ui.pulses.firstOrNull { "s:${it.key}" == key } ?: return
             title = s.label
-            sub = when (s.kind) { PulseKind.SOS -> "استغاثة مفتوحة تحتاج استجابة"; PulseKind.DONE -> "إنجاز اليوم"; PulseKind.LATE -> "تحتاج متابعة" }
+            sub = when (s.kind) { PulseKind.SOS -> "استغاثة مفتوحة تحتاج استجابة"; PulseKind.DONE -> "إنجاز اليوم"; PulseKind.LATE -> "تحتاج متابعة"; PulseKind.HERE -> "حضور مسجّل اليوم" }
         }
     }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {

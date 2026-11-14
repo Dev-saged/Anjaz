@@ -13,8 +13,8 @@
 ## Features (v0.3.0)
 - SOS: data/SosRepository → ui/sos؛ محادثة: data/ChatRepository → ui/chat (مسار room/{roomId}، SyncEngine.listenRoom).
 - حسابات: data/AccountsRepository → ui/accounts (Worker /v1/users)؛ دليل: data/DirectoryRepository → ui/directory.
-- إشعارات: push/{Notifications,DeviceTokens,AnjazMessagingService,DeepLink}؛ قناتا default وsos.
-- نسخ/تقارير: backup/BackupManager، report/{ReportData,PdfLayout,PdfExporter,XlsxExporter} → ui/reports؛ سجل: ui/audit.
+- إشعارات: push/ (قناتا default وsos).
+- نسخ/تقارير: backup/BackupManager، report/ → ui/reports؛ سجل: ui/audit.
 - Room v3: Migrations 1→2→3 (camps.regionId تفحصه القواعد)؛ PdfLayout منفصل لأن PdfDocument لا يعمل تحت Robolectric.
 - تحديث ذاتي: update/{UpdateChecker (3 طبقات من GitHub Releases)، UpdateManager (تنزيل Range + تثبيت PackageInstaller)، UpdateDownloadService، UpdateUi (بانر علوي + ورقة)، AppFolder (updates/backups/exports)}؛ build.yml ينشر Release + version.json؛ versionCode=VERSION_CODE*10000+BUILD_NUMBER.
 

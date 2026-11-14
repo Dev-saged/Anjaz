@@ -5,6 +5,7 @@ package com.anjaz.app.ui.chat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +39,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -124,6 +127,7 @@ fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) 
     val ui by vm.ui.collectAsStateWithLifecycle()
     var text by remember { mutableStateOf("") }
     var attach by remember { mutableStateOf(false) }
+    val rs = remember { RecorderState() }
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val dictate = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { r ->
         r.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.let { text = (text + " " + it).trim().take(4000) }
@@ -146,8 +150,8 @@ fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) 
         Row(
             Modifier.fillMaxWidth().navigationBarsPadding().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(Modifier.size(44.dp).clip(CircleShape).clickable { attach = true }.semantics { contentDescription = "إرفاق" }, contentAlignment = Alignment.Center) { AnjazIcon(AnjazIcons.Clip, c.mute) }
-            OutlinedTextField(
+            if (rs.recording) RecordingBar(rs, Modifier.weight(1f)) else Box(Modifier.size(44.dp).clip(CircleShape).clickable { attach = true }.semantics { contentDescription = "إرفاق" }, contentAlignment = Alignment.Center) { AnjazIcon(AnjazIcons.Clip, c.mute) }
+            if (!rs.recording) OutlinedTextField(
                 value = text, onValueChange = { if (it.length <= 4000) text = it }, placeholder = { Text("اكتب رسالة") },
                 trailingIcon = {
                     Box(Modifier.size(44.dp).clip(CircleShape).clickable {
@@ -161,7 +165,7 @@ fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) 
                 maxLines = 4, shape = RoundedCornerShape(22.dp), modifier = Modifier.weight(1f),
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = c.emerald, unfocusedBorderColor = c.line, focusedContainerColor = c.card, unfocusedContainerColor = c.card, cursorColor = c.emerald),
             )
-            if (text.isBlank()) HoldToRecord(onVoice = vm::sendVoice) else Box(
+            if (text.isBlank() || rs.recording) HoldToRecord(rs, onVoice = vm::sendVoice) else Box(
                 Modifier.size(52.dp).clip(CircleShape).background(c.emerald)
                     .clickable { vm.send(text); text = "" }.semantics { contentDescription = "إرسال" },
                 contentAlignment = Alignment.Center,
@@ -175,9 +179,22 @@ fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) 
 private fun Bubble(m: MessageEntity, mine: Boolean, vm: ChatRoomViewModel, sender: String?) {
     val c = Anjaz.colors
     val shape = RoundedCornerShape(18.dp, 18.dp, if (mine) 4.dp else 18.dp, if (mine) 18.dp else 4.dp)
+    var menu by remember { mutableStateOf(false) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    val unsent = mine && m.state != MessageState.SENT
     Box(Modifier.fillMaxWidth(), contentAlignment = if (mine) Alignment.CenterEnd else Alignment.CenterStart) {
+        androidx.compose.material3.DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            if (unsent) {
+                androidx.compose.material3.DropdownMenuItem(text = { Text("إعادة الإرسال") }, onClick = { menu = false; vm.resend(m.id) })
+                androidx.compose.material3.DropdownMenuItem(text = { Text("حذف", color = c.redDeep) }, onClick = { menu = false; vm.deleteUnsent(m.id) })
+            }
+            if (m.type == "text") androidx.compose.material3.DropdownMenuItem(text = { Text("نسخ") }, onClick = { menu = false; clipboard.setText(androidx.compose.ui.text.AnnotatedString(m.text)) })
+        }
         Column(
-            Modifier.widthIn(max = 300.dp).clip(shape).background(if (mine) c.navy else c.card).padding(horizontal = 12.dp, vertical = 8.dp),
+            Modifier.widthIn(max = 300.dp).clip(shape).background(if (mine) c.navy else c.card)
+                .combinedClickable(onClick = {}, onLongClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress); menu = true })
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             val tint = if (mine) c.onNavy else c.ink
@@ -198,6 +215,10 @@ private fun Receipt(m: MessageEntity) {
     val readByOthers = m.readBy.csv().any { it != m.senderId }
     val tint = if (readByOthers) c.emerald else c.onNavy.copy(.7f)
     when {
+        m.state == MessageState.FAILED -> Canvas(Modifier.size(14.dp).semantics { contentDescription = "فشل الإرسال، اضغط مطولاً" }) {
+            drawCircle(c.red); drawLine(Color.White, Offset(size.width / 2, size.height * .25f), Offset(size.width / 2, size.height * .6f), 2.dp.toPx())
+            drawCircle(Color.White, 1.2.dp.toPx(), Offset(size.width / 2, size.height * .78f))
+        }
         m.state == MessageState.LOCAL -> Canvas(Modifier.size(10.dp).semantics { contentDescription = "قيد الإرسال" }) { drawCircle(tint, style = Stroke(1.5.dp.toPx())) }
         readByOthers -> Box(Modifier.semantics { contentDescription = "تمت القراءة" }) {
             AnjazIcon(AnjazIcons.Check, tint, 14.dp)

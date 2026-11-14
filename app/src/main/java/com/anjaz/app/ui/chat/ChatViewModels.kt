@@ -111,6 +111,8 @@ class ChatRoomViewModel @Inject constructor(
     fun sendVoice(file: java.io.File, durMs: Long) { val me = profile.value ?: return; viewModelScope.launch { after(media.sendVoice(roomId, me, file, durMs)) } }
     fun sendLocation(lat: Double, lng: Double) { val me = profile.value ?: return; viewModelScope.launch { after(media.sendLocation(roomId, me, lat, lng)) } }
     fun download(id: String) = media.fetch(id)
+    fun resend(id: String) { viewModelScope.launch { repo.resend(id); scheduler.kick() } }
+    fun deleteUnsent(id: String) { viewModelScope.launch { repo.deleteUnsent(id) } }
     fun setTranscript(id: String, text: String) { viewModelScope.launch { media.saveTranscript(id, text) } }
 
     fun send(text: String) {

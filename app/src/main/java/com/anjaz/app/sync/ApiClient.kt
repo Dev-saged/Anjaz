@@ -55,7 +55,7 @@ class ApiClient @Inject constructor(private val cloud: CloudState) : Notifier, c
             try {
                 file.inputStream().use { i -> conn.outputStream.use { i.copyTo(it) } }
                 val code = conn.responseCode
-                if (code !in 200..299) throw java.io.IOException("HTTP $code")
+                if (code !in 200..299) throw com.anjaz.app.media.HttpFailure(code)
             } finally { conn.disconnect() }
         }
     }
@@ -69,7 +69,7 @@ class ApiClient @Inject constructor(private val cloud: CloudState) : Notifier, c
                 when (val code = conn.responseCode) {
                     200 -> { conn.inputStream.use { i -> dest.outputStream().use { i.copyTo(it) } }; com.anjaz.app.media.Download.Done }
                     404 -> com.anjaz.app.media.Download.Gone
-                    else -> throw java.io.IOException("HTTP $code")
+                    else -> throw com.anjaz.app.media.HttpFailure(code)
                 }
             } finally { conn.disconnect() }
         }

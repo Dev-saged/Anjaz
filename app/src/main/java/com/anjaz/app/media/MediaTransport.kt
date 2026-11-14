@@ -2,6 +2,11 @@ package com.anjaz.app.media
 
 import java.io.File
 
+/** فشل HTTP من الخادم؛ أخطاء 4xx (عدا 408/429) دائمة ولا تفيد إعادة المحاولة. */
+class HttpFailure(val code: Int) : java.io.IOException("HTTP $code") {
+    val permanent: Boolean get() = code in 400..499 && code != 408 && code != 429
+}
+
 sealed interface Download {
     data object Done : Download
     data object Gone : Download

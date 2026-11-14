@@ -30,7 +30,8 @@ import org.robolectric.annotation.Config
 
 private class FakeMedia : MediaTransport {
     val uploaded = mutableListOf<String>()
-    override suspend fun upload(roomId: String, mediaId: String, file: File, mime: String) { uploaded += "$roomId/$mediaId" }
+    var failCode: Int? = null
+    override suspend fun upload(roomId: String, mediaId: String, file: File, mime: String) { failCode?.let { throw com.anjaz.app.media.HttpFailure(it) }; uploaded += "$roomId/$mediaId" }
     override suspend fun download(mediaId: String, dest: File): Download = Download.Gone
     override suspend fun ack(mediaId: String) = Unit
 }
@@ -125,6 +126,45 @@ class MediaTest {
         val e = com.anjaz.app.data.db.TaskEventEntity("e1", "t1", "NEW", "IN_PROGRESS", "u2", null, 5)
         engine.applyEvents(listOf(e)); engine.applyEvents(listOf(e, e.copy(id = "e2", at = 6)))
         assertEquals(2, db.taskEvents().countAll())
+        db.close()
+    }
+
+    private suspend fun seed(db: AnjazDatabase) {
+        val f = File.createTempFile("voice", ".m4a").apply { writeBytes(byteArrayOf(1)) }
+        db.chat().upsertRoom(RoomEntity("r1", "direct", "", "u1,u2", "", 0))
+        val voice = MessageEntity("v1", "r1", "u1", "voice", "", 10, "u1", MessageState.LOCAL, mediaId = "a1", mediaMime = "audio/mp4", localPath = f.path, mediaState = MediaState.LOCAL)
+        val text = MessageEntity("t1", "r1", "u1", "text", "مرحبا", 11, "u1", MessageState.LOCAL)
+        listOf(voice, text).forEach {
+            db.chat().insertMessage(it)
+            db.outbox().insertIgnore(Outbox.op("message", "send", EntityOp(it.id, "r1"), it.createdAt))
+        }
+    }
+
+    @Test fun failedVoiceDoesNotBlockLaterMessages() = runBlocking {
+        val db = Room.inMemoryDatabaseBuilder(ctx, AnjazDatabase::class.java).build()
+        val tr = FakeMedia().apply { failCode = 500 }
+        val engine = SyncEngine(db, BareRemote(), Notifier { _, _ -> }, Clock { 10 }, tr)
+        seed(db)
+        val r = engine.pushPending()
+        assertEquals(1, r.sent)
+        assertTrue(r.retryLater)
+        assertEquals(MessageState.SENT, db.chat().messageById("t1")!!.state)
+        assertEquals(MessageState.LOCAL, db.chat().messageById("v1")!!.state)
+        db.close()
+    }
+
+    @Test fun permanentUploadErrorMarksMessageFailedAndResendWorks() = runBlocking {
+        val db = Room.inMemoryDatabaseBuilder(ctx, AnjazDatabase::class.java).build()
+        val tr = FakeMedia().apply { failCode = 413 }
+        val engine = SyncEngine(db, BareRemote(), Notifier { _, _ -> }, Clock { 10 }, tr)
+        seed(db)
+        engine.pushPending()
+        assertEquals(MessageState.FAILED, db.chat().messageById("v1")!!.state)
+        tr.failCode = null
+        com.anjaz.app.data.ChatRepository(db, Clock { 20 }).resend("v1")
+        assertEquals(1, engine.pushPending().sent)
+        assertEquals(MessageState.SENT, db.chat().messageById("v1")!!.state)
+        assertEquals(listOf("r1/a1"), tr.uploaded)
         db.close()
     }
 }

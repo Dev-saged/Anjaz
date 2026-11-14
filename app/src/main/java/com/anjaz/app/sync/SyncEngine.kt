@@ -39,7 +39,11 @@ class SyncEngine @Inject constructor(
         if (!remote.enabled) return PushResult(0, false)
         db.outbox().recoverSending()
         var sent = 0
+        var retry = false
+        val blocked = mutableSetOf<String>()
         for (op in db.outbox().pending()) {
+            val scope = scopeOf(op)
+            if ((scope ?: waitsOn(op)) in blocked) { retry = true; continue }
             db.outbox().mark(op.idempotencyKey, OutboxState.SENDING, 0, null, null)
             val result = runCatching { dispatch(op) }
             if (result.isSuccess) {
@@ -48,12 +52,29 @@ class SyncEngine @Inject constructor(
                 runCatching { notifyFor(op) }
             } else {
                 val e = result.exceptionOrNull()
-                val terminal = e is RemoteDenied || op.attempts + 1 >= MAX_ATTEMPTS
+                val terminal = e is RemoteDenied || (e is com.anjaz.app.media.HttpFailure && e.permanent) || op.attempts + 1 >= MAX_ATTEMPTS
                 db.outbox().mark(op.idempotencyKey, if (terminal) OutboxState.NEEDS_ATTENTION else OutboxState.FAILED, 1, e?.message?.take(200), null)
-                if (!terminal) return PushResult(sent, true)
+                if (terminal) { markMessageFailed(op); continue }
+                retry = true
+                // انقطاع الشبكة يوقف الجولة؛ أي فشل آخر لا يعطّل بقية العمليات المستقلة
+                if (e is java.io.IOException && e !is com.anjaz.app.media.HttpFailure) return PushResult(sent, true)
+                scope?.let { blocked += it }
             }
         }
-        return PushResult(sent, false)
+        return PushResult(sent, retry)
+    }
+
+    /** العمليات المترابطة بالترتيب تتشارك نطاقاً: مهمة واحدة، أو إنشاء غرفة قبل رسائلها. */
+    private fun scopeOf(op: OutboxEntity): String? = when (op.entity) {
+        "task" -> runCatching { json.decodeFromString<TaskOpPayload>(op.payload).taskId }.getOrNull()?.let { "task:$it" }
+        "room" -> "room:" + Outbox.parse(op.payload).id
+        else -> null
+    }
+
+    private fun waitsOn(op: OutboxEntity): String? = if (op.entity == "message") Outbox.parse(op.payload).roomId?.let { "room:$it" } else null
+
+    private suspend fun markMessageFailed(op: OutboxEntity) {
+        if (op.entity == "message" && op.op == "send") db.chat().setState(Outbox.parse(op.payload).id, MessageState.FAILED)
     }
 
     private suspend fun dispatch(op: OutboxEntity) {

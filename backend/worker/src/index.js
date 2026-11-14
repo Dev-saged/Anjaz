@@ -1,6 +1,7 @@
 import { HttpError, verifyIdToken } from './auth.js';
 import { readBackup, runBackup } from './backup.js';
 import { escalate } from './cron.js';
+import { runRecurring, weeklyReport } from './recurring.js';
 import { ackMedia, getMedia, purgeMedia, putMedia } from './media.js';
 import { Firestore } from './firestore.js';
 import { Identity } from './identity.js';
@@ -160,6 +161,18 @@ async function notify(ctx) {
   return json({ sent });
 }
 
+async function startCall(ctx) {
+  if (limited(ctx.uid, 'call', 20, ctx.now)) throw new HttpError(429, 'محاولات كثيرة');
+  const b = await body(ctx.request);
+  const others = Array.isArray(b.members) ? b.members.filter((m) => m !== ctx.uid) : [];
+  if (others.length < 1 || others.length > 3) throw new HttpError(400, 'اختر من 1 إلى 3 مشاركين');
+  const members = await membersInScope(ctx, others);
+  const id = crypto.randomUUID();
+  await ctx.fs.set(`meetings/${id}`, { title: 'مكالمة', kind: 'call', members, regionId: ctx.actor.regionId ?? null, createdBy: ctx.uid, createdAt: ctx.now });
+  await sendFcm(ctx.env, ctx.fs, others, { title: `مكالمة من ${ctx.actor.displayName || 'زميل'}`, body: 'اضغط للرد', kind: 'call', id, high: true }, ctx.fetch);
+  return json({ id }, 201);
+}
+
 function centralOnly(ctx) {
   if (ctx.actor.role !== 'CENTRAL') throw new HttpError(403, 'للإدارة المركزية فقط');
 }
@@ -173,6 +186,7 @@ export async function route(ctx, method, path) {
   if (method === 'POST' && (m = path.match(/^\/v1\/users\/([^/]+)\/delete$/))) return deleteUser(ctx, m[1]);
   if (method === 'POST' && path === '/v1/rooms/group') return createGroup(ctx, 'room');
   if (method === 'POST' && path === '/v1/meetings') return createGroup(ctx, 'meeting');
+  if (method === 'POST' && path === '/v1/calls') return startCall(ctx);
   if (method === 'POST' && path === '/v1/notify') return notify(ctx);
   if (method === 'PUT' && path === '/v1/media') return json(await putMedia(ctx, limited), 201);
   if (method === 'GET' && (m = path.match(/^\/v1\/media\/([A-Za-z0-9-]+)$/))) return getMedia(ctx, m[1]);
@@ -217,9 +231,10 @@ export default {
       ctx.waitUntil((async () => {
         await runBackup(env);
         await purgeMedia(env);
+        await weeklyReport(env);
       })());
     } else {
-      ctx.waitUntil((async () => { await escalate(env); await purgeMedia(env); })());
+      ctx.waitUntil((async () => { await escalate(env); await runRecurring(env); await purgeMedia(env); })());
     }
   },
 };

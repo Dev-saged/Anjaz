@@ -12,7 +12,7 @@ object BrandConfig {
     const val DYNAMIC_COLOR = false
 
     // عنوان الـ Worker بعد النشر؛ فارغ = وضع محلي بلا خادم
-    const val WORKER_URL = ""
+    const val WORKER_URL = "https://anjaz-api.dev-mr07.workers.dev"
     const val EMAIL_DOMAIN = "users.anjaz.local"
 
     data class Pair(val light: Oklch, val dark: Oklch)

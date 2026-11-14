@@ -16,7 +16,7 @@
 
 ## حالة النشر (2026-11-14)
 - D1 باسم `anjaz` أُنشئ في حساب Cloudflare وطُبّق عليه `schema.sql` (المعرّف في `wrangler.toml`).
-- المتبقي يدوياً لأنه يحتاج حسابك: مشروع Firebase، `FIREBASE_PROJECT_ID` في `wrangler.toml`، السر `SERVICE_ACCOUNT_JSON`، ونشر الـ Worker (سر `CLOUDFLARE_API_TOKEN` في GitHub يفعّل `deploy-worker.yml`).
+- الـ Worker منشور على https://anjaz-api.dev-mr07.workers.dev (و`WORKER_URL` مضبوط). المتبقي: مشروع Firebase، `FIREBASE_PROJECT_ID` ثم إعادة النشر، والسر `SERVICE_ACCOUNT_JSON`.
 
 ## حدود الخطة المجانية (تحقق منها قبل الإنتاج، فهي تتغير)
 - Firestore Spark: 50 ألف قراءة و20 ألف كتابة يومياً. القواعد التي تستدعي `get()` تُحتسب قراءات إضافية.

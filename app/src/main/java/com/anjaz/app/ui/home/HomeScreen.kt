@@ -51,7 +51,7 @@ import com.anjaz.app.ui.theme.Display
 import com.anjaz.app.ui.theme.ltr
 
 @Composable
-fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSos: () -> Unit, canAssign: Boolean, vm: HomeViewModel = hiltViewModel()) {
+fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSos: () -> Unit, onSearch: () -> Unit, canAssign: Boolean, vm: HomeViewModel = hiltViewModel()) {
     val s by vm.state.collectAsStateWithLifecycle()
     val c = Anjaz.colors
     var bell by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
@@ -68,7 +68,7 @@ fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSo
             contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            item { Stagger(0) { Header(alerts.sumOf { it.second }, onBell = { bell = true }) } }
+            item { Stagger(0) { Header(alerts.sumOf { it.second }, onBell = { bell = true }, onSearch = onSearch) } }
             if (s.openSos > 0) item { SosBanner(s.openSos, onOpenSos) }
             item { Stagger(1) { Hero(s.counts.done, s.counts.total, s.counts.progress) } }
             item {
@@ -95,16 +95,19 @@ fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSo
 }
 
 @Composable
-private fun Header(unsynced: Int, onBell: () -> Unit) {
+private fun Header(unsynced: Int, onBell: () -> Unit, onSearch: () -> Unit) {
     val c = Anjaz.colors
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Column {
             Text("مرحباً بك", color = c.mute, style = MaterialTheme.typography.bodySmall)
             Text(BrandConfig.NAME, color = if (c.dark) c.ink else c.navy, fontFamily = Display, style = MaterialTheme.typography.headlineMedium)
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Box(Modifier.size(48.dp).clip(CircleShape).background(c.card).clickable(onClick = onSearch), contentAlignment = Alignment.Center) { AnjazIcon(AnjazIcons.Search, c.ink, description = "بحث") }
         Box(Modifier.size(48.dp).clip(CircleShape).background(c.card).clickable(onClick = onBell), contentAlignment = Alignment.Center) {
             AnjazIcon(AnjazIcons.Bell, c.ink, description = "الإشعارات")
             if (unsynced > 0) Box(Modifier.align(Alignment.TopEnd).padding(10.dp).size(9.dp).clip(CircleShape).background(c.amber))
+        }
         }
     }
 }

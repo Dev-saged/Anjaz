@@ -109,6 +109,7 @@ fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Un
             }
         }
         UpdateEntry()
+        LockEntry()
         var showLog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
         AnjazCard(Modifier.fillMaxWidth(), onClick = { showLog = true }) {
             Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -162,6 +163,29 @@ private fun UpdateEntry(vm: com.anjaz.app.update.UpdateViewModel = androidx.hilt
                 Text("التحديثات", color = c.ink, style = MaterialTheme.typography.titleMedium)
                 Text(if (busy) "جارٍ الفحص…" else status ?: "فحص النسخة الجديدة", color = c.mute, style = MaterialTheme.typography.bodySmall)
             }
+        }
+    }
+}
+
+@androidx.compose.runtime.Composable
+private fun LockEntry() {
+    val c = Anjaz.colors
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    var on by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(com.anjaz.app.security.AppLock.enabled(ctx)) }
+    var hint by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    AnjazCard(Modifier.fillMaxWidth()) {
+        Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            AnjazIcon(AnjazIcons.Lock, c.ink)
+            Column(Modifier.weight(1f)) {
+                Text("قفل التطبيق", color = c.ink, style = MaterialTheme.typography.titleMedium)
+                Text(hint ?: "بصمة أو رمز الجهاز عند فتح التطبيق", color = c.mute, style = MaterialTheme.typography.bodySmall)
+            }
+            androidx.compose.material3.Switch(checked = on, onCheckedChange = { want ->
+                if (want && !com.anjaz.app.security.AppLock.available(ctx)) { hint = "فعّل بصمة أو رمز قفل للجهاز من إعدادات الهاتف أولاً"; return@Switch }
+                hint = null
+                com.anjaz.app.security.AppLock.setEnabled(ctx, want)
+                on = want
+            })
         }
     }
 }

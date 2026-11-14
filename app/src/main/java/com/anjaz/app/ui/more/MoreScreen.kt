@@ -31,7 +31,10 @@ import com.anjaz.app.ui.components.AnjazIcon
 import com.anjaz.app.ui.components.ScreenTitle
 import com.anjaz.app.ui.components.Tag
 import com.anjaz.app.ui.components.Tone
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import com.anjaz.app.ui.icons.AnjazIcons
+import kotlinx.coroutines.launch
 import com.anjaz.app.ui.theme.Anjaz
 import com.anjaz.app.ui.theme.ltr
 
@@ -84,6 +87,7 @@ fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Un
                 Text("الحسابات", color = c.ink, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
             }
         }
+        UpdateEntry()
         upcoming.forEach { e ->
             AnjazCard(Modifier.fillMaxWidth()) {
                 Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -101,5 +105,33 @@ fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Un
             ),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
+    }
+}
+
+@androidx.compose.runtime.Composable
+private fun UpdateEntry(vm: com.anjaz.app.update.UpdateViewModel = androidx.hilt.navigation.compose.hiltViewModel()) {
+    val c = Anjaz.colors
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var status by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    var busy by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    AnjazCard(Modifier.fillMaxWidth(), onClick = {
+        if (busy) return@AnjazCard
+        busy = true
+        scope.launch {
+            status = when (val r = vm.manager.check(force = true)) {
+                is com.anjaz.app.update.UpdateChecker.Result.Available -> { vm.manager.showSheet(true); "نسخة ${ltr(r.release.version)} متاحة" }
+                is com.anjaz.app.update.UpdateChecker.Result.UpToDate -> "أنت على أحدث إصدار"
+                else -> "تعذّر الفحص، تحقق من الاتصال"
+            }
+            busy = false
+        }
+    }) {
+        Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            AnjazIcon(AnjazIcons.Cloud, c.ink)
+            Column(Modifier.weight(1f)) {
+                Text("التحديثات", color = c.ink, style = MaterialTheme.typography.titleMedium)
+                Text(if (busy) "جارٍ الفحص…" else status ?: "فحص النسخة الجديدة", color = c.mute, style = MaterialTheme.typography.bodySmall)
+            }
+        }
     }
 }

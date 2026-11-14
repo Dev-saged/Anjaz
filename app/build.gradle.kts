@@ -11,6 +11,8 @@ plugins {
 
 val versionNameProp = providers.gradleProperty("VERSION_NAME").get()
 val versionCodeProp = providers.gradleProperty("VERSION_CODE").get().toInt()
+val buildNumber = providers.gradleProperty("BUILD_NUMBER").orElse("0").get().toInt()
+val fullVersionCode = versionCodeProp * 10000 + buildNumber
 
 android {
     namespace = "com.anjaz.app"
@@ -20,10 +22,11 @@ android {
         applicationId = "com.anjaz.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = versionCodeProp
+        versionCode = fullVersionCode
         versionName = versionNameProp
         buildConfigField("String", "VERSION_NAME", "\"$versionNameProp\"")
-        buildConfigField("int", "VERSION_CODE", "$versionCodeProp")
+        buildConfigField("int", "VERSION_CODE", "$fullVersionCode")
+        buildConfigField("int", "BUILD_NUMBER", "$buildNumber")
     }
 
     signingConfigs {

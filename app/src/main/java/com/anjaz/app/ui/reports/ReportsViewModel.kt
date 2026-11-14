@@ -52,7 +52,7 @@ class ReportsViewModel @Inject constructor(
 
     fun exportPdf(uri: Uri) = run("حُفظ تقرير PDF") { val t = table(); write(uri) { PdfExporter.write(t, it) }; null }
     fun exportXlsx(uri: Uri) = run("حُفظ ملف Excel") { val t = table(); write(uri) { XlsxExporter.write(t, it) }; null }
-    fun exportBackup(uri: Uri) = run("حُفظت النسخة الاحتياطية") { val text = backup.export(); write(uri) { it.write(text.toByteArray()) }; null }
+    fun exportBackup(uri: Uri) = run("حُفظت النسخة الاحتياطية") { val text = backup.export(); com.anjaz.app.update.AppFolder.saveBackup(ctx, "anjaz-backup-${clock.now()}.json", text.toByteArray()); write(uri) { it.write(text.toByteArray()) }; null }
 
     fun importBackup(uri: Uri) = run("") {
         val text = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) } ?: return@run "لا يمكن قراءة الملف"

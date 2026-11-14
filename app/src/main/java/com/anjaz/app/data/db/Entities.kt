@@ -172,4 +172,5 @@ object MediaState {
 object MessageState {
     const val LOCAL = "LOCAL"
     const val SENT = "SENT"
+    const val FAILED = "FAILED"
 }

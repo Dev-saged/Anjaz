@@ -201,6 +201,9 @@ interface ChatDao {
     @Query("UPDATE messages SET readBy = :readBy WHERE id = :id")
     suspend fun setReadBy(id: String, readBy: String)
 
+    @Query("DELETE FROM messages WHERE id = :id")
+    suspend fun deleteMessage(id: String)
+
     @Query("UPDATE messages SET localPath = :path, mediaState = :state WHERE id = :id")
     suspend fun setMedia(id: String, path: String, state: String)
 

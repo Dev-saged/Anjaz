@@ -107,10 +107,14 @@ class ChatRoomViewModel @Inject constructor(
     private fun after(r: Outcome<String>) { if (r is Outcome.Failure) error.value = r.reason else scheduler.kick() }
 
     fun sendImage(uri: android.net.Uri) { val me = profile.value ?: return; viewModelScope.launch { after(media.sendImage(roomId, me, uri)) } }
+    fun sendVideo(uri: android.net.Uri) { val me = profile.value ?: return; processing.value = true; viewModelScope.launch { after(media.sendVideo(roomId, me, uri)); processing.value = false } }
+    val processing = MutableStateFlow(false)
     fun sendFile(uri: android.net.Uri) { val me = profile.value ?: return; viewModelScope.launch { after(media.sendFile(roomId, me, uri)) } }
     fun sendVoice(file: java.io.File, durMs: Long) { val me = profile.value ?: return; viewModelScope.launch { after(media.sendVoice(roomId, me, file, durMs)) } }
     fun sendLocation(lat: Double, lng: Double) { val me = profile.value ?: return; viewModelScope.launch { after(media.sendLocation(roomId, me, lat, lng)) } }
     fun download(id: String) = media.fetch(id)
+    fun resend(id: String) { viewModelScope.launch { repo.resend(id); scheduler.kick() } }
+    fun deleteUnsent(id: String) { viewModelScope.launch { repo.deleteUnsent(id) } }
     fun setTranscript(id: String, text: String) { viewModelScope.launch { media.saveTranscript(id, text) } }
 
     fun send(text: String) {

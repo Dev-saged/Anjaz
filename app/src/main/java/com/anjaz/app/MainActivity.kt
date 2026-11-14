@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerForActivityResult(ActivityResultContracts.RequestPermission()) {}.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
-        setContent { AnjazTheme { androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) { AnjazRoot(); UpdateLayer() } } }
+        setContent { AnjazTheme { androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) { AnjazRoot(); UpdateLayer(); com.anjaz.app.ui.components.SplashOverlay() } } }
         handleUpdateIntent(intent)
     }
 

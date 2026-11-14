@@ -63,4 +63,22 @@ class ChatRepository @Inject constructor(private val db: AnjazDatabase, private 
             }
         }
     }
+
+    /** إعادة إرسال رسالة فشلت: تعود إلى الصندوق الصادر بمحاولات جديدة. */
+    suspend fun resend(messageId: String) {
+        val m = db.chat().messageById(messageId) ?: return
+        if (m.state == MessageState.SENT) return
+        db.withTransaction {
+            db.chat().setState(m.id, MessageState.LOCAL)
+            db.outbox().insertIgnore(Outbox.op("message", "send", EntityOp(m.id, m.roomId), clock.now()))
+        }
+    }
+
+    /** حذف رسالة لم تُرسل بعد (ومعها ملفها المحلي)؛ عمليتها الصادرة تُتجاوز لأن الرسالة غير موجودة. */
+    suspend fun deleteUnsent(messageId: String) {
+        val m = db.chat().messageById(messageId) ?: return
+        if (m.state == MessageState.SENT) return
+        if (m.localPath.isNotEmpty()) runCatching { java.io.File(m.localPath).delete() }
+        db.chat().deleteMessage(m.id)
+    }
 }

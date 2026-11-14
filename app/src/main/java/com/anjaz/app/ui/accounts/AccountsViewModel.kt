@@ -29,6 +29,7 @@ data class AccountsUi(
     val errors: Map<String, String> = emptyMap(),
     val busy: Boolean = false,
     val message: String? = null,
+    val isError: Boolean = false,
     val revealedPassword: Pair<String, String>? = null,
 )
 
@@ -59,17 +60,19 @@ class AccountsViewModel @Inject constructor(
         val me = profile.value ?: return
         val cur = ui.value
         val sch = schema.value ?: return
-        val errors = SchemaValidator.validate(sch, cur.values)
+        val errors = SchemaValidator.validate(sch, cur.values).toMutableMap()
+        val user = com.anjaz.app.domain.Username.normalize(cur.values["username"].orEmpty())
+        if ("username" !in errors && !com.anjaz.app.domain.Username.isValid(user)) errors["username"] = "اسم لاتيني (3-32) أو بريد كامل مثل name@domain.com"
         if (errors.isNotEmpty()) { ui.update { it.copy(errors = errors) }; return }
         ui.update { it.copy(busy = true) }
         viewModelScope.launch {
             when (val r = repo.create(me, cur.values, sch)) {
                 is Outcome.Ok -> {
                     val name = cur.values["displayName"].orEmpty()
-                    ui.update { AccountsUi(message = "أُنشئ حساب $name", revealedPassword = cur.values["username"].orEmpty() to cur.values["password"].orEmpty()) }
+                    ui.update { AccountsUi(message = "أُنشئ حساب $name", isError = false, revealedPassword = cur.values["username"].orEmpty() to cur.values["password"].orEmpty()) }
                     scheduler.kick()
                 }
-                is Outcome.Failure -> ui.update { it.copy(busy = false, message = r.reason) }
+                is Outcome.Failure -> ui.update { it.copy(busy = false, message = r.reason, isError = true) }
             }
         }
     }
@@ -77,14 +80,14 @@ class AccountsViewModel @Inject constructor(
     fun reset(u: UserEntity) = viewModelScope.launch {
         when (val r = repo.resetPassword(u.id)) {
             is Outcome.Ok -> ui.update { it.copy(revealedPassword = u.username to r.value) }
-            is Outcome.Failure -> ui.update { it.copy(message = r.reason) }
+            is Outcome.Failure -> ui.update { it.copy(message = r.reason, isError = true) }
         }
     }
 
     fun toggle(u: UserEntity) = viewModelScope.launch {
         when (val r = repo.setActive(u.id, !u.active)) {
             is Outcome.Ok -> scheduler.kick()
-            is Outcome.Failure -> ui.update { it.copy(message = r.reason) }
+            is Outcome.Failure -> ui.update { it.copy(message = r.reason, isError = true) }
         }
     }
 }

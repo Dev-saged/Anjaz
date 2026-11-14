@@ -62,6 +62,8 @@ test('إنشاء الحسابات: النجاح والرفض', async () => {
   assert.equal((await post('rmA', newUser({ role: 'REGION_MANAGER', squareId: null }))).status, 403);
   assert.equal((await post('rmA', newUser({ password: 'short' }))).status, 400);
   assert.equal((await post('rmA', newUser({ username: 'Bad Name' }))).status, 400);
+  assert.equal((await post('rmA', newUser({ username: 'sajed@anjaz' }))).status, 400);
+  assert.equal((await post('rmA', newUser({ username: 'sajed@anjaz.ps' }))).status, 201);
   const ok = await post('rmA', newUser());
   assert.equal(ok.status, 201);
   const { uid } = await ok.json();
@@ -132,6 +134,9 @@ test('الوسائط: النطاق والنوع والحجم وعدم التكر
   assert.equal((await put('staffA1', 'task:t1')).status, 403);
   assert.equal((await put('staffA1', 'room:r1', 'text/html')).status, 415);
   assert.equal((await put('staffA1', 'room:r1', 'image/jpeg', new Uint8Array(6_000_001))).status, 413);
+  assert.equal((await put('staffA1', 'room:r1', 'video/mp4', new Uint8Array(6_500_000), { 'x-idempotency-key': 'video1234567' })).status, 201);
+  w.env.DB.raw.exec("DELETE FROM media_chunks WHERE media_id = 'video1234567'; DELETE FROM media WHERE id = 'video1234567'");
+  assert.equal((await put('staffA1', 'room:r1', 'video/mp4', new Uint8Array(10_000_001))).status, 413);
   const ok = await put('staffA1', 'room:r1', 'image/jpeg', bytes, { 'x-idempotency-key': 'abcdef123456' });
   assert.equal(ok.status, 201);
   const { id } = await ok.json();

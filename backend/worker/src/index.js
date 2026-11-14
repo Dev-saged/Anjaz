@@ -45,7 +45,7 @@ async function audit(fs, actorId, action, targetId, regionId, now) {
 async function createUser(ctx) {
   const b = await body(ctx.request);
   const target = { role: b.role, regionId: b.regionId ?? null, squareId: b.squareId ?? null };
-  if (!validUsername(b.username)) throw new HttpError(400, 'اسم المستخدم: 3-32 حرفاً لاتينياً أو أرقاماً');
+  if (!validUsername(b.username)) throw new HttpError(400, 'اسم المستخدم: 3-32 حرفاً لاتينياً أو أرقاماً، أو بريد كامل مثل name@domain.com');
   if (!validPassword(b.password)) throw new HttpError(400, 'كلمة المرور 8 أحرف على الأقل');
   if (!str(b.displayName, 80)) throw new HttpError(400, 'الاسم مطلوب');
   if (!shapeOk(target) || !canCreateUser(ctx.actor, target)) throw new HttpError(403, 'ليس لديك صلاحية إنشاء هذا الحساب');

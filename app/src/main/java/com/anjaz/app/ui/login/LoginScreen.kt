@@ -49,9 +49,9 @@ fun LoginScreen(vm: LoginViewModel = hiltViewModel()) {
     val c = Anjaz.colors
     Box(Modifier.fillMaxSize().background(c.surface)) {
         AmbientBackground(c.emerald.copy(alpha = .18f), c.navyHigh.copy(alpha = .16f))
-        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
+        Column(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
             Column(
-                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp),
+                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 24.dp, end = 24.dp, bottom = 200.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
             ) {
                 ProgressRing(.78f, Modifier.size(88.dp), stroke = 9.dp, track = c.line, ring = if (c.dark) c.ink else c.navy, square = c.emerald)
@@ -72,8 +72,8 @@ fun LoginScreen(vm: LoginViewModel = hiltViewModel()) {
                     color = c.mute, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 14.dp),
                 )
             }
-            AboutCard(Modifier.padding(horizontal = 24.dp).padding(top = 8.dp, bottom = 14.dp))
         }
+        AboutCard(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 24.dp).padding(bottom = 12.dp))
     }
 }
 

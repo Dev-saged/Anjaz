@@ -52,6 +52,8 @@ import com.anjaz.app.data.db.MessageEntity
 import com.anjaz.app.data.db.MessageState
 import com.anjaz.app.ui.components.AnjazCard
 import com.anjaz.app.ui.components.AnjazIcon
+import com.anjaz.app.ui.components.PrimaryButton
+import com.anjaz.app.ui.components.QuietButton
 import com.anjaz.app.ui.components.ScreenTitle
 import com.anjaz.app.ui.icons.AnjazIcons
 import com.anjaz.app.ui.theme.Anjaz
@@ -63,6 +65,8 @@ fun ChatListScreen(onOpenRoom: (String) -> Unit, vm: ChatListViewModel = hiltVie
     val rooms by vm.rooms.collectAsStateWithLifecycle()
     val contacts by vm.contacts.collectAsStateWithLifecycle()
     var picker by remember { mutableStateOf(false) }
+    var groupMode by remember { mutableStateOf(false) }
+    val canGroup by vm.canCreateGroup.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize().background(c.surface).statusBarsPadding()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -93,9 +97,11 @@ fun ChatListScreen(onOpenRoom: (String) -> Unit, vm: ChatListViewModel = hiltVie
             }
         }
     }
-    if (picker) ModalBottomSheet(onDismissRequest = { picker = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = c.surface) {
+    if (picker && groupMode) GroupSheet(contacts, { groupMode = false; picker = false }) { name, ids -> vm.createGroup(name, ids) }
+    else if (picker) ModalBottomSheet(onDismissRequest = { picker = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = c.surface) {
         Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 20.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             ScreenTitle("محادثة جديدة", Modifier.padding(bottom = 8.dp))
+            if (canGroup) QuietButton("مجموعة جديدة", Modifier.fillMaxWidth()) { groupMode = true }
             if (contacts.isEmpty()) Text("لا توجد جهات اتصال بعد", color = c.mute, style = MaterialTheme.typography.bodyMedium)
             contacts.forEach { u ->
                 Column(
@@ -131,7 +137,7 @@ fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) 
             Text(ui?.title.orEmpty(), color = c.ink, style = MaterialTheme.typography.titleLarge)
         }
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = listState, contentPadding = PaddingValues(14.dp, 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            items(msgs, key = { it.id }) { m -> Bubble(m, mine = m.senderId == ui?.me, vm) }
+            items(msgs, key = { it.id }) { m -> Bubble(m, mine = m.senderId == ui?.me, vm, sender = if (ui?.group == true) ui?.names?.get(m.senderId) else null) }
         }
         Row(
             Modifier.fillMaxWidth().navigationBarsPadding().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
@@ -153,7 +159,7 @@ fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) 
 }
 
 @Composable
-private fun Bubble(m: MessageEntity, mine: Boolean, vm: ChatRoomViewModel) {
+private fun Bubble(m: MessageEntity, mine: Boolean, vm: ChatRoomViewModel, sender: String?) {
     val c = Anjaz.colors
     val shape = RoundedCornerShape(18.dp, 18.dp, if (mine) 4.dp else 18.dp, if (mine) 18.dp else 4.dp)
     Box(Modifier.fillMaxWidth(), contentAlignment = if (mine) Alignment.CenterEnd else Alignment.CenterStart) {
@@ -162,6 +168,7 @@ private fun Bubble(m: MessageEntity, mine: Boolean, vm: ChatRoomViewModel) {
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             val tint = if (mine) c.onNavy else c.ink
+            if (!mine && sender != null) Text(sender, color = c.emerald, style = MaterialTheme.typography.labelMedium)
             if (m.type == "text") Text(m.text, color = tint, style = MaterialTheme.typography.bodyLarge)
             else MediaContent(m, tint, onDownload = { vm.download(m.id) }, onTranscribe = null)
             Row(Modifier.align(Alignment.End), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -184,5 +191,39 @@ private fun Receipt(m: MessageEntity) {
             Box(Modifier.padding(start = 5.dp)) { AnjazIcon(AnjazIcons.Check, tint, 14.dp) }
         }
         else -> AnjazIcon(AnjazIcons.Check, tint, 14.dp, "أُرسلت")
+    }
+}
+
+@Composable
+private fun GroupSheet(contacts: List<com.anjaz.app.data.db.UserEntity>, onDismiss: () -> Unit, onCreate: suspend (String, Set<String>) -> String?) {
+    val c = Anjaz.colors
+    var name by remember { mutableStateOf("") }
+    var picked by remember { mutableStateOf(setOf<String>()) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = c.surface) {
+        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 20.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ScreenTitle("مجموعة جديدة", Modifier.padding(bottom = 4.dp))
+            OutlinedTextField(
+                value = name, onValueChange = { if (it.length <= 80) name = it }, placeholder = { Text("اسم المجموعة") }, singleLine = true,
+                shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = c.emerald, unfocusedBorderColor = c.line, focusedContainerColor = c.card, unfocusedContainerColor = c.card, cursorColor = c.emerald),
+            )
+            LazyColumn(Modifier.heightIn(max = 320.dp)) {
+                items(contacts, key = { it.id }) { u ->
+                    val on = u.id in picked
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(14.dp)).clickable { picked = if (on) picked - u.id else picked + u.id }.padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Box(Modifier.size(24.dp).clip(CircleShape).background(if (on) c.emerald else c.line), contentAlignment = Alignment.Center) { if (on) AnjazIcon(AnjazIcons.Check, c.onEmerald, 16.dp) }
+                        Text(u.displayName, color = c.ink, style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+            }
+            error?.let { Text(it, color = c.red, style = MaterialTheme.typography.bodySmall) }
+            PrimaryButton(if (busy) "جارٍ الإنشاء" else "إنشاء", { scope.launch { busy = true; error = onCreate(name, picked); busy = false; if (error == null) onDismiss() } }, Modifier.fillMaxWidth(), enabled = !busy)
+        }
     }
 }

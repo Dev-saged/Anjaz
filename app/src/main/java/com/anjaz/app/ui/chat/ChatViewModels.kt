@@ -32,8 +32,11 @@ class ChatListViewModel @Inject constructor(
     private val repo: ChatRepository,
     auth: AuthRepository,
     private val scheduler: SyncScheduler,
+    private val api: com.anjaz.app.sync.ApiClient,
 ) : ViewModel() {
     private val profile: StateFlow<Profile?> = auth.session.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val canCreateGroup: StateFlow<Boolean> = profile.map { it != null && it.role != com.anjaz.app.domain.Role.FIELD_STAFF.name }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
     private val contactsFlow = profile.filterNotNull().flatMapLatest { repo.contacts(it.uid) }
 
     val contacts: StateFlow<List<UserEntity>> = contactsFlow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -42,6 +45,21 @@ class ChatListViewModel @Inject constructor(
         val names = contacts.associate { it.id to it.displayName }
         rooms.map { r -> RoomRow(r.id, roomTitle(r, me?.uid, names), r.lastMessage, r.lastAt) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** المجموعات تُنشأ عبر الـ Worker (يتحقق من النطاق والصلاحية)، وتصل للجهاز عبر مزامنة الغرف. يعيد رسالة خطأ أو null. */
+    suspend fun createGroup(name: String, members: Set<String>): String? {
+        val me = profile.value ?: return "غير مسجل"
+        val clean = com.anjaz.app.schema.SchemaValidator.sanitize(name).take(80)
+        if (clean.isEmpty()) return "اسم المجموعة مطلوب"
+        if (members.isEmpty()) return "اختر عضواً واحداً على الأقل"
+        val body = kotlinx.serialization.json.buildJsonObject {
+            put("name", kotlinx.serialization.json.JsonPrimitive(clean))
+            put("members", kotlinx.serialization.json.JsonArray((members + me.uid).map { kotlinx.serialization.json.JsonPrimitive(it) }))
+        }.toString()
+        val r = runCatching { api.post("/v1/rooms/group", body) }.getOrNull() ?: return "يلزم اتصال بالإنترنت لإنشاء مجموعة"
+        scheduler.kick()
+        return if (r.first in 200..299) null else runCatching { org.json.JSONObject(r.second).optString("error") }.getOrNull()?.ifEmpty { null } ?: "تعذّر إنشاء المجموعة"
+    }
 
     suspend fun open(other: UserEntity): String? {
         val me = profile.value ?: return null
@@ -55,7 +73,7 @@ fun roomTitle(r: RoomEntity, me: String?, names: Map<String, String>): String {
     return other?.let { names[it] } ?: r.name.ifEmpty { "محادثة" }
 }
 
-data class RoomUi(val title: String, val messages: List<MessageEntity>, val me: String)
+data class RoomUi(val title: String, val messages: List<MessageEntity>, val me: String, val group: Boolean = false, val names: Map<String, String> = emptyMap())
 
 @HiltViewModel
 class ChatRoomViewModel @Inject constructor(
@@ -72,8 +90,9 @@ class ChatRoomViewModel @Inject constructor(
 
     val ui: StateFlow<RoomUi?> = combine(repo.messages(roomId), repo.rooms(), profile.filterNotNull().flatMapLatest { p -> repo.contacts(p.uid).map { p to it } }) { msgs, rooms, (me, contacts) ->
         val room = rooms.firstOrNull { it.id == roomId }
-        val title = room?.let { roomTitle(it, me.uid, contacts.associate { c -> c.id to c.displayName }) } ?: "محادثة"
-        RoomUi(title, msgs, me.uid)
+        val names = contacts.associate { c -> c.id to c.displayName }
+        val title = room?.let { roomTitle(it, me.uid, names) } ?: "محادثة"
+        RoomUi(title, msgs, me.uid, room?.type == "group", names)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     init {

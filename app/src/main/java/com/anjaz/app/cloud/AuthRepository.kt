@@ -37,12 +37,12 @@ class AuthRepository @Inject constructor(
     }
 
     suspend fun signIn(username: String, password: String): Outcome<Profile> {
-        val user = username.trim().lowercase()
+        val user = com.anjaz.app.domain.Username.normalize(username)
         if (user.isEmpty() || password.isEmpty()) return Outcome.Failure("أدخل اسم المستخدم وكلمة المرور")
         if (!cloud.available) return Outcome.Failure("لم يُربط الخادم بعد")
         return try {
             val auth = FirebaseAuth.getInstance()
-            val result = auth.signInWithEmailAndPassword("$user@${BrandConfig.EMAIL_DOMAIN}", password).await()
+            val result = auth.signInWithEmailAndPassword(com.anjaz.app.domain.Username.emailFor(user, BrandConfig.EMAIL_DOMAIN), password).await()
             val uid = result.user?.uid ?: return Outcome.Failure("تعذّر تسجيل الدخول")
             val doc = FirebaseFirestore.getInstance().collection("users").document(uid).get().await()
             if (!doc.exists() || doc.getBoolean("active") != true) {

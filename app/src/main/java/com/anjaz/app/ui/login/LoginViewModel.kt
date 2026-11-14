@@ -50,7 +50,7 @@ class LoginViewModel @Inject constructor(private val auth: AuthRepository) : Vie
     private val _ui = MutableStateFlow(LoginUiState())
     val ui: StateFlow<LoginUiState> = _ui
 
-    fun username(v: String) = _ui.update { it.copy(username = v.take(32), error = null) }
+    fun username(v: String) = _ui.update { it.copy(username = v.take(80), error = null) }
     fun password(v: String) = _ui.update { it.copy(password = v.take(128), error = null) }
 
     fun submit() {

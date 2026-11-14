@@ -48,6 +48,8 @@ import com.anjaz.app.ui.components.Tag
 import com.anjaz.app.ui.components.Tone
 import com.anjaz.app.ui.icons.AnjazIcons
 import com.anjaz.app.ui.theme.Anjaz
+import androidx.compose.foundation.layout.height
+import com.anjaz.app.ui.components.Notice
 import com.anjaz.app.ui.theme.ltr
 
 @Composable
@@ -66,9 +68,7 @@ fun AccountsScreen(onBack: () -> Unit, vm: AccountsViewModel = hiltViewModel()) 
                 AnjazIcon(AnjazIcons.Plus, c.onEmerald)
             }
         }
-        ui.message?.let {
-            Text(it, color = c.ink, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.fillMaxWidth().clickable(onClick = vm::dismissMessage).background(c.card).padding(14.dp))
-        }
+        if (!ui.formOpen) Notice(ui.message, ui.isError, vm::dismissMessage, Modifier.padding(horizontal = 18.dp, vertical = 4.dp))
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(18.dp, 8.dp, 18.dp, 40.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (users.isEmpty()) item { Text("لا توجد حسابات ضمن نطاقك بعد", color = c.mute, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 32.dp)) }
             items(users, key = { it.id }) { u ->
@@ -93,9 +93,19 @@ fun AccountsScreen(onBack: () -> Unit, vm: AccountsViewModel = hiltViewModel()) 
     val s = schema
     if (ui.formOpen && s != null) ModalBottomSheet(onDismissRequest = vm::closeForm, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = c.surface) {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 20.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            ScreenTitle(s.title)
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(48.dp).clip(CircleShape).background(c.navy), contentAlignment = Alignment.Center) { AnjazIcon(AnjazIcons.User, c.onNavy) }
+                Column {
+                    ScreenTitle(s.title)
+                    Text("بيانات الدخول تُعرض مرة واحدة بعد الإنشاء", color = c.mute, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            Notice(ui.message, ui.isError, vm::dismissMessage)
             SchemaForm(s, ui.values, ui.errors, vm::change)
-            QuietButton("توليد كلمة مرور", onClick = vm::generatePassword)
+            val user = ui.values["username"].orEmpty().trim().lowercase()
+            if (user.isNotEmpty()) Text("يدخل بـ: " + ltr(user) + if ('@' in user) "" else "  (يُضاف نطاق النظام تلقائياً)", color = c.mute, style = MaterialTheme.typography.bodySmall)
+            PasswordMeter(ui.values["password"].orEmpty())
+            QuietButton("توليد كلمة مرور قوية", onClick = vm::generatePassword)
             PrimaryButton(if (ui.busy) "جارٍ الإنشاء" else "إنشاء الحساب", onClick = vm::submit, enabled = !ui.busy)
         }
     }
@@ -106,5 +116,17 @@ fun AccountsScreen(onBack: () -> Unit, vm: AccountsViewModel = hiltViewModel()) 
             title = { Text("بيانات الدخول") },
             text = { Text("المستخدم: ${ltr(user)}\nكلمة المرور: ${ltr(pass)}\nسلّمها لصاحب الحساب؛ لن تظهر مرة أخرى.") },
         )
+    }
+}
+
+@Composable
+private fun PasswordMeter(p: String) {
+    val c = Anjaz.colors
+    val score = listOf(p.length >= 8, p.length >= 12, p.any { it.isDigit() } && p.any { it.isLetter() }, p.any { !it.isLetterOrDigit() } || p.any { it.isUpperCase() }).count { it }
+    if (p.isEmpty()) return
+    val color = when (score) { 0, 1 -> c.red; 2 -> c.amber; else -> c.emerald }
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+        repeat(4) { Box(Modifier.weight(1f).height(5.dp).clip(CircleShape).background(if (it < score) color else c.line)) }
+        Text(when (score) { 0, 1 -> "ضعيفة"; 2 -> "متوسطة"; 3 -> "جيدة"; else -> "قوية" }, color = color, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(start = 8.dp))
     }
 }

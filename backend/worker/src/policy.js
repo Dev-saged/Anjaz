@@ -1,8 +1,10 @@
 export const RANK = { CENTRAL: 5, REGION_MANAGER: 4, REGION_ADMIN: 3, SQUARE_MANAGER: 2, FIELD_STAFF: 1 };
 export const ROLES = Object.keys(RANK);
 const USERNAME = /^[a-z0-9._-]{3,32}$/;
+const EMAIL = /^[a-z0-9._+-]{1,64}@[a-z0-9-]+(\.[a-z0-9-]+)+$/;
 
-export function validUsername(u) { return typeof u === 'string' && USERNAME.test(u); }
+// اسم بسيط (يُلحق به نطاق النظام) أو بريد كامل مثل sajed@anjaz.ps
+export function validUsername(u) { return typeof u === 'string' && (USERNAME.test(u) || (u.length <= 80 && EMAIL.test(u))); }
 export function validPassword(p) { return typeof p === 'string' && p.length >= 8 && p.length <= 128; }
 
 export function isActive(p) { return !!p && p.active === true && p.role in RANK; }

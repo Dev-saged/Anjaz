@@ -31,6 +31,7 @@ import kotlinx.coroutines.withContext
 fun previewOf(m: MessageEntity): String = when (m.type) {
     "image" -> "صورة"
     "voice" -> "رسالة صوتية"
+    "video" -> "فيديو"
     "file" -> "ملف: " + m.mediaName.take(60)
     "location" -> "موقع"
     else -> m.text.take(200)
@@ -39,6 +40,7 @@ fun previewOf(m: MessageEntity): String = when (m.type) {
 fun extensionFor(mime: String, name: String): String = when {
     mime == "image/jpeg" -> "jpg"
     mime == "audio/mp4" -> "m4a"
+    mime == "video/mp4" -> "mp4"
     name.contains('.') -> name.substringAfterLast('.').take(8).filter { it.isLetterOrDigit() }.ifEmpty { "bin" }
     else -> "bin"
 }
@@ -80,6 +82,13 @@ class MediaRepository @Inject constructor(
             insert(me, roomId, base(roomId, me, "image").copy(mediaId = id, mediaMime = "image/jpeg", mediaName = "$id.jpg", mediaSize = f.length(), width = c.width, height = c.height, localPath = f.path, mediaState = MediaState.LOCAL))
         }.getOrElse { Outcome.Failure(it.message ?: "تعذّر معالجة الصورة") }
     }
+
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    suspend fun sendVideo(roomId: String, me: Profile, uri: Uri): Outcome<String> = runCatching {
+        val id = UUID.randomUUID().toString()
+        val c = VideoCompressor.compress(ctx, uri, File(roomDir(roomId), "$id.mp4"))
+        insert(me, roomId, base(roomId, me, "video").copy(mediaId = id, mediaMime = "video/mp4", mediaName = "$id.mp4", mediaSize = c.file.length(), durMs = c.durMs, width = c.width, height = c.height, localPath = c.file.path, mediaState = MediaState.LOCAL))
+    }.getOrElse { Outcome.Failure(it.message ?: "تعذّر معالجة الفيديو") }
 
     suspend fun sendFile(roomId: String, me: Profile, uri: Uri): Outcome<String> = withContext(Dispatchers.IO) {
         runCatching {
@@ -138,7 +147,7 @@ class MediaRepository @Inject constructor(
 
     /** صور وصوت بحجم صغير تُنزَّل تلقائيًا عند فتح المحادثة؛ الملفات الكبيرة بالضغط. */
     suspend fun autoDownload(roomId: String, me: String) {
-        db.chat().pendingDownloads(roomId, me).filter { it.type == "image" || it.type == "voice" || it.mediaSize <= 1_000_000 }.forEach { fetch(it.id) }
+        db.chat().pendingDownloads(roomId, me).filter { it.type == "image" || it.type == "voice" || (it.type != "video" && it.mediaSize <= 1_000_000) }.forEach { fetch(it.id) }
     }
 
     suspend fun saveTranscript(id: String, text: String) = db.chat().setTranscript(id, text.take(2000))

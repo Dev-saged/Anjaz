@@ -2,12 +2,13 @@ import { HttpError } from './auth.js';
 
 // جسر مؤقت: المرسل يرفع، والأعضاء ينزّلون ويؤكدون، وبعد تأكيد الجميع بساعة تُحذف النسخة من القاعدة
 export const MEDIA_MAX = 6_000_000;
+export const VIDEO_MAX = 10_000_000;
 const CHUNK = 800_000;
 export const HOLD_AFTER_ACKS_MS = 3_600_000;
 export const MAX_AGE_MS = 14 * 86_400_000;
 const TYPES = new Set([
   'image/jpeg', 'image/png', 'image/webp',
-  'audio/mp4', 'audio/aac', 'audio/ogg', 'audio/webm', 'audio/mpeg',
+  'video/mp4', 'audio/mp4', 'audio/aac', 'audio/ogg', 'audio/webm', 'audio/mpeg',
   'application/pdf', 'application/zip', 'application/octet-stream', 'text/plain',
   'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -28,7 +29,7 @@ export async function putMedia(ctx, limited) {
   await roomOf(ctx, scope);
   if (limited(ctx.uid, 'media', 30, ctx.now)) throw new HttpError(429, 'محاولات كثيرة');
   const buf = new Uint8Array(await ctx.request.arrayBuffer());
-  if (buf.length === 0 || buf.length > MEDIA_MAX) throw new HttpError(413, 'حجم الملف غير مقبول');
+  if (buf.length === 0 || buf.length > (mime === 'video/mp4' ? VIDEO_MAX : MEDIA_MAX)) throw new HttpError(413, 'حجم الملف غير مقبول');
   const id = ctx.request.headers.get('x-idempotency-key') || crypto.randomUUID();
   if (!/^[A-Za-z0-9-]{8,64}$/.test(id)) throw new HttpError(400, 'مفتاح غير صالح');
   const exists = await ctx.env.DB.prepare('SELECT owner FROM media WHERE id = ?').bind(id).first();

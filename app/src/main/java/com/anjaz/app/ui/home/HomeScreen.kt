@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.anjaz.app.ui.home
 
 import androidx.compose.foundation.background
@@ -5,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -21,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,6 +54,13 @@ import com.anjaz.app.ui.theme.ltr
 fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSos: () -> Unit, canAssign: Boolean, vm: HomeViewModel = hiltViewModel()) {
     val s by vm.state.collectAsStateWithLifecycle()
     val c = Anjaz.colors
+    var bell by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val alerts = buildList {
+        if (s.openSos > 0) add(Triple("بلاغات طوارئ مفتوحة", s.openSos, onOpenSos))
+        if (s.counts.overdue > 0) add(Triple("مهام متأخرة", s.counts.overdue, { onOpenTask(TaskEntity("", null, "", "", "", null, null, null, "NORMAL", "NEW", null, 0, 0, false)) }))
+        if (s.counts.awaiting > 0) add(Triple("بانتظار الاعتماد", s.counts.awaiting, { onOpenTask(TaskEntity("", null, "", "", "", null, null, null, "NORMAL", "NEW", null, 0, 0, false)) }))
+        if (s.unsynced > 0) add(Triple("عمليات بانتظار المزامنة", s.unsynced, {}))
+    }
     Box(Modifier.fillMaxSize().background(c.surface)) {
         AmbientBackground(c.emerald.copy(alpha = .16f), c.navyHigh.copy(alpha = .14f))
         LazyColumn(
@@ -57,7 +68,7 @@ fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSo
             contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            item { Stagger(0) { Header(s.unsynced) } }
+            item { Stagger(0) { Header(alerts.sumOf { it.second }, onBell = { bell = true }) } }
             if (s.openSos > 0) item { SosBanner(s.openSos, onOpenSos) }
             item { Stagger(1) { Hero(s.counts.done, s.counts.total, s.counts.progress) } }
             item {
@@ -80,17 +91,18 @@ fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSo
             }
         }
     }
+    if (bell) BellSheet(alerts) { bell = false }
 }
 
 @Composable
-private fun Header(unsynced: Int) {
+private fun Header(unsynced: Int, onBell: () -> Unit) {
     val c = Anjaz.colors
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Column {
             Text("مرحباً بك", color = c.mute, style = MaterialTheme.typography.bodySmall)
             Text(BrandConfig.NAME, color = if (c.dark) c.ink else c.navy, fontFamily = Display, style = MaterialTheme.typography.headlineMedium)
         }
-        Box(Modifier.size(44.dp).clip(CircleShape).background(c.card), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(48.dp).clip(CircleShape).background(c.card).clickable(onClick = onBell), contentAlignment = Alignment.Center) {
             AnjazIcon(AnjazIcons.Bell, c.ink, description = "الإشعارات")
             if (unsynced > 0) Box(Modifier.align(Alignment.TopEnd).padding(10.dp).size(9.dp).clip(CircleShape).background(c.amber))
         }
@@ -149,4 +161,23 @@ private fun SosBanner(open: Int, onClick: () -> Unit) {
 @Composable
 private fun Skeleton() {
     Box(Modifier.fillMaxWidth().height(72.dp).clip(RoundedCornerShape(18.dp)).background(Anjaz.colors.line.copy(.6f)))
+}
+
+@Composable
+private fun BellSheet(alerts: List<Triple<String, Int, () -> Unit>>, onDismiss: () -> Unit) {
+    val c = Anjaz.colors
+    androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDismiss, containerColor = c.surface) {
+        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("الإشعارات", color = c.ink, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 6.dp))
+            if (alerts.isEmpty()) Text("لا توجد تنبيهات. كل شيء على ما يرام.", color = c.mute, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 16.dp))
+            alerts.forEach { (label, n, go) ->
+                AnjazCard(Modifier.fillMaxWidth(), onClick = { onDismiss(); go() }) {
+                    Row(Modifier.heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(label, color = c.ink, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                        Text(ltr(n.toString()), color = c.redDeep, style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+            }
+        }
+    }
 }

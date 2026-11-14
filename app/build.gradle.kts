@@ -1,3 +1,5 @@
+import java.net.URI
+import java.security.MessageDigest
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -27,6 +29,7 @@ android {
         buildConfigField("String", "VERSION_NAME", "\"$versionNameProp\"")
         buildConfigField("int", "VERSION_CODE", "$fullVersionCode")
         buildConfigField("int", "BUILD_NUMBER", "$buildNumber")
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
     signingConfigs {
@@ -83,7 +86,27 @@ if (file("google-services.json").exists()) {
     pluginManager.apply("com.google.gms.google-services")
 }
 
+// مكتبة التعرف على الكلام (Whisper محلياً): تُنزَّل مرة واحدة وتُتحقق ببصمتها، ولا تُحفظ في Git
+val sherpaVersion = "1.12.14"
+val sherpaSha256 = "d70ebdd8ec18c3bd106c2e95241b19742dfc704c8d026993b6fe9e4aea807ef3"
+val sherpaAar = layout.projectDirectory.file("libs/sherpa-onnx-$sherpaVersion.aar").asFile
+val fetchSherpa by tasks.registering {
+    outputs.file(sherpaAar)
+    doLast {
+        fun sha(f: File) = MessageDigest.getInstance("SHA-256").digest(f.readBytes()).joinToString("") { "%02x".format(it) }
+        if (!sherpaAar.exists() || sha(sherpaAar) != sherpaSha256) {
+            sherpaAar.parentFile.mkdirs()
+            URI("https://huggingface.co/csukuangfj/sherpa-onnx-libs/resolve/main/android/aar/sherpa-onnx-$sherpaVersion.aar").toURL().openStream().use { i -> sherpaAar.outputStream().use { i.copyTo(it) } }
+            check(sha(sherpaAar) == sherpaSha256) { "بصمة مكتبة sherpa-onnx غير مطابقة" }
+        }
+    }
+}
+
 dependencies {
+    implementation(files(sherpaAar).builtBy(fetchSherpa))
+    implementation("androidx.media3:media3-transformer:1.5.1")
+    implementation("androidx.media3:media3-effect:1.5.1")
+    implementation("androidx.media3:media3-common:1.5.1")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

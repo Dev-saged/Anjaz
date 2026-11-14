@@ -23,7 +23,7 @@ export class Identity {
     return j;
   }
 
-  email(username) { return `${username}@${this.env.EMAIL_DOMAIN || 'users.anjaz.local'}`; }
+  email(username) { return username.includes('@') ? username : `${username}@${this.env.EMAIL_DOMAIN || 'users.anjaz.local'}`; }
 
   async createUser(username, password, displayName) {
     const r = await this.call('/accounts', { email: this.email(username), password, displayName, emailVerified: true });

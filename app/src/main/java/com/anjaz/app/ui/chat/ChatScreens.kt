@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -60,6 +61,7 @@ import com.anjaz.app.ui.components.QuietButton
 import com.anjaz.app.ui.components.ScreenTitle
 import com.anjaz.app.ui.icons.AnjazIcons
 import com.anjaz.app.ui.theme.Anjaz
+import com.anjaz.app.ui.theme.ltr
 import kotlinx.coroutines.launch
 
 @Composable
@@ -129,9 +131,12 @@ fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) 
     var attach by remember { mutableStateOf(false) }
     val rs = remember { RecorderState() }
     val ctx = androidx.compose.ui.platform.LocalContext.current
-    val dictate = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { r ->
-        r.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.let { text = (text + " " + it).trim().take(4000) }
-    }
+    val stt: com.anjaz.app.stt.SttViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+    val sttBusy by stt.busy.collectAsStateWithLifecycle()
+    val sttError by stt.error.collectAsStateWithLifecycle()
+    val pcm = remember { com.anjaz.app.stt.PcmRecorder() }
+    var dictating by remember { mutableStateOf(false) }
+    val micPerm = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { }
     val listState = rememberLazyListState()
     val msgs = ui?.messages.orEmpty()
     LaunchedEffect(msgs.size) {
@@ -145,7 +150,7 @@ fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) 
             Text(ui?.title.orEmpty(), color = c.ink, style = MaterialTheme.typography.titleLarge)
         }
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = listState, contentPadding = PaddingValues(14.dp, 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            items(msgs, key = { it.id }) { m -> Bubble(m, mine = m.senderId == ui?.me, vm, sender = if (ui?.group == true) ui?.names?.get(m.senderId) else null) }
+            items(msgs, key = { it.id }) { m -> Bubble(m, mine = m.senderId == ui?.me, vm, stt, sttBusy, sender = if (ui?.group == true) ui?.names?.get(m.senderId) else null) }
         }
         Row(
             Modifier.fillMaxWidth().navigationBarsPadding().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
@@ -154,13 +159,14 @@ fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) 
             if (!rs.recording) OutlinedTextField(
                 value = text, onValueChange = { if (it.length <= 4000) text = it }, placeholder = { Text("اكتب رسالة") },
                 trailingIcon = {
-                    Box(Modifier.size(44.dp).clip(CircleShape).clickable {
-                        val i = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-                            .putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                            .putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, "ar")
-                            .putExtra(android.speech.RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
-                        runCatching { dictate.launch(i) }.onFailure { android.widget.Toast.makeText(ctx, "الإملاء الصوتي غير متاح على هذا الجهاز", android.widget.Toast.LENGTH_SHORT).show() }
-                    }.semantics { contentDescription = "إملاء صوتي" }, contentAlignment = Alignment.Center) { AnjazIcon(AnjazIcons.Mic, c.mute, 20.dp) }
+                    Box(Modifier.size(44.dp).clip(CircleShape).background(if (dictating) c.red else androidx.compose.ui.graphics.Color.Transparent).clickable(enabled = sttBusy == null) {
+                        if (dictating) { dictating = false; stt.transcribePcm(pcm.stop()) { text = (text + " " + it).trim().take(4000) } }
+                        else if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) micPerm.launch(android.Manifest.permission.RECORD_AUDIO)
+                        else dictating = pcm.start()
+                    }.semantics { contentDescription = if (dictating) "إيقاف الإملاء" else "إملاء صوتي" }, contentAlignment = Alignment.Center) {
+                        if (sttBusy != null) androidx.compose.material3.CircularProgressIndicator(Modifier.size(18.dp), color = c.emerald, strokeWidth = 2.dp)
+                        else AnjazIcon(AnjazIcons.Mic, if (dictating) c.onNavy else c.mute, 20.dp)
+                    }
                 },
                 maxLines = 4, shape = RoundedCornerShape(22.dp), modifier = Modifier.weight(1f),
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = c.emerald, unfocusedBorderColor = c.line, focusedContainerColor = c.card, unfocusedContainerColor = c.card, cursorColor = c.emerald),
@@ -172,11 +178,20 @@ fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) 
             ) { AnjazIcon(AnjazIcons.Send, c.onEmerald) }
         }
     }
-    if (attach) AttachSheet({ attach = false }, vm::sendImage, vm::sendFile, vm::sendLocation)
+    val processing by vm.processing.collectAsStateWithLifecycle()
+    if (processing) Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .35f)), contentAlignment = Alignment.Center) {
+        Column(Modifier.clip(RoundedCornerShape(20.dp)).background(c.card).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            androidx.compose.material3.CircularProgressIndicator(color = c.emerald)
+            Text("جارٍ ضغط الفيديو…", color = c.ink, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+    com.anjaz.app.ui.components.Notice(sttError, true, stt::clearError, Modifier.padding(12.dp).statusBarsPadding())
+    ModelSheet(stt)
+    if (attach) AttachSheet({ attach = false }, vm::sendImage, vm::sendVideo, vm::sendFile, vm::sendLocation)
 }
 
 @Composable
-private fun Bubble(m: MessageEntity, mine: Boolean, vm: ChatRoomViewModel, sender: String?) {
+private fun Bubble(m: MessageEntity, mine: Boolean, vm: ChatRoomViewModel, stt: com.anjaz.app.stt.SttViewModel, sttBusy: String?, sender: String?) {
     val c = Anjaz.colors
     val shape = RoundedCornerShape(18.dp, 18.dp, if (mine) 4.dp else 18.dp, if (mine) 18.dp else 4.dp)
     var menu by remember { mutableStateOf(false) }
@@ -200,7 +215,7 @@ private fun Bubble(m: MessageEntity, mine: Boolean, vm: ChatRoomViewModel, sende
             val tint = if (mine) c.onNavy else c.ink
             if (!mine && sender != null) Text(sender, color = c.emerald, style = MaterialTheme.typography.labelMedium)
             if (m.type == "text") Text(m.text, color = tint, style = MaterialTheme.typography.bodyLarge)
-            else MediaContent(m, tint, onDownload = { vm.download(m.id) }, onTranscribe = null)
+            else MediaContent(m, tint, onDownload = { vm.download(m.id) }, onTranscribe = { stt.transcribeFile(m.id, m.localPath) { vm.setTranscript(m.id, it) } }, transcribing = sttBusy == m.id)
             Row(Modifier.align(Alignment.End), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(DayMath.time(m.createdAt), color = if (mine) c.onNavy.copy(.7f) else c.mute, style = MaterialTheme.typography.labelSmall)
                 if (mine) Receipt(m)
@@ -258,6 +273,31 @@ private fun GroupSheet(contacts: List<com.anjaz.app.data.db.UserEntity>, onDismi
             }
             error?.let { Text(it, color = c.red, style = MaterialTheme.typography.bodySmall) }
             PrimaryButton(if (busy) "جارٍ الإنشاء" else "إنشاء", { scope.launch { busy = true; error = onCreate(name, picked); busy = false; if (error == null) onDismiss() } }, Modifier.fillMaxWidth(), enabled = !busy)
+        }
+    }
+}
+
+@Composable
+private fun ModelSheet(stt: com.anjaz.app.stt.SttViewModel) {
+    val c = Anjaz.colors
+    val need by stt.needModel.collectAsStateWithLifecycle()
+    val st by stt.state.collectAsStateWithLifecycle()
+    if (!need) return
+    ModalBottomSheet(onDismissRequest = stt::dismissModel, containerColor = c.surface) {
+        Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("نموذج التعرف على الكلام", color = c.ink, style = MaterialTheme.typography.titleLarge)
+            Text("يُنزَّل مرة واحدة فقط (حوالي 160 ميغابايت، يُفضَّل واي فاي). بعدها يعمل التحويل على جهازك بلا إنترنت، ولا يُرسل صوتك لأي جهة.", color = c.mute, style = MaterialTheme.typography.bodyMedium)
+            when (val s = st) {
+                is com.anjaz.app.stt.ModelState.Downloading -> {
+                    androidx.compose.material3.LinearProgressIndicator(progress = { s.percent / 100f }, Modifier.fillMaxWidth().height(8.dp).clip(CircleShape), color = c.emerald, trackColor = c.line)
+                    Text(ltr("${s.percent}") + "٪", color = c.mute, style = MaterialTheme.typography.labelLarge)
+                }
+                is com.anjaz.app.stt.ModelState.Failed -> {
+                    Text(s.reason, color = c.redDeep, style = MaterialTheme.typography.bodySmall)
+                    PrimaryButton("إعادة المحاولة", stt::downloadModel, Modifier.fillMaxWidth())
+                }
+                else -> PrimaryButton("تنزيل النموذج", stt::downloadModel, Modifier.fillMaxWidth())
+            }
         }
     }
 }

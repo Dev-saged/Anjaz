@@ -1,9 +1,12 @@
 # session-handoff — Anjaz
 (يُعاد كتابته في نهاية كل جلسة، 25 سطراً كحد أقصى)
 
-- الحالة (v0.2.0): كل ما يلي مبني ويجتاز `./gradlew testDebugUnitTest assembleDebug` (50+ اختباراً) وCI أخضر: دخول، مزامنة Firestore، مهام، استغاثة، محادثة فردية، دليل (منطقة/مربع/مخيم)، حسابات، إشعارات FCM، تقارير PDF/Excel، نسخ JSON، سجل عمليات. الفروع foundation ← backend ← cloud مرتبة فوق بعضها.
-- لم يُختبر على مشروع Firebase/Cloudflare حقيقي ولا على جهاز: الإعداد في backend/README.md (google-services.json، نشر Worker، أول مستخدم CENTRAL، WORKER_URL في BrandConfig).
-- القرارات: Firebase Spark + Worker/D1 مجاناً؛ minSdk 24؛ APK مباشر؛ بلا E2EE؛ المدير ينشئ الحسابات؛ الهوية C + رئيسية A معتمدة (لا يُعاد بناء الهيكل).
-- غير منفّذ بعد: محادثات جماعية وصور/ملفات/موقع/صوت (تحتاج وسائط عبر Worker D1)، صوت إلى نص محلي، اجتماعات WebRTC، لوحات حسب الدور، واجهة التصعيد، نسخ Worker اليومي في الواجهة، سحب سجل أحداث المهمة.
-- ثغرات معروفة: الرسائل خارج النسخ الاحتياطي للـ Worker؛ الأدوار مفروضة في الواجهة جزئياً (canAssign) والقواعد هي الحاجز الحقيقي؛ PDF لم يُرسم على جهاز (التخطيط مختبر فقط).
-- الخطوة التالية: ساجد ينفّذ إعداد Firebase/Worker ويجرّب APK؛ ثم الوسائط في المحادثة (Worker /v1/media موجود) فالمجموعات.
+- الحالة (v0.3.0): كل الميزات السابقة + نظام التحديث الذاتي (update/) + README جديد بوسائط docs/media. يجتاز `./gradlew testDebugUnitTest assembleDebug` (53 اختباراً). الفرع feature/updates.
+- Firebase وWorker منشوران ومجرّبان (إنشاء حساب). لم يُجرَّب التطبيق ولا تدفق التحديث على جهاز حقيقي.
+- التحديث: UpdateChecker يقرأ GitHub Releases (version.json ← redirect ← API)؛ UpdateManager ينزّل بـ Range داخل AppFolder.updates ثم يثبّت بـ PackageInstaller؛ الحذف عبر PackageReplacedReceiver وrestore().
+- CI: build.yml يمرّر BUILD_NUMBER وينشر Release + version.json على main فقط عند وجود KEYSTORE_BASE64. الأسرار الأربعة غير مضافة بعد، فلا Release ولا تحديث ظاهر حتى يضيفها ساجد (Settings ← Secrets).
+- التوقيع: أي APK بمفتاح مختلف عن المثبّت لا يُرقّى؛ أول تثبيت بالمفتاح الثابت يحتاج حذف النسخة القديمة.
+- قرارات: versionCode=VERSION_CODE*10000+BUILD_NUMBER؛ مجلد التطبيق الخاص (Android/data) لا التخزين العام؛ ملاحظات الإصدار من docs/releases.
+- غير منفّذ: وسائط المحادثة والمجموعات، صوت→نص، اجتماعات WebRTC، لوحات حسب الدور، واجهة التصعيد، نسخ Worker للرسائل.
+- أمان: ساجد يدوّر رمز Cloudflare ومفتاح حساب الخدمة (نُشرا في المحادثة) ويغيّر كلمة مرور المدير.
+- الخطوة التالية: إضافة أسرار التوقيع ← دمج feature/updates إلى main ← تجربة APK على جهاز ← الوسائط في المحادثة.

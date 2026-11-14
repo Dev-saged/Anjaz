@@ -1,7 +1,7 @@
 # يبني APK على كل push (بعد ما يوصل مشروع Gradle حقيقي عبر unpack-zip.yml أو push مباشر).
 # التوقيع: أسرار KEYSTORE_BASE64 / SIGNING_STORE_PASSWORD / SIGNING_KEY_ALIAS / SIGNING_KEY_PASSWORD
 # أو secrets/signing/keystore.properties في المستودع الخاص. بدون توقيع: APK بمفتاح مؤقت، بدون Release.
-# كل push على main بتوقيع صحيح ينشر Release vX.Y.Z-bN من VERSION_NAME في gradle.properties.
+# كل push على main بتوقيع صحيح ينشر Release vX.Y.Z-bN مع APK وversion.json يقرؤهما التطبيق للتحديث الذاتي.
 
 name: Build APK
 
@@ -26,6 +26,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Check project is present
         id: check
@@ -62,19 +64,24 @@ jobs:
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
           chmod +x ./gradlew
-          ./gradlew --no-daemon --stacktrace assembleRelease
+          ./gradlew --no-daemon --stacktrace -PBUILD_NUMBER=$GITHUB_RUN_NUMBER assembleRelease
 
       - name: Collect APK
         if: steps.check.outputs.ready == 'true'
         run: |
           NAME=$(basename "$GITHUB_REPOSITORY")
-          VERSION=$(grep '^VERSION_NAME=' gradle.properties 2>/dev/null | cut -d= -f2)
-          VERSION=${VERSION:-0.0.0}
+          VERSION=$(grep '^VERSION_NAME=' gradle.properties | cut -d= -f2)
+          BASE=$(grep '^VERSION_CODE=' gradle.properties | cut -d= -f2)
+          CODE=$((BASE * 10000 + GITHUB_RUN_NUMBER))
           mkdir -p dist
-          cp app/build/outputs/apk/release/*.apk "dist/${NAME}-v${VERSION}-build${GITHUB_RUN_NUMBER}.apk"
-          cp app/build/outputs/apk/release/*.apk "dist/${NAME}-latest.apk"
+          APK="${NAME}-v${VERSION}-b${GITHUB_RUN_NUMBER}.apk"
+          cp app/build/outputs/apk/release/*.apk "dist/$APK"
+          SIZE=$(stat -c %s "dist/$APK")
+          NOTES=$(python3 -c "import json,os,sys; p=sys.argv[1]; print(json.dumps(open(p).read() if os.path.exists(p) else ''))" "docs/releases/v$VERSION.md")
+          echo "{\"version\":\"$VERSION\",\"build\":$GITHUB_RUN_NUMBER,\"code\":$CODE,\"tag\":\"v$VERSION-b$GITHUB_RUN_NUMBER\",\"apk\":\"$APK\",\"size\":$SIZE,\"notes\":$NOTES}" > dist/version.json
+          cat dist/version.json | head -c 400; echo
           if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::warning::بلا أسرار توقيع — APK موقّع بمفتاح مؤقت، لن يُنشر Release."
+            echo "::warning::بلا أسرار توقيع — APK بمفتاح مؤقت، لن يُنشر Release ولن يظهر التحديث داخل التطبيق."
           fi
           ls -l dist
 
@@ -93,11 +100,15 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           NAME=$(basename "$GITHUB_REPOSITORY")
-          VERSION=$(grep '^VERSION_NAME=' gradle.properties 2>/dev/null | cut -d= -f2)
-          VERSION=${VERSION:-0.0.0}
+          VERSION=$(grep '^VERSION_NAME=' gradle.properties | cut -d= -f2)
           TAG="v${VERSION}-b${GITHUB_RUN_NUMBER}"
-          NOTES="docs/releases/v${VERSION}.md"
-          if [ ! -f "$NOTES" ]; then echo "## $NAME $VERSION" > /tmp/notes.md; NOTES=/tmp/notes.md; fi
-          gh release create "$TAG" "dist/${NAME}-v${VERSION}-build${GITHUB_RUN_NUMBER}.apk" \
-            --title "$NAME $VERSION — بناء $GITHUB_RUN_NUMBER" \
-            --notes-file "$NOTES" --target "$(git rev-parse HEAD)" --latest
+          PREV=$(git tag --list 'v*' --sort=-creatordate | grep -v "^$TAG$" | head -n1)
+          {
+            if [ -f "docs/releases/v$VERSION.md" ]; then cat "docs/releases/v$VERSION.md"; echo; fi
+            echo "## تغييرات هذا البناء"
+            if [ -n "$PREV" ]; then RANGE="$PREV..HEAD"; else RANGE="HEAD~20..HEAD"; fi
+            git log --no-merges --pretty='- %s' $RANGE 2>/dev/null || true
+          } > /tmp/notes.md
+          gh release create "$TAG" "dist/${NAME}-v${VERSION}-b${GITHUB_RUN_NUMBER}.apk" dist/version.json \
+            --title "إنجاز $VERSION — بناء $GITHUB_RUN_NUMBER" \
+            --notes-file /tmp/notes.md --target "$(git rev-parse HEAD)" --latest

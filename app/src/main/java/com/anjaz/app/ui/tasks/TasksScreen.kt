@@ -2,6 +2,7 @@
 
 package com.anjaz.app.ui.tasks
 
+import com.anjaz.app.ui.components.EmptyState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -80,13 +81,7 @@ fun TasksScreen(vm: TasksViewModel, onNewTask: () -> Unit) {
             Modifier.fillMaxSize(), contentPadding = PaddingValues(18.dp, 14.dp, 18.dp, 120.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            if (!s.loading && s.tasks.isEmpty()) item {
-                Column(Modifier.fillMaxWidth().padding(top = 48.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AnjazIcon(AnjazIcons.Tasks, c.mute, 40.dp)
-                    Text("لا توجد مهام هنا", color = c.ink, style = MaterialTheme.typography.titleMedium)
-                    Text("المهام التي تنشئها تظهر في هذه القائمة", color = c.mute, style = MaterialTheme.typography.bodySmall)
-                }
-            }
+            if (!s.loading && s.tasks.isEmpty()) item { EmptyState(AnjazIcons.Tasks, "لا توجد مهام هنا", "المهام التي تنشئها تظهر في هذه القائمة") }
             items(s.tasks, key = { it.id }) { t -> TaskCard(t, s.now, { selected = t }) }
         }
     }

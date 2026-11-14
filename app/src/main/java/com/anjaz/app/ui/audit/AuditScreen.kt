@@ -1,5 +1,6 @@
 package com.anjaz.app.ui.audit
 
+import com.anjaz.app.ui.components.EmptyState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -82,7 +83,7 @@ fun AuditScreen(onBack: () -> Unit, vm: AuditViewModel = hiltViewModel()) {
             ScreenTitle("سجل العمليات")
         }
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(18.dp, 8.dp, 18.dp, 40.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (rows.isEmpty()) item { Text("لا توجد عمليات مسجّلة، أو لا تتوفر لك صلاحية العرض", color = c.mute, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 32.dp)) }
+            if (rows.isEmpty()) item { EmptyState(AnjazIcons.Log, "لا توجد عمليات مسجّلة", "أو لا تتوفر لك صلاحية العرض") }
             items(rows) { r ->
                 AnjazCard(Modifier.fillMaxWidth()) {
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {

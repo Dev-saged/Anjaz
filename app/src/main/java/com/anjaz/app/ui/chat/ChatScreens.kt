@@ -2,6 +2,7 @@
 
 package com.anjaz.app.ui.chat
 
+import com.anjaz.app.ui.components.EmptyState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -82,13 +83,7 @@ fun ChatListScreen(onOpenRoom: (String) -> Unit, vm: ChatListViewModel = hiltVie
             ) { AnjazIcon(AnjazIcons.Plus, c.ink) }
         }
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(18.dp, 4.dp, 18.dp, 120.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (rooms.isEmpty()) item {
-                Column(Modifier.fillMaxWidth().padding(top = 48.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AnjazIcon(AnjazIcons.Chat, c.mute, 40.dp)
-                    Text("لا توجد محادثات بعد", color = c.ink, style = MaterialTheme.typography.titleMedium)
-                    Text("ابدأ محادثة مع أحد زملائك من زر +", color = c.mute, style = MaterialTheme.typography.bodySmall)
-                }
-            }
+            if (rooms.isEmpty()) item { EmptyState(AnjazIcons.Chat, "لا توجد محادثات بعد", "ابدأ محادثة مع أحد زملائك من زر +") }
             items(rooms, key = { it.id }) { r ->
                 AnjazCard(Modifier.fillMaxWidth(), onClick = { onOpenRoom(r.id) }) {
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {

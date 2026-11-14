@@ -12,25 +12,24 @@
 
 ## Features (v0.7.0)
 - SOS: data/SosRepository → ui/sos؛ محادثة: data/ChatRepository → ui/chat (مسار room/{roomId}، SyncEngine.listenRoom).
-- حسابات: data/AccountsRepository → ui/accounts؛ دليل: ui/directory؛ حول: ui/about/AboutCard (BrandConfig.Dev)؛ أصول README: brand/tools/make_readme_assets.py.
-- Room v4: Migrations 1→4 (camps.regionId تفحصه القواعد؛ 3→4 حقول وسائط الرسائل)؛ PdfLayout منفصل لأن PdfDocument لا يعمل تحت Robolectric.
+- حسابات: data/AccountsRepository → ui/accounts؛ دليل: ui/directory؛ حول: ui/about/AboutCard؛ README: brand/tools/make_readme_assets.py.
+- Room v5: Migrations 1→5 (4→5 users.deleted)؛ PdfLayout منفصل لأن PdfDocument لا يعمل تحت Robolectric.
 - وسائط: media/{MediaCompressor، MediaRepository (إرسال/تنزيل/تأكيد/تنظيف)، VoiceRecorder، MediaTransport}؛ الـ Worker جسر مؤقت backend/worker/src/media.js (يُحذف بعد ساعة من تأكيد الجميع أو 14 يوماً)؛ واجهة ui/chat/MediaUi.
 - صوت→نص: stt/{WhisperModel (تنزيل 160MB مرة واحدة)، Transcriber (sherpa-onnx)، AudioPcm، SttViewModel}؛ الـ AAR يُنزَّل ببصمة في app/build.gradle.kts (fetchSherpa) وليس في Git. فيديو: media/VideoCompressor (Media3، تحت 9MB). تسجيل: RecorderState/HoldToRecord/RecordingBar في ui/chat/MediaUi.
 - حسابات: Worker POST /v1/users/:uid/{update,delete} (حذف ناعم deleted=true + حذف Auth)؛ Room v5 users.deleted؛ ui/accounts (openEdit، askDelete).
 - تنظيف: sync/CleanupWorker (يومي، MediaRepository.cleanOrphans)؛ ما الجديد: ui/about/Changelog؛ حالة فارغة: components/EmptyState؛ النشر: docs/DEPLOY.md.
 - مجموعات: ChatListViewModel.createGroup → Worker /v1/rooms/group (للقادة)؛ لوحة أدوار: domain/DashboardBuilder → ui/dashboard (تذكير بالمتأخرة).
-- تحديث ذاتي: update/ (UpdateChecker، UpdateManager، UpdateDownloadService، UpdateUi، AppFolder)؛ build.yml ينشر Release + version.json؛ versionCode=VERSION_CODE*10000+BUILD_NUMBER.
+- تحديث ذاتي: update/ (UpdateChecker، UpdateManager، UpdateUi)؛ build.yml ينشر Release + version.json؛ versionCode=VERSION_CODE*10000+BUILD_NUMBER.
 
 ## Decisions
 - كل شيء مجاني وبلا بطاقة: Firebase Spark (Auth + Firestore + FCM) + Cloudflare Workers/D1/Cron. السبب: قرار ساجد.
-- هوية: حلقة+مربع أخضر، Alexandria/IBM Plex، #102E52/#24C27D (brand/، build_brand.py). Storage/Functions تحتاج Blaze فالبديل Worker+D1.
-- العزل بين المناطق والمربعات في Firestore Security Rules + تحقق Worker بالتوكن، لا في الواجهة.
+- هوية: حلقة+مربع أخضر، #102E52/#24C27D (brand/، build_brand.py). Storage/Functions تحتاج Blaze فالبديل Worker+D1.
+- العزل بين المناطق في Firestore Rules + تحقق Worker بالتوكن، لا في الواجهة.
 - الدخول باسم مستخدم + كلمة مرور (بريد وهمي داخلي)؛ المدير ينشئ ويعيد الضبط.
-- minSdk 24 (بدل 26 في القالب) لدعم أجهزة قديمة؛ targetSdk 36. توزيع APK مباشر.
+- minSdk 24 لدعم أجهزة قديمة؛ targetSdk 36. توزيع APK مباشر.
 - اجتماعات WebRTC غير منفّذة.
 - المستخدم: اسم بسيط أو بريد كامل (domain/Username + Worker policy.validUsername).
 
-- الرئيسية معتمدة (brand/prototype/home-a.html): لا يُعاد بناء الهيكل.
 
 ## Solved bugs (never reintroduce)
 - رسالة صوتية فاشلة (Worker غير منشور) كانت توقف الصندوق الصادر كله؛ الإصلاح: SyncEngine.pushPending يتجاوز الفاشل ويكمل (تتوقف الجولة فقط عند انقطاع الشبكة)، وFAILED + إعادة إرسال/حذف بالضغط المطول.
@@ -40,4 +39,4 @@
 
 ## Open issues
 - Firebase والـ Worker منشوران ومجرّبان؛ التطبيق وتدفق التحديث لم يُجرَّبا على جهاز؛ لا Release قبل إضافة أسرار التوقيع (4) في GitHub.
-- الإملاء/الفيديو/التسجيل الجديد لم تُجرَّب على جهاز؛ تأكد من أسرار CLOUDFLARE_API_TOKEN/ACCOUNT_ID في GitHub؛ PDF لم يُرسم.
+- الإملاء/الفيديو/التسجيل/حذف الحسابات لم تُجرَّب على جهاز؛ أسرار CLOUDFLARE_* في GitHub؛ PDF لم يُرسم.

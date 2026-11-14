@@ -7,8 +7,16 @@ import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
+data class SquareCount(val squareId: String, val n: Int)
+
 @Dao
 interface TaskDao {
+    @Query("SELECT squareId AS squareId, COUNT(*) AS n FROM tasks WHERE squareId IS NOT NULL AND status = 'APPROVED' AND updatedAt >= :since GROUP BY squareId")
+    fun doneBySquare(since: Long): Flow<List<SquareCount>>
+
+    @Query("SELECT squareId AS squareId, COUNT(*) AS n FROM tasks WHERE squareId IS NOT NULL AND status IN ('NEW','SEEN','IN_PROGRESS','AWAITING_REVIEW') AND deadline IS NOT NULL AND deadline < :now GROUP BY squareId")
+    fun overdueBySquare(now: Long): Flow<List<SquareCount>>
+
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(task: TaskEntity)
 

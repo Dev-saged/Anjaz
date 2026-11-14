@@ -42,7 +42,7 @@ private data class Entry(val title: String, val icon: ImageVector)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Unit, onOpenAccounts: () -> Unit, onOpenDirectory: () -> Unit, onOpenReports: () -> Unit, onOpenDashboard: () -> Unit, onOpenAudit: () -> Unit) {
+fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Unit, onOpenAccounts: () -> Unit, onOpenDirectory: () -> Unit, onOpenReports: () -> Unit, onOpenDashboard: () -> Unit, onOpenAudit: () -> Unit, onOpenMap: () -> Unit = {}) {
     val c = Anjaz.colors
     val haptic = LocalHapticFeedback.current
     val upcoming = listOf(
@@ -67,6 +67,15 @@ fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Un
             Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 AnjazIcon(AnjazIcons.Map, c.ink)
                 Text("المربعات والمخيمات", color = c.ink, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            }
+        }
+        AnjazCard(Modifier.fillMaxWidth(), onClick = onOpenMap) {
+            Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                AnjazIcon(AnjazIcons.Loc, c.emeraldDeep)
+                Column(Modifier.weight(1f)) {
+                    Text("الخريطة الحية", color = c.ink, style = MaterialTheme.typography.titleMedium)
+                    Text("الحضور والنقاط والمساكن والتنبيهات", color = c.mute, style = MaterialTheme.typography.bodySmall)
+                }
             }
         }
         AnjazCard(Modifier.fillMaxWidth(), onClick = onOpenDashboard) {

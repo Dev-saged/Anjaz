@@ -29,6 +29,7 @@ class SyncEngine @Inject constructor(
     private val remote: RemoteStore,
     private val notifier: Notifier,
     private val clock: Clock,
+    private val media: com.anjaz.app.media.MediaTransport = com.anjaz.app.media.NoMedia,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -72,7 +73,8 @@ class SyncEngine @Inject constructor(
                 val p = Outbox.parse(op.payload)
                 if (op.op == "send") {
                     val m = db.chat().messageById(p.id) ?: return
-                    remote.sendMessage(m, m.text.take(200))
+                    if (m.mediaId.isNotEmpty() && m.localPath.isNotEmpty()) media.upload(m.roomId, m.mediaId, java.io.File(m.localPath), m.mediaMime)
+                    remote.sendMessage(m, com.anjaz.app.media.previewOf(m))
                     db.chat().setState(m.id, MessageState.SENT)
                 } else {
                     remote.markRead(p.roomId.orEmpty(), p.id, p.by.orEmpty())
@@ -119,8 +121,11 @@ class SyncEngine @Inject constructor(
         list.forEach { r ->
             val local = db.chat().messageById(r.id)
             val merged = ((local?.readBy.orEmpty().csv()) + r.readBy.csv()).distinct().joinToString(",")
-            db.chat().upsertMessage(r.copy(readBy = merged, state = MessageState.SENT))
-            db.chat().touchRoom(r.roomId, r.text.take(200), r.createdAt)
+            val keep = if (local != null && local.mediaId.isNotEmpty()) {
+                r.copy(localPath = local.localPath, mediaState = local.mediaState, transcript = local.transcript)
+            } else r
+            db.chat().upsertMessage(keep.copy(readBy = merged, state = MessageState.SENT))
+            db.chat().touchRoom(r.roomId, com.anjaz.app.media.previewOf(r), r.createdAt)
         }
     }
 

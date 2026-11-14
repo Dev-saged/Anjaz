@@ -117,6 +117,7 @@ fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) 
     val c = Anjaz.colors
     val ui by vm.ui.collectAsStateWithLifecycle()
     var text by remember { mutableStateOf("") }
+    var attach by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val msgs = ui?.messages.orEmpty()
     LaunchedEffect(msgs.size) {
@@ -130,27 +131,29 @@ fun ChatRoomScreen(onBack: () -> Unit, vm: ChatRoomViewModel = hiltViewModel()) 
             Text(ui?.title.orEmpty(), color = c.ink, style = MaterialTheme.typography.titleLarge)
         }
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = listState, contentPadding = PaddingValues(14.dp, 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            items(msgs, key = { it.id }) { m -> Bubble(m, mine = m.senderId == ui?.me) }
+            items(msgs, key = { it.id }) { m -> Bubble(m, mine = m.senderId == ui?.me, vm) }
         }
         Row(
             Modifier.fillMaxWidth().navigationBarsPadding().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
         ) {
+            Box(Modifier.size(44.dp).clip(CircleShape).clickable { attach = true }.semantics { contentDescription = "إرفاق" }, contentAlignment = Alignment.Center) { AnjazIcon(AnjazIcons.Clip, c.mute) }
             OutlinedTextField(
                 value = text, onValueChange = { if (it.length <= 4000) text = it }, placeholder = { Text("اكتب رسالة") },
                 maxLines = 4, shape = RoundedCornerShape(22.dp), modifier = Modifier.weight(1f),
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = c.emerald, unfocusedBorderColor = c.line, focusedContainerColor = c.card, unfocusedContainerColor = c.card, cursorColor = c.emerald),
             )
-            Box(
-                Modifier.size(52.dp).clip(CircleShape).background(if (text.isBlank()) c.line else c.emerald)
-                    .clickable(enabled = text.isNotBlank()) { vm.send(text); text = "" }.semantics { contentDescription = "إرسال" },
+            if (text.isBlank()) HoldToRecord(onVoice = vm::sendVoice) else Box(
+                Modifier.size(52.dp).clip(CircleShape).background(c.emerald)
+                    .clickable { vm.send(text); text = "" }.semantics { contentDescription = "إرسال" },
                 contentAlignment = Alignment.Center,
-            ) { AnjazIcon(AnjazIcons.Send, if (text.isBlank()) c.mute else c.onEmerald) }
+            ) { AnjazIcon(AnjazIcons.Send, c.onEmerald) }
         }
     }
+    if (attach) AttachSheet({ attach = false }, vm::sendImage, vm::sendFile, vm::sendLocation)
 }
 
 @Composable
-private fun Bubble(m: MessageEntity, mine: Boolean) {
+private fun Bubble(m: MessageEntity, mine: Boolean, vm: ChatRoomViewModel) {
     val c = Anjaz.colors
     val shape = RoundedCornerShape(18.dp, 18.dp, if (mine) 4.dp else 18.dp, if (mine) 18.dp else 4.dp)
     Box(Modifier.fillMaxWidth(), contentAlignment = if (mine) Alignment.CenterEnd else Alignment.CenterStart) {
@@ -158,7 +161,9 @@ private fun Bubble(m: MessageEntity, mine: Boolean) {
             Modifier.widthIn(max = 300.dp).clip(shape).background(if (mine) c.navy else c.card).padding(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Text(m.text, color = if (mine) c.onNavy else c.ink, style = MaterialTheme.typography.bodyLarge)
+            val tint = if (mine) c.onNavy else c.ink
+            if (m.type == "text") Text(m.text, color = tint, style = MaterialTheme.typography.bodyLarge)
+            else MediaContent(m, tint, onDownload = { vm.download(m.id) }, onTranscribe = null)
             Row(Modifier.align(Alignment.End), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(DayMath.time(m.createdAt), color = if (mine) c.onNavy.copy(.7f) else c.mute, style = MaterialTheme.typography.labelSmall)
                 if (mine) Receipt(m)

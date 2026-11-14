@@ -63,6 +63,7 @@ class ChatRoomViewModel @Inject constructor(
     private val repo: ChatRepository,
     private val engine: SyncEngine,
     private val scheduler: SyncScheduler,
+    private val media: com.anjaz.app.media.MediaRepository,
     auth: AuthRepository,
 ) : ViewModel() {
     val roomId: String = checkNotNull(saved["roomId"])
@@ -77,7 +78,21 @@ class ChatRoomViewModel @Inject constructor(
 
     init {
         engine.listenRoom(viewModelScope, roomId)
+        viewModelScope.launch {
+            profile.filterNotNull().collect { p ->
+                repo.messages(roomId).collect { media.autoDownload(roomId, p.uid) }
+            }
+        }
     }
+
+    private fun after(r: Outcome<String>) { if (r is Outcome.Failure) error.value = r.reason else scheduler.kick() }
+
+    fun sendImage(uri: android.net.Uri) { val me = profile.value ?: return; viewModelScope.launch { after(media.sendImage(roomId, me, uri)) } }
+    fun sendFile(uri: android.net.Uri) { val me = profile.value ?: return; viewModelScope.launch { after(media.sendFile(roomId, me, uri)) } }
+    fun sendVoice(file: java.io.File, durMs: Long) { val me = profile.value ?: return; viewModelScope.launch { after(media.sendVoice(roomId, me, file, durMs)) } }
+    fun sendLocation(lat: Double, lng: Double) { val me = profile.value ?: return; viewModelScope.launch { after(media.sendLocation(roomId, me, lat, lng)) } }
+    fun download(id: String) = media.fetch(id)
+    fun setTranscript(id: String, text: String) { viewModelScope.launch { media.saveTranscript(id, text) } }
 
     fun send(text: String) {
         val me = profile.value ?: return

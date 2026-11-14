@@ -5,9 +5,23 @@ CREATE TABLE IF NOT EXISTS media (
   mime TEXT NOT NULL,
   size INTEGER NOT NULL,
   created_at INTEGER NOT NULL,
-  data BLOB NOT NULL
+  chunks INTEGER NOT NULL,
+  delete_at INTEGER
 );
 CREATE INDEX IF NOT EXISTS media_created ON media(created_at);
+CREATE INDEX IF NOT EXISTS media_delete ON media(delete_at);
+CREATE TABLE IF NOT EXISTS media_chunks (
+  media_id TEXT NOT NULL,
+  idx INTEGER NOT NULL,
+  data BLOB NOT NULL,
+  PRIMARY KEY (media_id, idx)
+);
+CREATE TABLE IF NOT EXISTS media_acks (
+  media_id TEXT NOT NULL,
+  uid TEXT NOT NULL,
+  at INTEGER NOT NULL,
+  PRIMARY KEY (media_id, uid)
+);
 
 CREATE TABLE IF NOT EXISTS backups (
   id TEXT PRIMARY KEY,

@@ -21,4 +21,15 @@ object Migrations {
             db.execSQL("ALTER TABLE `camps` ADD COLUMN `regionId` TEXT NOT NULL DEFAULT ''")
         }
     }
+
+    val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            listOf(
+                "`mediaId` TEXT NOT NULL DEFAULT ''", "`mediaMime` TEXT NOT NULL DEFAULT ''", "`mediaName` TEXT NOT NULL DEFAULT ''",
+                "`mediaSize` INTEGER NOT NULL DEFAULT 0", "`durMs` INTEGER NOT NULL DEFAULT 0", "`width` INTEGER NOT NULL DEFAULT 0",
+                "`height` INTEGER NOT NULL DEFAULT 0", "`lat` REAL", "`lng` REAL", "`localPath` TEXT NOT NULL DEFAULT ''",
+                "`mediaState` TEXT NOT NULL DEFAULT 'NONE'", "`transcript` TEXT NOT NULL DEFAULT ''",
+            ).forEach { db.execSQL("ALTER TABLE `messages` ADD COLUMN $it") }
+        }
+    }
 }

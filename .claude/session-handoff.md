@@ -1,11 +1,14 @@
 # Session handoff — Anjaz
 
 ## الحالة
-- الإصدار 0.11.0 (VERSION_CODE 14)، الفرع feature/v0110-stats-layout يُدمج في main؛ البناء في CI، اختبارات الـ Worker (12) خضراء محلياً.
+- الإصدار 0.12.0 (VERSION_CODE 15) مدموج في main؛ قبله 0.11.0؛ البناء في CI، اختبارات الـ Worker (12) خضراء محلياً.
 - الجديد: شاشة الإحصائيات ui/stats (مربعات/مخيمات/أسر)، camps.families (Room v7)، أقسام المهام الأربعة `TaskCategory`، أولوية مستويان (HIGH القديم = عادية)، مربعات منسدلة، حذف صور المهام، حذف الرسالة لدى الجميع، الحسابات على @anjaz.ps فقط (BrandConfig.ACCOUNT_DOMAIN + Worker ACCOUNT_DOMAIN).
 - إصلاح الخطوط: Type.kt (lineHeight واسع + Trim.None + includeFontPadding)، حد fontScale 0.85–1.3 في AnjazTheme، `FitText` للنصوص ذات السطر الواحد.
 
+- 0.12.0: الدليل حسب المناطق، نقل المربعات/المخيمات، تحويل منطقة إلى مربع، حذف منطقة فارغة (Room v8)، اسم دخول بلاحقة @anjaz.ps ظاهرة، كلمة مرور بأي طول.
+
 ## قرارات
+- كلمة المرور الأقصر من 6 تُكمَّل بـ `#anjaz` في التطبيق والـ Worker معاً (شرط Firebase)؛ الدخول يجرّب المكمَّلة ثم الخام.
 - السلة: الحذف النهائي يضع deletedAt=1؛ الـ Worker (trash.js، كرون 21:00) يحذف فعلياً ما deletedAt < الآن−30 يوماً مع events/photos. القواعد تسمح بالحذف الفعلي فقط لما deletedAt رقم.
 - الدخول باسم بلا نطاق يجرّب @anjaz.ps ثم النطاق القديم users.anjaz.local.
 

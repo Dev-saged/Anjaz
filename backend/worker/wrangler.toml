@@ -5,6 +5,7 @@ compatibility_date = "2025-07-01"
 [vars]
 FIREBASE_PROJECT_ID = "anjaz-gaza"
 EMAIL_DOMAIN = "users.anjaz.local"
+ACCOUNT_DOMAIN = "anjaz.ps"
 MEDIA_TTL_DAYS = "90"
 ALLOWED_ORIGIN = ""
 

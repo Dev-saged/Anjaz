@@ -44,17 +44,19 @@ service cloud.firestore {
         && optStr(request.resource.data, 'managerName', 80);
       allow update: if (isCentral() || isRegionManager(resource.data.regionId))
         && unchanged(['regionId']) && str(request.resource.data.name, 80);
-      allow delete: if false;
+      // الحذف الفعلي فقط لما هو في سلة المهملات
+      allow delete: if (isCentral() || isRegionManager(resource.data.regionId)) && resource.data.deletedAt is number;
     }
 
+    function families(d) { return !('families' in d) || d.families == null || (d.families is int && d.families >= 0 && d.families <= 100000); }
     match /camps/{cid} {
       allow read: if isCentral() || isRegionLead(resource.data.regionId) || inSquare(resource.data.regionId, resource.data.squareId);
       allow create: if lead(request.resource.data.regionId, request.resource.data.squareId)
         && str(request.resource.data.name, 80) && optStr(request.resource.data, 'phone', 20)
-        && optStr(request.resource.data, 'managerName', 80);
+        && optStr(request.resource.data, 'managerName', 80) && families(request.resource.data);
       allow update: if lead(resource.data.regionId, resource.data.squareId)
-        && unchanged(['regionId', 'squareId']) && str(request.resource.data.name, 80);
-      allow delete: if false;
+        && unchanged(['regionId', 'squareId']) && str(request.resource.data.name, 80) && families(request.resource.data);
+      allow delete: if lead(resource.data.regionId, resource.data.squareId) && resource.data.deletedAt is number;
     }
 
     // ---------- tasks ----------
@@ -106,7 +108,7 @@ service cloud.firestore {
           ))
       );
 
-      allow delete: if false;
+      allow delete: if active() && lead(resource.data.regionId, resource.data.squareId) && resource.data.deletedAt is number;
 
       match /events/{eid} {
         allow read: if taskReader(get(/databases/$(db)/documents/tasks/$(tid)).data);
@@ -123,7 +125,10 @@ service cloud.firestore {
           && request.resource.data.by == request.auth.uid
           && request.resource.data.kind in ['BEFORE', 'AFTER']
           && str(request.resource.data.data, 400000);
-        allow update, delete: if false;
+        allow update: if false;
+        // صاحب الصورة أو إداري المهمة يحذفها
+        allow delete: if active() && (resource.data.by == request.auth.uid
+          || lead(get(/databases/$(db)/documents/tasks/$(tid)).data.regionId, get(/databases/$(db)/documents/tasks/$(tid)).data.squareId));
       }
     }
 

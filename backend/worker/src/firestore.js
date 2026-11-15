@@ -65,6 +65,10 @@ export class Firestore {
     await this.call(`${this.base}/${path}?${mask}`, { method: 'PATCH', body: JSON.stringify({ fields: encodeFields(data) }) });
   }
 
+  async remove(path) {
+    await this.call(`${this.base}/${path}`, { method: 'DELETE' });
+  }
+
   async add(collection, data) {
     const id = crypto.randomUUID();
     await this.set(`${collection}/${id}`, data);

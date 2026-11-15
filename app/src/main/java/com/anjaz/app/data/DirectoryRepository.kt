@@ -92,6 +92,8 @@ class DirectoryRepository @Inject constructor(private val db: AnjazDatabase, pri
         return Outcome.Ok(camp.id)
     }
 
+    suspend fun squareById(id: String) = db.directory().squareById(id)
+
     suspend fun updateSquare(actor: Profile, id: String, values: Map<String, String>): Outcome<Unit> {
         if (!canCreateSquare(actor)) return Outcome.Failure("ليس لديك صلاحية تعديل المربع")
         val cur = db.directory().squareById(id) ?: return Outcome.Failure("المربع غير موجود")

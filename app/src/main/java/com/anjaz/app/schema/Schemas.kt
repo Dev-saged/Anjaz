@@ -20,8 +20,8 @@ object Schemas {
         id = "accounts", title = "حساب جديد",
         fields = buildList {
             add(FieldSchema("displayName", "الاسم", FieldType.TEXT, required = true, maxLength = 80))
-            add(FieldSchema("username", "اسم المستخدم أو بريد كامل (مثل sajed@anjaz.ps)", FieldType.TEXT, required = true, maxLength = 80))
-            add(FieldSchema("password", "كلمة المرور (8 أحرف فأكثر)", FieldType.TEXT, required = true, maxLength = 64))
+            add(FieldSchema("username", "اسم المستخدم (يُضاف له @anjaz.ps تلقائياً)", FieldType.TEXT, required = true, maxLength = 80))
+            add(FieldSchema("password", "كلمة المرور", FieldType.TEXT, required = true, maxLength = 64))
             add(FieldSchema("role", "الدور", FieldType.CHOICE, required = true, choices = roles))
             if (!regions.isNullOrEmpty()) add(FieldSchema("regionId", "المنطقة", FieldType.CHOICE, choices = regions))
             if (!squares.isNullOrEmpty()) add(FieldSchema("squareId", "المربع", FieldType.CHOICE, choices = squares))

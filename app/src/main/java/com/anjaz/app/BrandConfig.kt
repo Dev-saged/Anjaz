@@ -16,6 +16,8 @@ object BrandConfig {
     const val GITHUB_REPO = "Dev-saged/Anjaz"
     const val UPDATE_CHECK_HOURS = 6L
     const val EMAIL_DOMAIN = "users.anjaz.local"
+    /** نطاق الحسابات الجديدة؛ الأسماء القديمة بلا نطاق تبقى على EMAIL_DOMAIN. */
+    const val ACCOUNT_DOMAIN = "anjaz.ps"
 
     object Dev {
         const val TITLE = "المهندس ساجد العبادلة"

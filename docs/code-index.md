@@ -4,8 +4,8 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 207 ملفاً · 30758 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
-> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · MediaUi.kt 313 · FirestoreRemoteStore.kt 310
+> 210 ملفاً · 31100 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · CallManager.kt 315 · MediaUi.kt 313
 
 ### ./
 - CLAUDE.md (44)
@@ -16,13 +16,13 @@
 ### .github/workflows/
 - apply-to-all-repos.yml (106)
 - backend-tests.yml (21)
-- build.yml (127)
+- build.yml (155)
 - deploy-worker.yml (21)
 - new-project.yml (95)
 - repomap.yml (41)
 - unpack-zip.yml (79)
 ### app/
-- build.gradle.kts (155)
+- build.gradle.kts (157)
 - google-services.json (29)
 ### app/schemas/com.anjaz.app.data.db.AnjazDatabase/
 - 1.json (519)
@@ -32,13 +32,13 @@
 ### app/src/main/
 - AndroidManifest.xml (69)
 ### app/src/main/java/com/anjaz/app/
-- AnjazApp.kt (24): AnjazApp
+- AnjazApp.kt (25): AnjazApp
 - BrandConfig.kt (53): BrandConfig
 - MainActivity.kt (79): MainActivity
 ### app/src/main/java/com/anjaz/app/backup/
 - BackupManager.kt (84): BackupFile, RestoreSummary, BackupManager
 ### app/src/main/java/com/anjaz/app/call/
-- CallManager.kt (306): CallPhase, CallPeer, CallState, CallManager
+- CallManager.kt (315): CallPhase, CallPeer, CallState, CallManager
 - CallScreen.kt (146): CallViewModel, CallScreen
 ### app/src/main/java/com/anjaz/app/cloud/
 - AuthRepository.kt (75): CloudState, AuthRepository
@@ -61,7 +61,7 @@
 - TaskRepository.kt (96): TaskOpPayload, TaskRepository
 ### app/src/main/java/com/anjaz/app/data/db/
 - AnjazDatabase.kt (33): AnjazDatabase
-- Daos.kt (239): SquareCount, TaskDao, TaskEventDao, OutboxDao, DirectoryDao, SosDao, ChatDao +1
+- Daos.kt (242): SquareCount, TaskDao, TaskEventDao, OutboxDao, DirectoryDao, SosDao, ChatDao +1
 - Entities.kt (178): RegionEntity, SquareEntity, CampEntity, UserEntity, TaskEntity, TaskEventEntity, OutboxEntity +6
 - Migrations.kt (42): Migrations
 - SearchDao.kt (23): SearchDao
@@ -84,6 +84,9 @@
 - MediaTransport.kt (27): HttpFailure, Download, MediaTransport, NoMedia
 - VideoCompressor.kt (76): CompressedVideo, VideoCompressor
 - VoiceRecorder.kt (71): VoiceRecorder, VoicePlayer
+### app/src/main/java/com/anjaz/app/pack/
+- NativePacks.kt (123): PackState, NativePacks
+- PackPrefetchWorker.kt (33): PackPrefetchWorker
 ### app/src/main/java/com/anjaz/app/push/
 - AnjazMessagingService.kt (35): AnjazMessagingService
 - DeepLink.kt (8): DeepLink
@@ -103,7 +106,7 @@
 - AudioPcm.kt (84): AudioPcm
 - PcmRecorder.kt (39): PcmRecorder
 - SttViewModel.kt (47): SttViewModel
-- Transcriber.kt (46): Transcriber
+- Transcriber.kt (51): Transcriber
 - WhisperModel.kt (92): ModelState, WhisperModel
 ### app/src/main/java/com/anjaz/app/sync/
 - ApiClient.kt (82): ApiClient
@@ -114,7 +117,7 @@
 - SyncWorker.kt (54): SyncWorker, SyncScheduler
 ### app/src/main/java/com/anjaz/app/ui/about/
 - AboutCard.kt (83): AboutCard
-- Changelog.kt (48): ChangelogSheet
+- Changelog.kt (49): ChangelogSheet
 ### app/src/main/java/com/anjaz/app/ui/accounts/
 - AccountsScreen.kt (158): AccountsScreen
 - AccountsViewModel.kt (127): AccountsUi, AccountsViewModel
@@ -140,10 +143,11 @@
 - DirectoryScreen.kt (104): DirectoryScreen
 - DirectoryViewModel.kt (89): DirKind, SquareRow, DirectoryUi, DirForm, DirectoryViewModel
 ### app/src/main/java/com/anjaz/app/ui/home/
-- HomeScreen.kt (187): HomeScreen
-- HomeViewModel.kt (52): HomeUiState, HomeViewModel
+- HomeScreen.kt (190): HomeScreen
+- HomeShortcuts.kt (118): MapCard, PlacesRow
+- HomeViewModel.kt (55): HomeUiState, HomeViewModel
 ### app/src/main/java/com/anjaz/app/ui/icons/
-- Icons.kt (170): AnjazIcons
+- Icons.kt (182): AnjazIcons
 ### app/src/main/java/com/anjaz/app/ui/login/
 - LoginScreen.kt (110): LoginScreen
 - LoginViewModel.kt (66): SessionState, LoginUiState, AppSessionViewModel, LoginViewModel
@@ -274,7 +278,7 @@
 ### docs/
 - DEPLOY.md (18)
 - media.md (7)
-- repo-map.md (40)
+- repo-map.md (41)
 ### tools/
 - repomap.py (146): files, symbols, build, main
 <!-- repomap:auto:end -->

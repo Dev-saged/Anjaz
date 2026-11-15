@@ -77,6 +77,8 @@ android {
 
     packaging {
         jniLibs.useLegacyPackaging = true
+        // مكتبات ثقيلة تُنزَّل كحزمة مكوّنات (pack/NativePacks) بدل تضمينها
+        jniLibs.excludes += setOf("**/libonnxruntime.so", "**/libsherpa-onnx-*.so", "**/libjingle_peerconnection_so.so")
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
 }

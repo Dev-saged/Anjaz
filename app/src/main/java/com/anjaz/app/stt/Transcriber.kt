@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 
 /** تحويل الصوت إلى نص بـ Whisper على الجهاز؛ المحرّك يُحمَّل عند أول استخدام ويُحرَّر عند الطلب. */
 @Singleton
-class Transcriber @Inject constructor(private val model: WhisperModel) {
+class Transcriber @Inject constructor(private val model: WhisperModel, private val packs: com.anjaz.app.pack.NativePacks) {
     private val lock = Mutex()
     private var rec: OfflineRecognizer? = null
 
@@ -31,7 +31,12 @@ class Transcriber @Inject constructor(private val model: WhisperModel) {
 
     suspend fun fromFile(path: String): String = fromPcm(AudioPcm.decode(path))
 
-    suspend fun fromPcm(pcm: FloatArray): String = withContext(Dispatchers.Default) {
+    suspend fun fromPcm(pcm: FloatArray): String {
+        packs.ensure().getOrThrow()
+        return decode(pcm)
+    }
+
+    private suspend fun decode(pcm: FloatArray): String = withContext(Dispatchers.Default) {
         lock.withLock {
             val e = engine()
             AudioPcm.chunks(pcm).joinToString(" ") { part ->

@@ -97,6 +97,31 @@ jobs:
           fi
           ls -l dist
 
+      - name: Build native packs
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          WEBRTC=$(find ~/.gradle/caches/modules-2 -name 'stream-webrtc-android-1.3.8.aar' | head -n1)
+          SHERPA=$(ls app/libs/sherpa-onnx-*.aar | head -n1)
+          test -f "$WEBRTC" && test -f "$SHERPA"
+          mkdir -p packs
+          python3 - "$WEBRTC" "$SHERPA" <<'PY'
+          import hashlib, re, sys, zipfile
+          want = re.compile(r"(libonnxruntime|libsherpa-onnx-[a-z+-]+|libjingle_peerconnection_so)\.so$")
+          for abi in ("arm64-v8a", "armeabi-v7a"):
+              out = f"packs/Anjaz-libs-{abi}.zip"
+              names = set()
+              with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+                  for aar in sys.argv[1:]:
+                      with zipfile.ZipFile(aar) as a:
+                          for n in a.namelist():
+                              if n.startswith(f"jni/{abi}/") and want.search(n) and n.rsplit("/", 1)[1] not in names:
+                                  names.add(n.rsplit("/", 1)[1]); z.writestr(n.rsplit("/", 1)[1], a.read(n))
+              assert len(names) >= 4, (abi, names)
+              open(out + ".sha256", "w").write(hashlib.sha256(open(out, "rb").read()).hexdigest() + "\n")
+              print(abi, sorted(names))
+          PY
+          ls -l packs
+
       - name: Upload APK artifact
         if: steps.check.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
@@ -114,6 +139,9 @@ jobs:
           NAME=$(basename "$GITHUB_REPOSITORY")
           VERSION=$(grep '^VERSION_NAME=' gradle.properties | cut -d= -f2)
           TAG="v${VERSION}-b${GITHUB_RUN_NUMBER}"
+          if ! gh release view packs-v1 >/dev/null 2>&1; then
+            gh release create packs-v1 packs/* --title "مكوّنات أصلية (إملاء ومكالمات)" --notes "حزمة تُنزَّل تلقائياً من التطبيق؛ لا تحذفها." --latest=false --target "$(git rev-parse HEAD)"
+          fi
           PREV=$(git tag --list 'v*' --sort=-creatordate | grep -v "^$TAG$" | head -n1)
           {
             if [ -f "docs/releases/v$VERSION.md" ]; then cat "docs/releases/v$VERSION.md"; echo; fi

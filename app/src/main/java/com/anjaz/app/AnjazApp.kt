@@ -15,6 +15,7 @@ class AnjazApp : Application(), Configuration.Provider {
         super.onCreate()
         com.anjaz.app.push.Notifications.createChannels(this)
         com.anjaz.app.update.UpdateCheckWorker.schedule(this)
+        com.anjaz.app.pack.PackPrefetchWorker.schedule(this)
         Thread { runCatching { updates.restore() } }.start()
     }
 

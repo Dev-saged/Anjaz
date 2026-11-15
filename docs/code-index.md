@@ -4,8 +4,8 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 210 ملفاً · 31100 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
-> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · CallManager.kt 315 · MediaUi.kt 313
+> 215 ملفاً · 31830 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · VoiceUi.kt 331 · CallManager.kt 315
 
 ### ./
 - CLAUDE.md (44)
@@ -32,7 +32,7 @@
 ### app/src/main/
 - AndroidManifest.xml (69)
 ### app/src/main/java/com/anjaz/app/
-- AnjazApp.kt (25): AnjazApp
+- AnjazApp.kt (27): AnjazApp
 - BrandConfig.kt (53): BrandConfig
 - MainActivity.kt (79): MainActivity
 ### app/src/main/java/com/anjaz/app/backup/
@@ -61,7 +61,7 @@
 - TaskRepository.kt (96): TaskOpPayload, TaskRepository
 ### app/src/main/java/com/anjaz/app/data/db/
 - AnjazDatabase.kt (33): AnjazDatabase
-- Daos.kt (242): SquareCount, TaskDao, TaskEventDao, OutboxDao, DirectoryDao, SosDao, ChatDao +1
+- Daos.kt (254): SquareCount, TaskDao, TaskEventDao, OutboxDao, DirectoryDao, SosDao, ChatDao +1
 - Entities.kt (178): RegionEntity, SquareEntity, CampEntity, UserEntity, TaskEntity, TaskEventEntity, OutboxEntity +6
 - Migrations.kt (42): Migrations
 - SearchDao.kt (23): SearchDao
@@ -74,24 +74,28 @@
 - Role.kt (12): Role
 - TaskStatus.kt (39): TaskStatus, Priority
 - Username.kt (14): Username
+### app/src/main/java/com/anjaz/app/downloads/
+- DownloadCenter.kt (125): DlStatus, DlItem, DownloadCenter
+- DownloadsScreen.kt (108): DownloadsViewModel, DownloadsScreen
 ### app/src/main/java/com/anjaz/app/geo/
 - GeoModels.kt (42): Place, Presence, PulseKind, Pulse, MapFilter, GeoMath
 - GeoRepository.kt (97): GeoRepository
 - LocationProvider.kt (45): LocationProvider
 ### app/src/main/java/com/anjaz/app/media/
 - MediaCompressor.kt (62): Compressed, MediaCompressor
+- MediaProgress.kt (9): MediaProgress
 - MediaRepository.kt (173): previewOf, extensionFor, MediaRepository
 - MediaTransport.kt (27): HttpFailure, Download, MediaTransport, NoMedia
 - VideoCompressor.kt (76): CompressedVideo, VideoCompressor
-- VoiceRecorder.kt (71): VoiceRecorder, VoicePlayer
+- VoiceRecorder.kt (99): VoiceRecorder, VoicePlayer
 ### app/src/main/java/com/anjaz/app/pack/
-- NativePacks.kt (123): PackState, NativePacks
+- NativePacks.kt (129): PackState, NativePacks
 - PackPrefetchWorker.kt (33): PackPrefetchWorker
 ### app/src/main/java/com/anjaz/app/push/
 - AnjazMessagingService.kt (35): AnjazMessagingService
 - DeepLink.kt (8): DeepLink
 - DeviceTokens.kt (26): DeviceTokens
-- Notifications.kt (49): Notifications
+- Notifications.kt (51): Notifications
 ### app/src/main/java/com/anjaz/app/report/
 - PdfExporter.kt (32): PdfExporter
 - PdfLayout.kt (60): PdfText, PdfRule, PdfPage, PdfLayout
@@ -105,11 +109,11 @@
 ### app/src/main/java/com/anjaz/app/stt/
 - AudioPcm.kt (84): AudioPcm
 - PcmRecorder.kt (39): PcmRecorder
-- SttViewModel.kt (47): SttViewModel
+- SttViewModel.kt (48): SttViewModel
 - Transcriber.kt (51): Transcriber
-- WhisperModel.kt (92): ModelState, WhisperModel
+- WhisperModel.kt (112): ModelState, WhisperModel
 ### app/src/main/java/com/anjaz/app/sync/
-- ApiClient.kt (82): ApiClient
+- ApiClient.kt (95): ApiClient
 - CleanupWorker.kt (19): CleanupWorker
 - FirestoreRemoteStore.kt (310): FirestoreRemoteStore
 - RemoteStore.kt (54): RemoteDenied, AuditEntry, RemoteStore, NoRemoteStore, interface
@@ -117,7 +121,7 @@
 - SyncWorker.kt (54): SyncWorker, SyncScheduler
 ### app/src/main/java/com/anjaz/app/ui/about/
 - AboutCard.kt (83): AboutCard
-- Changelog.kt (49): ChangelogSheet
+- Changelog.kt (50): ChangelogSheet
 ### app/src/main/java/com/anjaz/app/ui/accounts/
 - AccountsScreen.kt (158): AccountsScreen
 - AccountsViewModel.kt (127): AccountsUi, AccountsViewModel
@@ -126,7 +130,8 @@
 ### app/src/main/java/com/anjaz/app/ui/chat/
 - ChatScreens.kt (303): ChatListScreen, ChatRoomScreen
 - ChatViewModels.kt (133): RoomRow, ChatListViewModel, roomTitle, RoomUi, ChatRoomViewModel
-- MediaUi.kt (313): MediaContent, AttachSheet, RecorderState, RecordingBar, HoldToRecord
+- MediaUi.kt (213): sizeLabel, clock, MediaContent, AttachSheet
+- VoiceUi.kt (331): VoiceBubble, RecorderState, RecordingBar, HoldToRecord
 ### app/src/main/java/com/anjaz/app/ui/components/
 - AnimatedLogo.kt (79): AnimatedLogo, SplashOverlay
 - Components.kt (218): Tone, toneColors, Tag, AnjazCard, AnjazIcon, PrimaryButton, QuietButton +7
@@ -143,11 +148,11 @@
 - DirectoryScreen.kt (104): DirectoryScreen
 - DirectoryViewModel.kt (89): DirKind, SquareRow, DirectoryUi, DirForm, DirectoryViewModel
 ### app/src/main/java/com/anjaz/app/ui/home/
-- HomeScreen.kt (190): HomeScreen
-- HomeShortcuts.kt (118): MapCard, PlacesRow
+- HomeScreen.kt (192): HomeScreen
+- HomeShortcuts.kt (149): MapCard, CampsCard
 - HomeViewModel.kt (55): HomeUiState, HomeViewModel
 ### app/src/main/java/com/anjaz/app/ui/icons/
-- Icons.kt (182): AnjazIcons
+- Icons.kt (214): AnjazIcons
 ### app/src/main/java/com/anjaz/app/ui/login/
 - LoginScreen.kt (110): LoginScreen
 - LoginViewModel.kt (66): SessionState, LoginUiState, AppSessionViewModel, LoginViewModel
@@ -157,9 +162,9 @@
 - MapViewModel.kt (181): MapUi, MapViewModel
 ### app/src/main/java/com/anjaz/app/ui/more/
 - ChatPlaceholder.kt (29): ChatPlaceholder
-- MoreScreen.kt (192): MoreScreen
+- MoreScreen.kt (201): MoreScreen
 ### app/src/main/java/com/anjaz/app/ui/nav/
-- AnjazNav.kt (166): Routes, AnjazRoot
+- AnjazNav.kt (168): Routes, AnjazRoot
 - SyncViewModel.kt (36): SyncViewModel
 ### app/src/main/java/com/anjaz/app/ui/reports/
 - ReportsScreen.kt (83): ReportsScreen
@@ -169,6 +174,8 @@
 ### app/src/main/java/com/anjaz/app/ui/sos/
 - SosScreen.kt (188): SosScreen
 - SosViewModel.kt (50): SosViewModel
+### app/src/main/java/com/anjaz/app/ui/sync/
+- SyncCenter.kt (95): SyncCenterViewModel, SyncSheet
 ### app/src/main/java/com/anjaz/app/ui/tasks/
 - TaskPhotos.kt (145): TaskPhoto, TaskPhotosViewModel, TaskPhotosSection
 - TasksScreen.kt (171): TasksScreen, NewTaskSheet
@@ -278,7 +285,7 @@
 ### docs/
 - DEPLOY.md (18)
 - media.md (7)
-- repo-map.md (41)
+- repo-map.md (42)
 ### tools/
 - repomap.py (146): files, symbols, build, main
 <!-- repomap:auto:end -->

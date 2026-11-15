@@ -67,11 +67,24 @@ class ApiClient @Inject constructor(private val cloud: CloudState) : Notifier, c
             val conn = open("/v1/media/$mediaId", "GET", t)
             try {
                 when (val code = conn.responseCode) {
-                    200 -> { conn.inputStream.use { i -> dest.outputStream().use { i.copyTo(it) } }; com.anjaz.app.media.Download.Done }
+                    200 -> {
+                        val total = conn.contentLengthLong
+                        conn.inputStream.use { i ->
+                            dest.outputStream().use { o ->
+                                val buf = ByteArray(32 * 1024); var done = 0L; var last = -1
+                                while (true) {
+                                    val n = i.read(buf); if (n < 0) break
+                                    o.write(buf, 0, n); done += n
+                                    if (total > 0) { val p = (done * 100 / total).toInt(); if (p != last) { last = p; com.anjaz.app.media.MediaProgress.percent[mediaId] = p } }
+                                }
+                            }
+                        }
+                        com.anjaz.app.media.Download.Done
+                    }
                     404 -> com.anjaz.app.media.Download.Gone
                     else -> throw com.anjaz.app.media.HttpFailure(code)
                 }
-            } finally { conn.disconnect() }
+            } finally { conn.disconnect(); com.anjaz.app.media.MediaProgress.percent.remove(mediaId) }
         }
     }
 

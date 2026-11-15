@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class SttViewModel @Inject constructor(private val model: WhisperModel, private val transcriber: Transcriber) : ViewModel() {
     val state: StateFlow<ModelState> = model.state
+    val sizeLabel: String get() = model.sizeLabel
     val busy = MutableStateFlow<String?>(null)
     val error = MutableStateFlow<String?>(null)
     val needModel = MutableStateFlow(false)

@@ -145,7 +145,7 @@ fun ChatRoomScreen(onBack: () -> Unit, onCall: (List<String>) -> Unit = {}, vm: 
             Text(ui?.title.orEmpty(), color = c.ink, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
             val others = ui?.members.orEmpty()
             if (others.isNotEmpty() && others.size <= 3) Box(Modifier.size(48.dp).clip(CircleShape).clickable { onCall(others) }.semantics { contentDescription = "مكالمة صوتية" }, contentAlignment = Alignment.Center) {
-                AnjazIcon(AnjazIcons.Meet, c.emeraldDeep)
+                AnjazIcon(AnjazIcons.Phone, c.emeraldDeep)
             }
         }
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = listState, contentPadding = PaddingValues(14.dp, 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -156,15 +156,15 @@ fun ChatRoomScreen(onBack: () -> Unit, onCall: (List<String>) -> Unit = {}, vm: 
         ) {
             if (rs.recording) RecordingBar(rs, Modifier.weight(1f)) else Box(Modifier.size(44.dp).clip(CircleShape).clickable { attach = true }.semantics { contentDescription = "إرفاق" }, contentAlignment = Alignment.Center) { AnjazIcon(AnjazIcons.Clip, c.mute) }
             if (!rs.recording) OutlinedTextField(
-                value = text, onValueChange = { if (it.length <= 4000) text = it }, placeholder = { Text("اكتب رسالة") },
+                value = text, onValueChange = { if (it.length <= 4000) text = it }, placeholder = { Text(if (dictating) "جارٍ الاستماع… اضغط لإنهاء الإملاء" else "اكتب رسالة أو أملِ بصوتك") },
                 trailingIcon = {
-                    Box(Modifier.size(44.dp).clip(CircleShape).background(if (dictating) c.red else androidx.compose.ui.graphics.Color.Transparent).clickable(enabled = sttBusy == null) {
+                    Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(if (dictating) c.red else c.navy.copy(alpha = if (c.dark) .5f else .09f)).clickable(enabled = sttBusy == null) {
                         if (dictating) { dictating = false; stt.transcribePcm(pcm.stop()) { text = (text + " " + it).trim().take(4000) } }
                         else if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) micPerm.launch(android.Manifest.permission.RECORD_AUDIO)
                         else dictating = pcm.start()
-                    }.semantics { contentDescription = if (dictating) "إيقاف الإملاء" else "إملاء صوتي" }, contentAlignment = Alignment.Center) {
+                    }.semantics { contentDescription = if (dictating) "إيقاف الإملاء" else "إملاء صوتي: تحويل كلامك إلى نص" }, contentAlignment = Alignment.Center) {
                         if (sttBusy != null) androidx.compose.material3.CircularProgressIndicator(Modifier.size(18.dp), color = c.emerald, strokeWidth = 2.dp)
-                        else AnjazIcon(AnjazIcons.Mic, if (dictating) c.onNavy else c.mute, 20.dp)
+                        else AnjazIcon(AnjazIcons.Dictate, if (dictating) c.onNavy else (if (c.dark) c.ink else c.navy), 24.dp)
                     }
                 },
                 maxLines = 4, shape = RoundedCornerShape(22.dp), modifier = Modifier.weight(1f),
@@ -285,7 +285,7 @@ private fun ModelSheet(stt: com.anjaz.app.stt.SttViewModel) {
     ModalBottomSheet(onDismissRequest = stt::dismissModel, containerColor = c.surface) {
         Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("نموذج التعرف على الكلام", color = c.ink, style = MaterialTheme.typography.titleLarge)
-            Text("يُنزَّل مرة واحدة فقط (حوالي 160 ميغابايت، يُفضَّل واي فاي). بعدها يعمل التحويل على جهازك بلا إنترنت، ولا يُرسل صوتك لأي جهة.", color = c.mute, style = MaterialTheme.typography.bodyMedium)
+            Text("يُنزَّل مرة واحدة فقط (${stt.sizeLabel}، يُفضَّل واي فاي). بعدها يعمل التحويل على جهازك بلا إنترنت، ولا يُرسل صوتك لأي جهة.", color = c.mute, style = MaterialTheme.typography.bodyMedium)
             when (val s = st) {
                 is com.anjaz.app.stt.ModelState.Downloading -> {
                     androidx.compose.material3.LinearProgressIndicator(progress = { s.percent / 100f }, Modifier.fillMaxWidth().height(8.dp).clip(CircleShape), color = c.emerald, trackColor = c.line)

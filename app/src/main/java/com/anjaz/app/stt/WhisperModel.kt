@@ -23,10 +23,29 @@ sealed interface ModelState {
 /** نموذج Whisper (base int8 ≈160MB) يُنزَّل مرة واحدة ثم يعمل بلا إنترنت؛ التنزيل يستأنف من حيث توقف. */
 @Singleton
 class WhisperModel @Inject constructor(@ApplicationContext private val ctx: Context) {
+    data class Variant(val key: String, val label: String, val approxMb: Int, val note: String)
+
     companion object {
-        const val NAME = "base"
-        private const val BASE = "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-$NAME/resolve/main/"
-        val FILES = listOf("$NAME-encoder.int8.onnx", "$NAME-decoder.int8.onnx", "$NAME-tokens.txt")
+        val VARIANTS = listOf(
+            Variant("tiny", "خفيف", 100, "أسرع وأصغر، دقته في العربية أقل"),
+            Variant("base", "متوازن", 160, "الموصى به: توازن جيد بين الدقة والحجم"),
+            Variant("small", "دقيق", 375, "أدق للعربية لكنه أكبر وأبطأ"),
+        )
+    }
+
+    private val prefs = ctx.getSharedPreferences("stt", Context.MODE_PRIVATE)
+    var variant: String = prefs.getString("variant", "base")?.takeIf { v -> VARIANTS.any { it.key == v } } ?: "base"
+        private set
+    val info: Variant get() = VARIANTS.first { it.key == variant }
+    private val NAME get() = variant
+    private val BASE get() = "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-$NAME/resolve/main/"
+    private val FILES get() = listOf("$NAME-encoder.int8.onnx", "$NAME-decoder.int8.onnx", "$NAME-tokens.txt")
+
+    fun select(key: String) {
+        if (key == variant || VARIANTS.none { it.key == key } || _state.value is ModelState.Downloading) return
+        variant = key
+        prefs.edit().putString("variant", key).apply()
+        _state.value = if (installed()) ModelState.Ready else ModelState.Missing
     }
 
     val dir: File get() = File(AppFolder.root(ctx), "models/whisper-$NAME").apply { mkdirs() }
@@ -37,6 +56,7 @@ class WhisperModel @Inject constructor(@ApplicationContext private val ctx: Cont
 
     private val _state = MutableStateFlow<ModelState>(if (installed()) ModelState.Ready else ModelState.Missing)
     val state: StateFlow<ModelState> = _state
+    val sizeLabel: String get() = "حوالي ${info.approxMb} ميغابايت"
 
     private fun installed() = File(dir, ".ok").exists() && FILES.all { file(it).length() > 0 }
 

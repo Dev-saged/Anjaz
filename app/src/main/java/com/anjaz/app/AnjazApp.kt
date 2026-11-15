@@ -10,12 +10,14 @@ import javax.inject.Inject
 class AnjazApp : Application(), Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var updates: com.anjaz.app.update.UpdateManager
+    @Inject lateinit var downloads: com.anjaz.app.downloads.DownloadCenter
 
     override fun onCreate() {
         super.onCreate()
         com.anjaz.app.push.Notifications.createChannels(this)
         com.anjaz.app.update.UpdateCheckWorker.schedule(this)
         com.anjaz.app.pack.PackPrefetchWorker.schedule(this)
+        downloads.startNotifier()
         Thread { runCatching { updates.restore() } }.start()
     }
 

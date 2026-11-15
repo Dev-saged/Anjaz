@@ -175,6 +175,15 @@ class SyncEngine @Inject constructor(
         }
     }
 
+    private suspend fun applyRegion(r: com.anjaz.app.data.db.RegionEntity) {
+        val local = db.directory().regionById(r.id)
+        val pending = local != null && db.outbox().unsyncedFor(r.id) > 0
+        when {
+            Trash.expired(r.deletedAt) -> if (local != null && !pending) db.directory().removeRegion(r.id)
+            local == null || (!pending && r.updatedAt >= local.updatedAt) -> db.directory().upsertRegion(r)
+        }
+    }
+
     private suspend fun applySquare(r: com.anjaz.app.data.db.SquareEntity) {
         val local = db.directory().squareById(r.id)
         val pending = local != null && db.outbox().unsyncedFor(r.id) > 0
@@ -202,7 +211,7 @@ class SyncEngine @Inject constructor(
         return listOf(
             scope.launch { remote.tasks(profile).catch { }.collect { applyTasks(it) } },
             scope.launch { remote.users(profile).catch { }.collect { applyUsers(it) } },
-            scope.launch { remote.regions(profile).catch { }.collect { r -> r.forEach { db.directory().upsertRegion(it) } } },
+            scope.launch { remote.regions(profile).catch { }.collect { r -> r.forEach { applyRegion(it) } } },
             scope.launch { remote.squares(profile).catch { }.collect { r -> r.forEach { applySquare(it) } } },
             scope.launch { remote.camps(profile).catch { }.collect { r -> r.forEach { applyCamp(it) } } },
             scope.launch { remote.sos(profile).catch { }.collect { applySos(it) } },

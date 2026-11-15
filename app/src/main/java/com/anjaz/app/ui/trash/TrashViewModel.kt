@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-enum class TrashKind(val label: String) { TASK("مهمة"), SQUARE("مربع"), CAMP("مخيم") }
+enum class TrashKind(val label: String) { TASK("مهمة"), SQUARE("مربع"), CAMP("مخيم"), REGION("منطقة") }
 
 data class TrashItem(val kind: TrashKind, val id: String, val title: String, val detail: String, val deletedAt: Long)
 
@@ -35,11 +35,12 @@ class TrashViewModel @Inject constructor(
     val message = MutableStateFlow<String?>(null)
 
     val ui: StateFlow<TrashUi> = combine(
-        db.tasks().observeTrashed(), db.directory().observeTrashedSquares(), db.directory().observeTrashedCamps(),
-    ) { t, s, c ->
+        db.tasks().observeTrashed(), db.directory().observeTrashedSquares(), db.directory().observeTrashedCamps(), db.directory().observeTrashedRegions(),
+    ) { t, s, c, r ->
         val list = t.map { TrashItem(TrashKind.TASK, it.id, it.title, "", it.deletedAt ?: 0L) } +
             s.map { TrashItem(TrashKind.SQUARE, it.id, it.name, it.managerName.orEmpty(), it.deletedAt ?: 0L) } +
-            c.map { TrashItem(TrashKind.CAMP, it.id, it.name, it.managerName.orEmpty(), it.deletedAt ?: 0L) }
+            c.map { TrashItem(TrashKind.CAMP, it.id, it.name, it.managerName.orEmpty(), it.deletedAt ?: 0L) } +
+            r.map { TrashItem(TrashKind.REGION, it.id, it.name, "", it.deletedAt ?: 0L) }
         TrashUi(list.sortedByDescending { it.deletedAt }, clock.now())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TrashUi())
 
@@ -48,6 +49,7 @@ class TrashViewModel @Inject constructor(
             TrashKind.TASK -> tasks.restore(i.id)
             TrashKind.SQUARE -> directory.restoreSquare(i.id)
             TrashKind.CAMP -> directory.restoreCamp(i.id)
+            TrashKind.REGION -> directory.restoreRegion(i.id)
         }
     }
 
@@ -59,6 +61,7 @@ class TrashViewModel @Inject constructor(
         TrashKind.TASK -> tasks.purge(i.id)
         TrashKind.SQUARE -> directory.purgeSquare(i.id)
         TrashKind.CAMP -> directory.purgeCamp(i.id)
+        TrashKind.REGION -> directory.purgeRegion(i.id)
     }
 
     private fun run(done: String, block: suspend () -> Outcome<Unit>) {

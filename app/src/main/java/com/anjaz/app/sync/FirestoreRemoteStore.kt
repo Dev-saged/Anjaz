@@ -99,7 +99,8 @@ class FirestoreRemoteStore : RemoteStore {
     override suspend fun createRegion(region: RegionEntity) = guard {
         val data = hashMapOf<String, Any?>("name" to region.name, "active" to region.active, "updatedAt" to region.updatedAt)
         region.phone?.let { data["phone"] = it }
-        fs.collection("regions").document(region.id).set(data).await()
+        data["deletedAt"] = region.deletedAt
+        fs.collection("regions").document(region.id).set(data, com.google.firebase.firestore.SetOptions.merge()).await()
         Unit
     }
 
@@ -130,7 +131,7 @@ class FirestoreRemoteStore : RemoteStore {
         return snapshots(q) { snap ->
             snap.documents.mapNotNull { d ->
                 d.data?.let {
-                    RegionEntity(d.id, it["name"] as? String ?: "", it["managerId"] as? String, it["phone"] as? String, it["active"] as? Boolean ?: true, (it["updatedAt"] as? Number)?.toLong() ?: 0L)
+                    RegionEntity(d.id, it["name"] as? String ?: "", it["managerId"] as? String, it["phone"] as? String, it["active"] as? Boolean ?: true, (it["updatedAt"] as? Number)?.toLong() ?: 0L, (it["deletedAt"] as? Number)?.toLong())
                 }
             }
         }

@@ -52,6 +52,8 @@ class DirectoryRepository @Inject constructor(private val db: AnjazDatabase, pri
         if (!canCreateRegion(actor)) return Outcome.Failure("ليس لديك صلاحية إضافة منطقة")
         val errors = SchemaValidator.validate(Schemas.region, values)
         if (errors.isNotEmpty()) return Outcome.Failure(errors.values.first())
+        val name = clean(values, "name").orEmpty()
+        if (db.directory().allRegions().any { it.deletedAt == null && it.name.trim().equals(name, true) }) return Outcome.Failure("توجد منطقة باسم «$name» مسبقاً")
         val now = clock.now()
         val r = RegionEntity(UUID.randomUUID().toString(), clean(values, "name").orEmpty(), null, clean(values, "phone"), true, now)
         db.withTransaction {
@@ -67,6 +69,8 @@ class DirectoryRepository @Inject constructor(private val db: AnjazDatabase, pri
         if (region.isNullOrEmpty()) return Outcome.Failure("اختر المنطقة")
         val errors = SchemaValidator.validate(Schemas.square, values)
         if (errors.isNotEmpty()) return Outcome.Failure(errors.values.first())
+        val sqName = clean(values, "name").orEmpty()
+        if (db.directory().allSquares().any { it.deletedAt == null && it.regionId == region && it.name.trim().equals(sqName, true) }) return Outcome.Failure("يوجد مربع باسم «$sqName» في هذه المنطقة")
         val now = clock.now()
         val sq = SquareEntity(UUID.randomUUID().toString(), region, clean(values, "name").orEmpty(), null, clean(values, "idNumber"), clean(values, "phone"), now, clean(values, "managerName"))
         db.withTransaction {
@@ -98,6 +102,67 @@ class DirectoryRepository @Inject constructor(private val db: AnjazDatabase, pri
 
     suspend fun squareById(id: String) = db.directory().squareById(id)
 
+    suspend fun usersOfSquare(id: String) = db.directory().allUsers().filter { it.squareId == id && !it.deleted }
+
+    suspend fun updateRegion(actor: Profile, id: String, values: Map<String, String>): Outcome<Unit> {
+        if (!canCreateRegion(actor)) return Outcome.Failure("تعديل المناطق للإدارة المركزية فقط")
+        val cur = db.directory().regionById(id) ?: return Outcome.Failure("المنطقة غير موجودة")
+        val errors = SchemaValidator.validate(Schemas.region, values)
+        if (errors.isNotEmpty()) return Outcome.Failure(errors.values.first())
+        val now = clock.now()
+        db.withTransaction {
+            db.directory().upsertRegion(cur.copy(name = clean(values, "name").orEmpty(), phone = clean(values, "phone"), updatedAt = now))
+            db.outbox().insertIgnore(Outbox.op("region", "update", EntityOp(id), now))
+        }
+        return Outcome.Ok(Unit)
+    }
+
+    /** المنطقة تُحذف فارغة فقط: لا مربعات فيها ولا حسابات مرتبطة بها. */
+    suspend fun trashRegion(actor: Profile, id: String): Outcome<Unit> {
+        if (!canCreateRegion(actor)) return Outcome.Failure("حذف المناطق للإدارة المركزية فقط")
+        val cur = db.directory().regionById(id) ?: return Outcome.Failure("المنطقة غير موجودة")
+        val squares = db.directory().allSquares().count { it.regionId == id && it.deletedAt == null }
+        if (squares > 0) return Outcome.Failure("في هذه المنطقة ${squares} مربع؛ انقلها لمنطقة أخرى أولاً ثم احذف المنطقة")
+        val users = db.directory().allUsers().count { it.regionId == id && !it.deleted }
+        if (users > 0) return Outcome.Failure("مرتبط بهذه المنطقة ${users} حساب؛ غيّر منطقتهم من شاشة الحسابات أولاً")
+        val now = clock.now()
+        db.withTransaction {
+            db.directory().upsertRegion(cur.copy(deletedAt = now, updatedAt = now))
+            db.outbox().insertIgnore(Outbox.op("region", "delete", EntityOp(id), now))
+        }
+        return Outcome.Ok(Unit)
+    }
+
+    suspend fun restoreRegion(id: String): Outcome<Unit> {
+        val cur = db.directory().regionById(id) ?: return Outcome.Failure("المنطقة غير موجودة")
+        val now = clock.now()
+        db.withTransaction {
+            db.directory().upsertRegion(cur.copy(deletedAt = null, updatedAt = now))
+            db.outbox().insertIgnore(Outbox.op("region", "restore", EntityOp(id), now))
+        }
+        return Outcome.Ok(Unit)
+    }
+
+    suspend fun purgeRegion(id: String): Outcome<Unit> {
+        val cur = db.directory().regionById(id) ?: return Outcome.Ok(Unit)
+        val now = clock.now()
+        db.withTransaction {
+            db.directory().upsertRegion(cur.copy(deletedAt = Trash.EXPIRED, updatedAt = now))
+            db.outbox().insertIgnore(Outbox.op("region", "purge", EntityOp(id), now))
+        }
+        return Outcome.Ok(Unit)
+    }
+
+    /** منطقة أُنشئت بالخطأ وهي في الحقيقة مربع: يُنشأ مربع باسمها في المنطقة المختارة وتُنقل هي إلى السلة. */
+    suspend fun convertRegionToSquare(actor: Profile, regionId: String, targetRegion: String?, values: Map<String, String>): Outcome<String> {
+        if (targetRegion == regionId) return Outcome.Failure("اختر منطقة أخرى غير المنطقة نفسها")
+        val squares = db.directory().allSquares().count { it.regionId == regionId && it.deletedAt == null }
+        if (squares > 0) return Outcome.Failure("لا يمكن تحويل منطقة فيها مربعات؛ انقل مربعاتها أولاً")
+        val created = createSquare(actor, targetRegion, values)
+        if (created is Outcome.Ok) trashRegion(actor, regionId)
+        return created
+    }
+
     suspend fun updateSquare(actor: Profile, id: String, values: Map<String, String>): Outcome<Unit> {
         if (!canCreateSquare(actor)) return Outcome.Failure("ليس لديك صلاحية تعديل المربع")
         val cur = db.directory().squareById(id) ?: return Outcome.Failure("المربع غير موجود")
@@ -105,13 +170,23 @@ class DirectoryRepository @Inject constructor(private val db: AnjazDatabase, pri
         val errors = SchemaValidator.validate(Schemas.square, values)
         if (errors.isNotEmpty()) return Outcome.Failure(errors.values.first())
         val now = clock.now()
+        val target = values["regionId"]?.takeIf { it.isNotBlank() } ?: cur.regionId
+        if (target != cur.regionId) {
+            if (actor.roleEnum != Role.CENTRAL) return Outcome.Failure("نقل المربع بين المناطق للإدارة المركزية فقط")
+            if (db.directory().regionById(target)?.deletedAt != null) return Outcome.Failure("المنطقة المختارة غير متاحة")
+        }
         val next = cur.copy(
             name = clean(values, "name").orEmpty(), managerName = clean(values, "managerName"),
-            idNumber = clean(values, "idNumber"), phone = clean(values, "phone"), updatedAt = now,
+            idNumber = clean(values, "idNumber"), phone = clean(values, "phone"), updatedAt = now, regionId = target,
         )
         db.withTransaction {
             db.directory().upsertSquare(next)
             db.outbox().insertIgnore(Outbox.op("square", "update", EntityOp(id), now))
+            // المخيمات تتبع مربعها إلى المنطقة الجديدة
+            if (target != cur.regionId) db.directory().allCamps().filter { it.squareId == id }.forEach {
+                db.directory().upsertCamp(it.copy(regionId = target, updatedAt = now))
+                db.outbox().insertIgnore(Outbox.op("camp", "update", EntityOp(it.id), now))
+            }
         }
         return Outcome.Ok(Unit)
     }
@@ -123,10 +198,14 @@ class DirectoryRepository @Inject constructor(private val db: AnjazDatabase, pri
         val errors = SchemaValidator.validate(Schemas.camp, values)
         if (errors.isNotEmpty()) return Outcome.Failure(errors.values.first())
         val now = clock.now()
+        val newSquare = values["squareId"]?.takeIf { it.isNotBlank() && it != cur.squareId }?.let { db.directory().squareById(it) }
+        if (newSquare != null && squaresInScope(actor, listOf(newSquare)).isEmpty()) return Outcome.Failure("المربع المختار خارج نطاقك")
+        if (newSquare != null && actor.roleEnum != Role.CENTRAL && newSquare.regionId != cur.regionId) return Outcome.Failure("نقل المخيم لمنطقة أخرى للإدارة المركزية فقط")
         val next = cur.copy(
             name = clean(values, "name").orEmpty(), managerName = clean(values, "managerName"),
             idNumber = clean(values, "idNumber"), phone = clean(values, "phone"), updatedAt = now,
             families = families(values),
+            squareId = newSquare?.id ?: cur.squareId, regionId = newSquare?.regionId ?: cur.regionId,
         )
         db.withTransaction {
             db.directory().upsertCamp(next)

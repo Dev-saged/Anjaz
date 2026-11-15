@@ -5,7 +5,7 @@ const EMAIL = /^[a-z0-9._+-]{1,64}@[a-z0-9-]+(\.[a-z0-9-]+)+$/;
 
 // اسم بسيط (يُلحق به نطاق النظام) أو بريد كامل مثل sajed@anjaz.ps
 export function validUsername(u) { return typeof u === 'string' && (USERNAME.test(u) || (u.length <= 80 && EMAIL.test(u))); }
-export function validPassword(p) { return typeof p === 'string' && p.length >= 8 && p.length <= 128; }
+export function validPassword(p) { return typeof p === 'string' && p.length >= 6 && p.length <= 128; }
 
 export function isActive(p) { return !!p && p.active === true && p.role in RANK; }
 export function isLead(p) { return isActive(p) && p.role !== 'FIELD_STAFF'; }

@@ -51,9 +51,12 @@ fun AnjazTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () ->
         lightColorScheme(primary = c.navy, onPrimary = c.onNavy, background = c.surface, surface = c.surface,
             onSurface = c.ink, surfaceContainer = c.card, surfaceContainerHigh = c.card, error = c.red)
     }
+    val d = androidx.compose.ui.platform.LocalDensity.current
+    val scaled = androidx.compose.ui.unit.Density(d.density, d.fontScale.coerceIn(MIN_FONT_SCALE, MAX_FONT_SCALE))
     CompositionLocalProvider(
         LocalAnjazColors provides c,
         LocalLayoutDirection provides LayoutDirection.Rtl,
+        androidx.compose.ui.platform.LocalDensity provides scaled,
     ) {
         MaterialTheme(colorScheme = scheme, typography = AnjazTypography, content = content)
     }

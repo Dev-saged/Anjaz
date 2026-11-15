@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -127,22 +128,29 @@ fun MapCard(onClick: () -> Unit) {
 
 /** بطاقة المخيمات الواحدة: العدّاد الكبير، وتحته عدد الساحات؛ تفتح الدليل. */
 @Composable
-fun CampsCard(camps: Int, squares: Int, onOpen: () -> Unit) {
+fun CampsCard(camps: Int, squares: Int, families: Int, onOpen: () -> Unit) {
     val c = Anjaz.colors
     val shape = RoundedCornerShape(22.dp)
     Row(
         Modifier.fillMaxWidth().heightIn(min = 84.dp).clip(shape).background(c.card)
             .border(BorderStroke(1.5.dp, Brush.horizontalGradient(listOf(c.emerald, c.emerald.copy(alpha = .25f)))), shape)
-            .clickable(onClick = onOpen).semantics { role = Role.Button; contentDescription = "المخيمات" }.padding(horizontal = 16.dp, vertical = 14.dp),
+            .clickable(onClick = onOpen).semantics { role = Role.Button; contentDescription = "إحصائيات المنطقة" }.padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(56.dp).clip(RoundedCornerShape(18.dp)).background(Brush.linearGradient(listOf(c.emerald.copy(alpha = .28f), c.emerald.copy(alpha = .1f)))), contentAlignment = Alignment.Center) {
             AnjazIcon(AnjazIcons.Camp, c.emeraldDeep, 32.dp)
         }
-        Column(Modifier.weight(1f)) {
-            Text("المخيمات", color = c.ink, style = MaterialTheme.typography.titleLarge)
-            Text("تتوزع على ${ltr(squares.toString())} ساحة", color = c.mute, style = MaterialTheme.typography.bodySmall)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("المخيمات والأسر", color = c.ink, style = MaterialTheme.typography.titleLarge)
+            Text(
+                "في " + com.anjaz.app.domain.Plural.of(squares, com.anjaz.app.domain.Plural.square) { ltr(it.toString()) } +
+                    " · " + com.anjaz.app.domain.Plural.of(families, com.anjaz.app.domain.Plural.family) { ltr(com.anjaz.app.domain.Plural.grouped(it)) },
+                color = c.mute, style = MaterialTheme.typography.bodySmall,
+            )
         }
-        Text(ltr(camps.toString()), color = if (c.dark) c.ink else c.navy, fontFamily = Display, style = MaterialTheme.typography.displaySmall)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            com.anjaz.app.ui.components.FitText(ltr(camps.toString()), if (c.dark) c.ink else c.navy, MaterialTheme.typography.displayLarge.copy(fontFamily = Display), Modifier.widthIn(max = 96.dp))
+            Text("مخيم", color = c.mute, style = MaterialTheme.typography.labelSmall)
+        }
     }
 }

@@ -1,7 +1,9 @@
 package com.anjaz.app.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -18,17 +20,30 @@ val PlexArabic = FontFamily(
 
 private const val TNUM = "tnum"
 
-val AnjazTypography = Typography(
-    displayLarge = TextStyle(fontFamily = Display, fontWeight = FontWeight.SemiBold, fontSize = 34.sp, lineHeight = 36.sp, fontFeatureSettings = TNUM),
-    headlineMedium = TextStyle(fontFamily = Display, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 30.sp),
-    titleLarge = TextStyle(fontFamily = Display, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, lineHeight = 26.sp),
-    titleMedium = TextStyle(fontFamily = PlexArabic, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 22.sp),
-    bodyLarge = TextStyle(fontFamily = PlexArabic, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 22.sp, fontFeatureSettings = TNUM),
-    bodyMedium = TextStyle(fontFamily = PlexArabic, fontWeight = FontWeight.Normal, fontSize = 13.sp, lineHeight = 20.sp, fontFeatureSettings = TNUM),
-    bodySmall = TextStyle(fontFamily = PlexArabic, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 18.sp, fontFeatureSettings = TNUM),
-    labelLarge = TextStyle(fontFamily = PlexArabic, fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
-    labelMedium = TextStyle(fontFamily = PlexArabic, fontWeight = FontWeight.Medium, fontSize = 12.sp),
-    labelSmall = TextStyle(fontFamily = PlexArabic, fontWeight = FontWeight.Medium, fontSize = 11.sp),
+// الخطوط العربية لها صواعد ونوازل طويلة: ارتفاع سطر واسع بلا قصّ، وحشوة الخط مفعّلة حتى لا تُقصّ الحروف.
+private val Roomy = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None)
+private val Padded = PlatformTextStyle(includeFontPadding = true)
+
+private fun style(family: FontFamily, weight: FontWeight, size: Int, line: Int, tnum: Boolean = false) = TextStyle(
+    fontFamily = family, fontWeight = weight, fontSize = size.sp, lineHeight = line.sp,
+    fontFeatureSettings = if (tnum) TNUM else null, lineHeightStyle = Roomy, platformStyle = Padded,
 )
+
+val AnjazTypography = Typography(
+    displayLarge = style(Display, FontWeight.SemiBold, 34, 50, tnum = true),
+    headlineMedium = style(Display, FontWeight.SemiBold, 24, 38),
+    titleLarge = style(Display, FontWeight.SemiBold, 20, 32, tnum = true),
+    titleMedium = style(PlexArabic, FontWeight.SemiBold, 15, 24),
+    bodyLarge = style(PlexArabic, FontWeight.Normal, 14, 23, tnum = true),
+    bodyMedium = style(PlexArabic, FontWeight.Normal, 13, 21, tnum = true),
+    bodySmall = style(PlexArabic, FontWeight.Normal, 12, 19, tnum = true),
+    labelLarge = style(PlexArabic, FontWeight.SemiBold, 14, 21),
+    labelMedium = style(PlexArabic, FontWeight.Medium, 12, 18),
+    labelSmall = style(PlexArabic, FontWeight.Medium, 11, 17),
+)
+
+/** أقصى تكبير للخط داخل التطبيق: يحترم إعداد الجهاز حتى 130% ثم يثبت كي لا تنكسر التخطيطات. */
+const val MAX_FONT_SCALE = 1.3f
+const val MIN_FONT_SCALE = 0.85f
 
 fun ltr(text: String): String = "⁦$text⁩"

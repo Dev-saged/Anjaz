@@ -111,6 +111,7 @@ class FirestoreRemoteStore : RemoteStore {
         camp.phone?.let { data["phone"] = it }
         data["managerName"] = camp.managerName
         data["deletedAt"] = camp.deletedAt
+        data["families"] = camp.families
         fs.collection("camps").document(camp.id).set(data, com.google.firebase.firestore.SetOptions.merge()).await()
         Unit
     }
@@ -152,7 +153,7 @@ class FirestoreRemoteStore : RemoteStore {
         return snapshots(q) { snap ->
             snap.documents.mapNotNull { d ->
                 d.data?.let {
-                    CampEntity(d.id, it["regionId"] as? String ?: "", it["squareId"] as? String ?: "", it["name"] as? String ?: "", it["managerName"] as? String, it["idNumber"] as? String, it["phone"] as? String, (it["updatedAt"] as? Number)?.toLong() ?: 0L, (it["deletedAt"] as? Number)?.toLong())
+                    CampEntity(d.id, it["regionId"] as? String ?: "", it["squareId"] as? String ?: "", it["name"] as? String ?: "", it["managerName"] as? String, it["idNumber"] as? String, it["phone"] as? String, (it["updatedAt"] as? Number)?.toLong() ?: 0L, (it["deletedAt"] as? Number)?.toLong(), (it["families"] as? Number)?.toInt())
                 }
             }
         }

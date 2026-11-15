@@ -31,6 +31,8 @@ class HomeViewModel @Inject constructor(private val repo: DashboardRepository, d
     val places: StateFlow<Pair<Int, Int>> = combine(db.directory().observeSquareCount(), db.directory().observeCampCount()) { a, b -> a to b }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0 to 0)
 
+    val families: StateFlow<Int> = db.directory().observeFamilies().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
     private val selected = MutableStateFlow(0)
     private val start = DayMath.startOfDay(repo.now())
 

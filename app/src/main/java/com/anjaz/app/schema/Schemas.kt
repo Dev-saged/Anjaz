@@ -1,7 +1,7 @@
 package com.anjaz.app.schema
 
 object Schemas {
-    val priorities = listOf(Choice("NORMAL", "عادية"), Choice("HIGH", "مهمة"), Choice("URGENT", "عاجلة"))
+    val priorities = listOf(Choice("NORMAL", "عادية"), Choice("URGENT", "عاجلة"))
     val task = ModuleSchema(
         id = "tasks", title = "مهمة جديدة",
         fields = listOf(
@@ -54,7 +54,8 @@ object Schemas {
         fields = listOf(
             FieldSchema("name", "اسم المخيم", FieldType.TEXT, required = true, maxLength = 80),
             FieldSchema("managerName", "مدير المخيم", FieldType.TEXT, maxLength = 80),
-            FieldSchema("idNumber", "رقم الهوية", FieldType.NUMBER, maxLength = 12),
+            FieldSchema("families", "عدد الأسر في المخيم", FieldType.NUMBER, required = true, maxLength = 6),
+            FieldSchema("idNumber", "رقم هوية المدير", FieldType.NUMBER, maxLength = 12),
             FieldSchema("phone", "رقم التواصل", FieldType.PHONE),
         ),
         listColumns = listOf("name", "managerName"),

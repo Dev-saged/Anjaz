@@ -143,7 +143,7 @@ class TemplatesViewModel @Inject constructor(private val repo: TemplatesReposito
         fields = buildList {
             add(FieldSchema("title", "عنوان المهمة", FieldType.TEXT, required = true, maxLength = 120))
             add(FieldSchema("description", "الوصف", FieldType.MULTILINE, maxLength = 1000))
-            add(FieldSchema("priority", "الأولوية", FieldType.CHOICE, required = true, choices = listOf(Choice("NORMAL", "عادية"), Choice("HIGH", "مرتفعة"), Choice("URGENT", "عاجلة"))))
+            add(FieldSchema("priority", "الأولوية", FieldType.CHOICE, required = true, choices = listOf(Choice("NORMAL", "عادية"), Choice("URGENT", "عاجلة"))))
             add(FieldSchema("every", "التكرار", FieldType.CHOICE, required = true, choices = listOf(Choice("DAILY", "يومي"), Choice("WEEKLY", "أسبوعي"))))
             if (ui.value.values["every"] == "WEEKLY") add(FieldSchema("weekday", "يوم الأسبوع", FieldType.CHOICE, choices = WEEKDAYS.mapIndexed { i, d -> Choice(i.toString(), d) }))
             add(FieldSchema("hour", "الساعة (0 إلى 23، بتوقيت غزة)", FieldType.NUMBER, required = true, maxLength = 2))

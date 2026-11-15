@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,14 +43,14 @@ private data class Entry(val title: String, val icon: ImageVector)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Unit, onOpenAccounts: () -> Unit, onOpenDirectory: () -> Unit, onOpenReports: () -> Unit, onOpenDashboard: () -> Unit, onOpenAudit: () -> Unit, onOpenMap: () -> Unit = {}, onOpenTemplates: () -> Unit = {}, onOpenDownloads: () -> Unit = {}, onOpenTrash: () -> Unit = {}) {
+fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Unit, onOpenAccounts: () -> Unit, onOpenDirectory: () -> Unit, onOpenReports: () -> Unit, onOpenDashboard: () -> Unit, onOpenAudit: () -> Unit, onOpenMap: () -> Unit = {}, onOpenTemplates: () -> Unit = {}, onOpenDownloads: () -> Unit = {}, onOpenTrash: () -> Unit = {}, onOpenStats: () -> Unit = {}) {
     val c = Anjaz.colors
     val haptic = LocalHapticFeedback.current
     val upcoming = listOf(
         Entry("الأمان والحساب", AnjazIcons.Lock),
     )
     Column(
-        Modifier.fillMaxSize().background(c.surface).statusBarsPadding().verticalScroll(rememberScrollState()).padding(18.dp).padding(bottom = 110.dp),
+        Modifier.fillMaxSize().background(c.surface).statusBarsPadding().verticalScroll(rememberScrollState()).padding(18.dp).navigationBarsPadding().padding(bottom = 150.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         ScreenTitle("المزيد", Modifier.padding(bottom = 6.dp))
@@ -61,6 +62,15 @@ fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Un
                     Text(profile.roleEnum.label, color = c.mute, style = MaterialTheme.typography.bodySmall)
                 }
                 Text("خروج", color = c.redDeep, style = MaterialTheme.typography.labelLarge, modifier = Modifier.heightIn(min = 44.dp).clickable(onClick = onSignOut).padding(8.dp))
+            }
+        }
+        AnjazCard(Modifier.fillMaxWidth(), onClick = onOpenStats) {
+            Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                AnjazIcon(AnjazIcons.Users, c.emeraldDeep)
+                Column(Modifier.weight(1f)) {
+                    Text("إحصائيات المنطقة", color = c.ink, style = MaterialTheme.typography.titleMedium)
+                    Text("المخيمات والأسر في كل مربع", color = c.mute, style = MaterialTheme.typography.bodySmall)
+                }
             }
         }
         AnjazCard(Modifier.fillMaxWidth(), onClick = onOpenDirectory) {
@@ -147,7 +157,7 @@ fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Un
         }
         com.anjaz.app.ui.about.AboutCard(Modifier.padding(top = 18.dp))
         Text(
-            "${BrandConfig.NAME} ${ltr(BuildConfig.VERSION_NAME)}",
+            "${BrandConfig.NAME} " + ltr("v${BuildConfig.VERSION_NAME} · b${BuildConfig.BUILD_NUMBER}"),
             color = c.mute, style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.fillMaxWidth().padding(top = 2.dp).combinedClickable(
                 onClick = {}, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onOpenSelfTest() },

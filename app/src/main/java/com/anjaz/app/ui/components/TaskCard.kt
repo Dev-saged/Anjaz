@@ -30,6 +30,7 @@ fun statusTone(s: TaskStatus): Tone = when (s) {
     else -> Tone.Neutral
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun TaskCard(task: TaskEntity, now: Long, onClick: () -> Unit, modifier: Modifier = Modifier, subtitle: String? = null) {
     val c = Anjaz.colors
@@ -38,7 +39,6 @@ fun TaskCard(task: TaskEntity, now: Long, onClick: () -> Unit, modifier: Modifie
     val overdue = TaskStatus.isOverdue(status, task.deadline, now)
     val accent = when {
         overdue || priority == Priority.URGENT -> c.red
-        priority == Priority.HIGH -> c.amber
         else -> c.emerald
     }
     AnjazCard(modifier, onClick) {
@@ -47,9 +47,9 @@ fun TaskCard(task: TaskEntity, now: Long, onClick: () -> Unit, modifier: Modifie
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(task.title, color = c.ink, style = MaterialTheme.typography.titleMedium, maxLines = 2)
                 subtitle?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodySmall, maxLines = 1) }
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp), itemVerticalAlignment = Alignment.CenterVertically) {
                     Tag(status.label, statusTone(status))
-                    if (priority != Priority.NORMAL) Tag(priority.label, if (priority == Priority.URGENT) Tone.Danger else Tone.Warning)
+                    if (priority.urgent) Tag(priority.label, Tone.Danger)
                     DayMath.dueLabel(task.deadline, now)?.let {
                         Text(it, color = if (overdue) c.redDeep else c.mute, style = MaterialTheme.typography.bodySmall)
                     }

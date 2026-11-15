@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.anjaz.app.ui.directory
 
@@ -50,6 +50,10 @@ import com.anjaz.app.ui.components.Tone
 import com.anjaz.app.ui.icons.AnjazIcons
 import com.anjaz.app.ui.theme.Anjaz
 import com.anjaz.app.ui.theme.ltr
+import com.anjaz.app.domain.Plural
+import androidx.compose.ui.graphics.graphicsLayer
+
+private fun ltrNum(n: Int) = ltr(n.toString())
 
 @Composable
 fun DirectoryScreen(onBack: () -> Unit, vm: DirectoryViewModel = hiltViewModel()) {
@@ -58,6 +62,7 @@ fun DirectoryScreen(onBack: () -> Unit, vm: DirectoryViewModel = hiltViewModel()
     val form by vm.form.collectAsStateWithLifecycle()
     val message by vm.message.collectAsStateWithLifecycle()
     var confirmDelete by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var expanded by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(setOf<String>()) }
     Column(Modifier.fillMaxSize().background(c.surface).statusBarsPadding()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onBack).semantics { contentDescription = "رجوع" }, contentAlignment = Alignment.Center) {
@@ -70,24 +75,65 @@ fun DirectoryScreen(onBack: () -> Unit, vm: DirectoryViewModel = hiltViewModel()
             if (ui.canRegion) item { QuietButton("منطقة جديدة") { vm.open(DirKind.REGION) } }
             if (ui.canSquare) item { QuietButton("مربع جديد") { vm.open(DirKind.SQUARE, ui.profile?.regionId) } }
             if (ui.squares.isEmpty()) item { EmptyState(AnjazIcons.Map, "لا توجد مربعات بعد", "أضف منطقة ثم مربعاً ليظهر هنا") }
+            if (ui.squares.isNotEmpty()) item {
+                val camps = ui.squares.sumOf { it.camps.size }
+                val fam = ui.squares.sumOf { r -> r.camps.sumOf { it.families ?: 0 } }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    com.anjaz.app.ui.components.KpiCard(ltr(ui.squares.size.toString()), "مربعات", Tone.Neutral, Modifier.weight(1f))
+                    com.anjaz.app.ui.components.KpiCard(ltr(camps.toString()), "مخيمات", Tone.Neutral, Modifier.weight(1f))
+                    com.anjaz.app.ui.components.KpiCard(ltr(Plural.grouped(fam)), "أسرة", Tone.Neutral, Modifier.weight(1f))
+                }
+            }
             items(ui.squares, key = { it.square.id }) { row ->
+                val open = row.square.id in expanded
+                val fam = row.camps.sumOf { it.families ?: 0 }
+                val turn by androidx.compose.animation.core.animateFloatAsState(if (open) 180f else 0f, label = "arrow")
                 AnjazCard(Modifier.fillMaxWidth()) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f).then(if (ui.canSquare) Modifier.clickable { vm.openEdit(DirKind.SQUARE, row.square.id) } else Modifier)) {
+                        Row(
+                            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { expanded = if (open) expanded - row.square.id else expanded + row.square.id }
+                                .semantics { contentDescription = row.square.name + if (open) "، مفتوح" else "، اضغط لعرض المخيمات" },
+                            horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Text(row.square.name, color = c.ink, style = MaterialTheme.typography.titleMedium)
-                                row.square.managerName?.let { Text("المسؤول: $it", color = c.ink, style = MaterialTheme.typography.bodyMedium) }
-                                if (row.regionName.isNotEmpty()) Text(row.regionName, color = c.mute, style = MaterialTheme.typography.bodySmall)
+                                Text("المسؤول: " + (row.square.managerName?.takeIf { it.isNotBlank() } ?: "غير محدد"), color = if (row.square.managerName.isNullOrBlank()) c.mute else c.ink, style = MaterialTheme.typography.bodyMedium)
+                                androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Tag(Plural.of(row.camps.size, Plural.camp, ::ltrNum), Tone.Neutral)
+                                    Tag(Plural.of(fam, Plural.family) { ltr(Plural.grouped(it)) }, Tone.Success)
+                                    if (row.regionName.isNotEmpty()) Tag(row.regionName, Tone.Neutral)
+                                }
                             }
-                            Tag("${ltr(row.camps.size.toString())} مخيم", Tone.Neutral)
-                        }
-                        row.camps.forEach { camp ->
-                            Column(Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).background(c.surface).then(if (ui.canCamp) Modifier.clickable { vm.openEdit(DirKind.CAMP, camp.id) } else Modifier).padding(10.dp)) {
-                                Text(camp.name, color = c.ink, style = MaterialTheme.typography.bodyLarge)
-                                camp.managerName?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodySmall) }
+                            if (ui.canSquare) Box(Modifier.size(44.dp).clip(CircleShape).clickable { vm.openEdit(DirKind.SQUARE, row.square.id) }.semantics { contentDescription = "تعديل " + row.square.name }, contentAlignment = Alignment.Center) {
+                                AnjazIcon(AnjazIcons.Edit, c.mute, 20.dp)
+                            }
+                            Box(Modifier.size(36.dp).clip(CircleShape).background(c.surface), contentAlignment = Alignment.Center) {
+                                Box(Modifier.graphicsLayer { rotationZ = turn }) { AnjazIcon(AnjazIcons.Down, c.ink, 20.dp) }
                             }
                         }
-                        if (ui.canCamp) QuietButton("مخيم جديد") { vm.open(DirKind.CAMP, row.square.id) }
+                        androidx.compose.animation.AnimatedVisibility(open) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                if (row.camps.isEmpty()) Text("لا مخيمات في هذا المربع بعد", color = c.mute, style = MaterialTheme.typography.bodySmall)
+                                row.camps.forEach { camp ->
+                                    Row(
+                                        Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).background(c.surface)
+                                            .then(if (ui.canCamp) Modifier.clickable { vm.openEdit(DirKind.CAMP, camp.id) } else Modifier).padding(12.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        AnjazIcon(AnjazIcons.Camp, c.emeraldDeep, 22.dp)
+                                        Column(Modifier.weight(1f)) {
+                                            Text(camp.name, color = c.ink, style = MaterialTheme.typography.bodyLarge)
+                                            camp.managerName?.takeIf { it.isNotBlank() }?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodySmall) }
+                                        }
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(camp.families?.let { ltr(Plural.grouped(it)) } ?: "—", color = c.ink, style = MaterialTheme.typography.titleMedium)
+                                            Text("أسرة", color = c.mute, style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    }
+                                }
+                                if (ui.canCamp) QuietButton("مخيم جديد") { vm.open(DirKind.CAMP, row.square.id) }
+                            }
+                        }
                     }
                 }
             }

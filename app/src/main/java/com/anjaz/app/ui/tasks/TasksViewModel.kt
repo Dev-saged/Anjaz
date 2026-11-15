@@ -32,11 +32,39 @@ enum class TaskFilter(val label: String, val match: (TaskStatus) -> Boolean) {
     DONE("منتهية", { it.terminal }),
 }
 
+/** أقسام شاشة المهام: تظهر كأربع بطاقات، والضغط على بطاقة يعرض مهامها. ALL لعرض الكل. */
+enum class TaskCategory(val label: String, val hint: String) {
+    NORMAL("مهام عادية", "مفتوحة وغير عاجلة"),
+    URGENT("مهام عاجلة", "تحتاج تدخلاً سريعاً"),
+    REVIEW("بانتظار الاعتماد", "أُنجزت وتنتظر المراجعة"),
+    DONE("منتهية", "معتمدة أو مرفوضة أو ملغاة"),
+    ALL("كل المهام", "");
+
+    fun match(t: TaskEntity): Boolean {
+        val st = TaskStatus.parse(t.status)
+        val open = !st.terminal && st != TaskStatus.AWAITING_REVIEW
+        val urgent = com.anjaz.app.domain.Priority.parse(t.priority).urgent
+        return when (this) {
+            NORMAL -> open && !urgent
+            URGENT -> open && urgent
+            REVIEW -> st == TaskStatus.AWAITING_REVIEW
+            DONE -> st.terminal
+            ALL -> true
+        }
+    }
+
+    companion object { val tiles = listOf(NORMAL, URGENT, REVIEW, DONE) }
+}
+
 data class TasksUiState(
     val loading: Boolean = true,
     val filter: TaskFilter = TaskFilter.ALL,
     val tasks: List<TaskEntity> = emptyList(),
     val now: Long = 0L,
+    val category: TaskCategory? = null,
+    val counts: Map<TaskCategory, Int> = emptyMap(),
+    val overdue: Map<TaskCategory, Int> = emptyMap(),
+    val query: String = "",
 )
 
 data class NewTaskState(
@@ -93,12 +121,27 @@ class TasksViewModel @Inject constructor(
     val form: StateFlow<NewTaskState> = _form
     val message: StateFlow<String?> = _message
 
-    val state: StateFlow<TasksUiState> = combine(queries.all(), filter) { all, f ->
+    private val category = MutableStateFlow<TaskCategory?>(null)
+    private val query = MutableStateFlow("")
+
+    val state: StateFlow<TasksUiState> = combine(queries.all(), filter, category, query) { all, f, cat, q ->
+        val now = queries.now()
+        fun late(t: TaskEntity) = t.deadline != null && t.deadline < now && !TaskStatus.parse(t.status).terminal
+        val needle = q.trim()
+        val shown = all.asSequence()
+            .filter { f.match(TaskStatus.parse(it.status)) && (cat?.match(it) ?: true) }
+            .filter { needle.isEmpty() || it.title.contains(needle, true) || it.description.contains(needle, true) }
+            .sortedWith(compareByDescending<TaskEntity> { late(it) }.thenBy { it.deadline ?: Long.MAX_VALUE }.thenByDescending { it.updatedAt })
+            .toList()
         TasksUiState(
-            loading = false, filter = f, now = queries.now(),
-            tasks = all.filter { f.match(TaskStatus.parse(it.status)) },
+            loading = false, filter = f, now = now, tasks = shown, category = cat, query = q,
+            counts = TaskCategory.entries.associateWith { c -> all.count(c::match) },
+            overdue = TaskCategory.entries.associateWith { c -> all.count { c.match(it) && late(it) } },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TasksUiState())
+
+    fun openCategory(c: TaskCategory?) { category.value = c; query.value = "" }
+    fun search(q: String) { query.value = q.take(60) }
 
     private var eventsJob: kotlinx.coroutines.Job? = null
     private val watched = MutableStateFlow<String?>(null)

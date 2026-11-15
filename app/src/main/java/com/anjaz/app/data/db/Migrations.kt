@@ -48,4 +48,10 @@ object Migrations {
             db.execSQL("ALTER TABLE `camps` ADD COLUMN `deletedAt` INTEGER")
         }
     }
+
+    val MIGRATION_6_7 = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `camps` ADD COLUMN `families` INTEGER")
+        }
+    }
 }

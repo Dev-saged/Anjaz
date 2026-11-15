@@ -59,7 +59,7 @@ object SelfTest {
         try {
             val clock = Clock { 1_760_000_000_000L }
             val repo = TaskRepository(db, clock)
-            val id = (repo.create(mapOf("title" to "مهمة اختبار", "description" to "", "priority" to "HIGH", "deadline" to "today"), "t") as? Outcome.Ok)?.value
+            val id = (repo.create(mapOf("title" to "مهمة اختبار", "description" to "", "priority" to "URGENT", "deadline" to "today"), "t") as? Outcome.Ok)?.value
 
             out += Check("إنشاء مهمة محلياً", id != null && db.tasks().byId(id) != null)
             out += Check("الصندوق الصادر يستلم العملية", db.outbox().countAll() == 1)

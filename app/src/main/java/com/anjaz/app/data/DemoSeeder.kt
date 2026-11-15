@@ -10,13 +10,13 @@ class DemoSeeder @Inject constructor(private val repo: TaskRepository) {
     private data class Seed(val title: String, val desc: String, val priority: String, val deadline: String, val path: List<TaskStatus>)
 
     private val seeds = listOf(
-        Seed("توزيع السلال الغذائية على مخيم الأمل", "مطابقة الكشوف قبل التسليم وتوثيق المستلمين.", "HIGH", "today",
+        Seed("توزيع السلال الغذائية على مخيم الأمل", "مطابقة الكشوف قبل التسليم وتوثيق المستلمين.", "NORMAL", "today",
             listOf(TaskStatus.SEEN, TaskStatus.IN_PROGRESS)),
         Seed("فحص خزانات المياه في المربع الثالث", "قياس مستوى الخزانات وتسجيل أي تسرب.", "URGENT", "today",
             listOf(TaskStatus.IN_PROGRESS, TaskStatus.AWAITING_REVIEW)),
         Seed("جرد المستلزمات الطبية في عيادة المخيم", "إعداد قائمة النواقص وإرسالها للمركز.", "NORMAL", "tomorrow", emptyList()),
         Seed("تحديث كشف الأسر المستفيدة", "إضافة الأسر الجديدة وحذف المكرر.", "NORMAL", "3d", listOf(TaskStatus.SEEN)),
-        Seed("صيانة إنارة الممر الرئيسي", "استبدال ثلاث وحدات تالفة.", "HIGH", "tomorrow",
+        Seed("صيانة إنارة الممر الرئيسي", "استبدال ثلاث وحدات تالفة.", "NORMAL", "tomorrow",
             listOf(TaskStatus.IN_PROGRESS, TaskStatus.AWAITING_REVIEW, TaskStatus.APPROVED)),
         Seed("تقرير الزيارة الأسبوعية للمربع الأول", "ملخص الملاحظات والصور.", "NORMAL", "none", emptyList()),
     )

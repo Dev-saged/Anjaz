@@ -74,7 +74,7 @@ class UpdateChecker @Inject constructor() {
         }
     }
 
-    private fun viaAsset(): AppRelease = parseVersionJson(get("$PAGE/download/version.json"), REPO)
+    private fun viaAsset(): AppRelease = parseVersionJson(get("$PAGE/download/version.json"), REPO, android.os.Build.SUPPORTED_ABIS.toList())
 
     private fun viaRedirect(): AppRelease {
         val conn = open(PAGE, follow = false)
@@ -94,8 +94,11 @@ class UpdateChecker @Inject constructor() {
         val json = Json.parseToJsonElement(get(API, "application/vnd.github+json")).jsonObject
         val tag = json["tag_name"]?.jsonPrimitive?.contentOrNull ?: throw IOException("no tag")
         val (version, build) = parseTag(tag) ?: throw IOException("bad tag")
-        val apk = json["assets"]?.jsonArray?.map { it.jsonObject }.orEmpty()
-            .firstOrNull { it["name"]?.jsonPrimitive?.contentOrNull.orEmpty().endsWith(".apk") }
+        val assets = json["assets"]?.jsonArray?.map { it.jsonObject }.orEmpty()
+            .filter { it["name"]?.jsonPrimitive?.contentOrNull.orEmpty().endsWith(".apk") }
+        val name = { a: kotlinx.serialization.json.JsonObject -> a["name"]?.jsonPrimitive?.contentOrNull.orEmpty() }
+        val apk = android.os.Build.SUPPORTED_ABIS.firstNotNullOfOrNull { abi -> assets.firstOrNull { name(it).endsWith("-$abi.apk") } }
+            ?: assets.firstOrNull { !name(it).contains("-arm") }
         return AppRelease(
             version, build, null,
             apk?.get("browser_download_url")?.jsonPrimitive?.contentOrNull ?: apkUrl(tag),
@@ -127,18 +130,22 @@ class UpdateChecker @Inject constructor() {
             return version to (body.substringAfter("-b", "").toIntOrNull() ?: 0)
         }
 
-        fun parseVersionJson(text: String, repo: String): AppRelease {
+        fun parseVersionJson(text: String, repo: String, abis: List<String> = emptyList()): AppRelease {
             val j = Json.parseToJsonElement(text).jsonObject
             val version = j["version"]?.jsonPrimitive?.contentOrNull ?: throw IOException("no version")
             if (parts(version).isEmpty()) throw IOException("bad version")
             val build = j["build"]?.jsonPrimitive?.intOrNull ?: 0
             val tag = j["tag"]?.jsonPrimitive?.contentOrNull ?: "v$version-b$build"
-            val apk = j["apk"]?.jsonPrimitive?.contentOrNull ?: "Anjaz-$tag.apk"
+            val split = abis.firstOrNull { j["apks"]?.jsonObject?.containsKey(it) == true }
+            val apk = split?.let { j["apks"]?.jsonObject?.get(it)?.jsonPrimitive?.contentOrNull }
+                ?: j["apk"]?.jsonPrimitive?.contentOrNull ?: "Anjaz-$tag.apk"
+            val size = split?.let { j["sizes"]?.jsonObject?.get(it)?.jsonPrimitive?.longOrNull }
+                ?: j["size"]?.jsonPrimitive?.longOrNull ?: 0
             return AppRelease(
                 version, build, j["code"]?.jsonPrimitive?.intOrNull,
                 "$repo/releases/download/$tag/$apk",
                 j["notes"]?.jsonPrimitive?.contentOrNull.orEmpty(),
-                j["size"]?.jsonPrimitive?.longOrNull ?: 0,
+                size,
             )
         }
 

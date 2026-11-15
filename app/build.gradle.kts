@@ -29,7 +29,6 @@ android {
         buildConfigField("String", "VERSION_NAME", "\"$versionNameProp\"")
         buildConfigField("int", "VERSION_CODE", "$fullVersionCode")
         buildConfigField("int", "BUILD_NUMBER", "$buildNumber")
-        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
     signingConfigs {
@@ -53,6 +52,15 @@ android {
         }
     }
 
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = true
+        }
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -68,6 +76,7 @@ android {
     }
 
     packaging {
+        jniLibs.useLegacyPackaging = true
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
 }

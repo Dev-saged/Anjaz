@@ -74,11 +74,23 @@ jobs:
           BASE=$(grep '^VERSION_CODE=' gradle.properties | cut -d= -f2)
           CODE=$((BASE * 10000 + GITHUB_RUN_NUMBER))
           mkdir -p dist
-          APK="${NAME}-v${VERSION}-b${GITHUB_RUN_NUMBER}.apk"
-          cp app/build/outputs/apk/release/*.apk "dist/$APK"
-          SIZE=$(stat -c %s "dist/$APK")
-          NOTES=$(python3 -c "import json,os,sys; p=sys.argv[1]; print(json.dumps(open(p).read() if os.path.exists(p) else ''))" "docs/releases/v$VERSION.md")
-          echo "{\"version\":\"$VERSION\",\"build\":$GITHUB_RUN_NUMBER,\"code\":$CODE,\"tag\":\"v$VERSION-b$GITHUB_RUN_NUMBER\",\"apk\":\"$APK\",\"size\":$SIZE,\"notes\":$NOTES}" > dist/version.json
+          BASEN="${NAME}-v${VERSION}-b${GITHUB_RUN_NUMBER}"
+          cp app/build/outputs/apk/release/app-universal-release.apk "dist/$BASEN.apk"
+          cp app/build/outputs/apk/release/app-arm64-v8a-release.apk "dist/$BASEN-arm64-v8a.apk"
+          cp app/build/outputs/apk/release/app-armeabi-v7a-release.apk "dist/$BASEN-armeabi-v7a.apk"
+          python3 - "$VERSION" "$GITHUB_RUN_NUMBER" "$CODE" "$BASEN" "docs/releases/v$VERSION.md" <<'PY'
+          import json, os, sys
+          v, n, code, base, notes = sys.argv[1:6]
+          sz = lambda f: os.path.getsize("dist/" + f)
+          abis = {a: f"{base}-{a}.apk" for a in ("arm64-v8a", "armeabi-v7a")}
+          out = {
+              "version": v, "build": int(n), "code": int(code), "tag": f"v{v}-b{n}",
+              "apk": f"{base}.apk", "size": sz(f"{base}.apk"),
+              "apks": abis, "sizes": {a: sz(f) for a, f in abis.items()},
+              "notes": open(notes).read() if os.path.exists(notes) else "",
+          }
+          json.dump(out, open("dist/version.json", "w"), ensure_ascii=False)
+          PY
           cat dist/version.json | head -c 400; echo
           if [ -z "$KEYSTORE_BASE64" ]; then
             echo "::warning::بلا أسرار توقيع — APK بمفتاح مؤقت، لن يُنشر Release ولن يظهر التحديث داخل التطبيق."
@@ -109,6 +121,6 @@ jobs:
             if [ -n "$PREV" ]; then RANGE="$PREV..HEAD"; else RANGE="HEAD~20..HEAD"; fi
             git log --no-merges --pretty='- %s' $RANGE 2>/dev/null || true
           } > /tmp/notes.md
-          gh release create "$TAG" "dist/${NAME}-v${VERSION}-b${GITHUB_RUN_NUMBER}.apk" dist/version.json \
+          gh release create "$TAG" dist/*.apk dist/version.json \
             --title "إنجاز $VERSION — بناء $GITHUB_RUN_NUMBER" \
             --notes-file /tmp/notes.md --target "$(git rev-parse HEAD)" --latest

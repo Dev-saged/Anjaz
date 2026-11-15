@@ -98,6 +98,8 @@ class SyncEngine @Inject constructor(
                     if (m.mediaId.isNotEmpty() && m.localPath.isNotEmpty()) media.upload(m.roomId, m.mediaId, java.io.File(m.localPath), m.mediaMime)
                     remote.sendMessage(m, com.anjaz.app.media.previewOf(m))
                     db.chat().setState(m.id, MessageState.SENT)
+                } else if (op.op == "unsend") {
+                    remote.unsendMessage(p.roomId.orEmpty(), p.id)
                 } else {
                     remote.markRead(p.roomId.orEmpty(), p.id, p.by.orEmpty())
                 }

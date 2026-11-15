@@ -41,6 +41,14 @@ class FirestoreRemoteStore : RemoteStore {
         Unit
     }
 
+    override suspend fun unsendMessage(roomId: String, messageId: String) = guard {
+        fs.collection("rooms").document(roomId).collection("messages").document(messageId).update(
+            mapOf("type" to "deleted", "text" to "", "media" to com.google.firebase.firestore.FieldValue.delete(),
+                "lat" to com.google.firebase.firestore.FieldValue.delete(), "lng" to com.google.firebase.firestore.FieldValue.delete()),
+        ).await()
+        Unit
+    }
+
     override suspend fun setTaskDeleted(taskId: String, deletedAt: Long?, updatedAt: Long) = guard {
         fs.collection("tasks").document(taskId).update(mapOf("deletedAt" to deletedAt, "updatedAt" to updatedAt)).await()
         Unit

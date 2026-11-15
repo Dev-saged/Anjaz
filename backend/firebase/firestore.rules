@@ -209,12 +209,16 @@ service cloud.firestore {
           && request.resource.data.type in ['text', 'image', 'file', 'location', 'voice']
           && optStr(request.resource.data, 'text', 4000)
           && request.resource.data.readBy == [request.auth.uid];
-        // إيصالات القراءة فقط: يضيف المستخدم نفسه إلى readBy
-        allow update: if isMember(roomId)
+        // المرسل يحذف رسالته لدى الجميع (تبقى أثراً بلا محتوى)
+        allow update: if (isMember(roomId) && resource.data.senderId == request.auth.uid
+          && request.resource.data.type == 'deleted' && request.resource.data.text == ''
+          && only(['type', 'text', 'media', 'lat', 'lng']))
+          // أو إيصالات القراءة فقط: يضيف المستخدم نفسه إلى readBy
+          || (isMember(roomId)
           && only(['readBy'])
           && !(request.auth.uid in resource.data.readBy)
           && request.resource.data.readBy.size() == resource.data.readBy.size() + 1
-          && request.resource.data.readBy.toSet() == resource.data.readBy.toSet().union([request.auth.uid].toSet());
+          && request.resource.data.readBy.toSet() == resource.data.readBy.toSet().union([request.auth.uid].toSet()));
         allow delete: if false;
       }
     }

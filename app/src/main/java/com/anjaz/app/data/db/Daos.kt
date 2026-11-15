@@ -263,6 +263,9 @@ interface ChatDao {
     @Query("DELETE FROM messages WHERE id = :id")
     suspend fun deleteMessage(id: String)
 
+    @Query("UPDATE messages SET type = 'deleted', text = '', mediaId = '', localPath = '', transcript = '', lat = NULL, lng = NULL WHERE id = :id")
+    suspend fun markUnsent(id: String)
+
     @Query("UPDATE messages SET localPath = :path, mediaState = :state WHERE id = :id")
     suspend fun setMedia(id: String, path: String, state: String)
 

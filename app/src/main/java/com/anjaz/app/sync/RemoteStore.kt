@@ -27,6 +27,7 @@ interface RemoteStore {
     suspend fun updateSosStatus(id: String, status: String, by: String?, updatedAt: Long) = Unit
     suspend fun createRoom(room: RoomEntity) = Unit
     suspend fun sendMessage(message: MessageEntity, roomLast: String) = Unit
+    suspend fun unsendMessage(roomId: String, messageId: String) = Unit
     suspend fun markRead(roomId: String, messageId: String, uid: String) = Unit
     suspend fun createRegion(region: com.anjaz.app.data.db.RegionEntity) = Unit
     suspend fun createSquare(square: com.anjaz.app.data.db.SquareEntity) = Unit

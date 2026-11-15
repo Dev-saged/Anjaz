@@ -115,6 +115,7 @@ class ChatRoomViewModel @Inject constructor(
     fun download(id: String) = media.fetch(id)
     fun resend(id: String) { viewModelScope.launch { repo.resend(id); scheduler.kick() } }
     fun deleteUnsent(id: String) { viewModelScope.launch { repo.deleteUnsent(id) } }
+    fun unsend(id: String) { val me = profile.value ?: return; viewModelScope.launch { repo.unsend(id, me); scheduler.kick() } }
     fun setTranscript(id: String, text: String) { viewModelScope.launch { media.saveTranscript(id, text) } }
 
     fun send(text: String) {

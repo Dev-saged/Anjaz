@@ -4,7 +4,7 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 207 ملفاً · 30718 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> 207 ملفاً · 30747 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
 > الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · MediaUi.kt 313 · FirestoreRemoteStore.kt 310
 
 ### ./
@@ -16,13 +16,13 @@
 ### .github/workflows/
 - apply-to-all-repos.yml (106)
 - backend-tests.yml (21)
-- build.yml (115)
+- build.yml (127)
 - deploy-worker.yml (21)
 - new-project.yml (95)
 - repomap.yml (41)
 - unpack-zip.yml (79)
 ### app/
-- build.gradle.kts (146)
+- build.gradle.kts (155)
 - google-services.json (29)
 ### app/schemas/com.anjaz.app.data.db.AnjazDatabase/
 - 1.json (519)
@@ -114,7 +114,7 @@
 - SyncWorker.kt (54): SyncWorker, SyncScheduler
 ### app/src/main/java/com/anjaz/app/ui/about/
 - AboutCard.kt (83): AboutCard
-- Changelog.kt (46): ChangelogSheet
+- Changelog.kt (47): ChangelogSheet
 ### app/src/main/java/com/anjaz/app/ui/accounts/
 - AccountsScreen.kt (158): AccountsScreen
 - AccountsViewModel.kt (127): AccountsUi, AccountsViewModel
@@ -179,7 +179,7 @@
 ### app/src/main/java/com/anjaz/app/update/
 - AppFolder.kt (21): AppFolder
 - UpdateCheckWorker.kt (52): UpdateCheckWorker
-- UpdateChecker.kt (172): AppRelease, UpdateChecker
+- UpdateChecker.kt (179): AppRelease, UpdateChecker
 - UpdateDownloadService.kt (65): UpdateDownloadService
 - UpdateInstallReceiver.kt (36): UpdateInstallReceiver, PackageReplacedReceiver
 - UpdateManager.kt (279): UpdateManager

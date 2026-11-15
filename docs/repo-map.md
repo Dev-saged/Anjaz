@@ -8,7 +8,7 @@
 - الدخول → cloud/AuthRepository؛ المزامنة → sync/ (`SyncEngine`، `FirestoreRemoteStore`، `SyncWorker`، `ApiClient`)
 
 ## Features (v0.8.0)
-- SOS: data/SosRepository → ui/sos؛ محادثة: data/ChatRepository → ui/chat (SyncEngine.listenRoom).
+- SOS: ui/sos؛ محادثة: ui/chat (SyncEngine.listenRoom).
 - حسابات: data/AccountsRepository → ui/accounts؛ دليل: ui/directory؛ حول: ui/about/AboutCard؛ README: brand/tools/make_readme_assets.py.
 - Room v8: Migrations 1→8 (7→8 regions.deletedAt)؛ PdfLayout منفصل لأن PdfDocument لا يعمل تحت Robolectric.
 - وسائط: media/{MediaRepository، VoiceRecorder، MediaTransport}؛ Worker جسر مؤقت media.js؛ واجهة ui/chat/MediaUi.

@@ -27,6 +27,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,6 +57,7 @@ fun DirectoryScreen(onBack: () -> Unit, vm: DirectoryViewModel = hiltViewModel()
     val ui by vm.ui.collectAsStateWithLifecycle()
     val form by vm.form.collectAsStateWithLifecycle()
     val message by vm.message.collectAsStateWithLifecycle()
+    var confirmDelete by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(c.surface).statusBarsPadding()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onBack).semantics { contentDescription = "رجوع" }, contentAlignment = Alignment.Center) {
@@ -71,14 +74,15 @@ fun DirectoryScreen(onBack: () -> Unit, vm: DirectoryViewModel = hiltViewModel()
                 AnjazCard(Modifier.fillMaxWidth()) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
+                            Column(Modifier.weight(1f).then(if (ui.canSquare) Modifier.clickable { vm.openEdit(DirKind.SQUARE, row.square.id) } else Modifier)) {
                                 Text(row.square.name, color = c.ink, style = MaterialTheme.typography.titleMedium)
+                                row.square.managerName?.let { Text("المسؤول: $it", color = c.ink, style = MaterialTheme.typography.bodyMedium) }
                                 if (row.regionName.isNotEmpty()) Text(row.regionName, color = c.mute, style = MaterialTheme.typography.bodySmall)
                             }
                             Tag("${ltr(row.camps.size.toString())} مخيم", Tone.Neutral)
                         }
                         row.camps.forEach { camp ->
-                            Column(Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).background(c.surface).padding(10.dp)) {
+                            Column(Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).background(c.surface).then(if (ui.canCamp) Modifier.clickable { vm.openEdit(DirKind.CAMP, camp.id) } else Modifier).padding(10.dp)) {
                                 Text(camp.name, color = c.ink, style = MaterialTheme.typography.bodyLarge)
                                 camp.managerName?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodySmall) }
                             }
@@ -92,12 +96,23 @@ fun DirectoryScreen(onBack: () -> Unit, vm: DirectoryViewModel = hiltViewModel()
     val f = form
     if (f != null) ModalBottomSheet(onDismissRequest = vm::close, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = c.surface) {
         val base = vm.schemaFor(f, ui)
-        val needsRegion = f.kind == DirKind.SQUARE && ui.profile?.roleEnum == com.anjaz.app.domain.Role.CENTRAL
+        val needsRegion = f.editId == null && f.kind == DirKind.SQUARE && ui.profile?.roleEnum == com.anjaz.app.domain.Role.CENTRAL
         val schema = if (needsRegion) base.copy(fields = listOf(FieldSchema("regionId", "المنطقة", FieldType.CHOICE, required = true, choices = vm.regionChoices(ui))) + base.fields) else base
         Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 20.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            ScreenTitle(schema.title)
+            ScreenTitle(if (f.editId != null) "تعديل: " + schema.title else schema.title)
             SchemaForm(schema, f.values, f.errors, vm::change)
             PrimaryButton("حفظ", onClick = vm::submit)
+            if (f.editId != null) Text(
+                "حذف إلى سلة المهملات", color = c.redDeep, style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { confirmDelete = true }.padding(vertical = 12.dp),
+            )
         }
     }
+    if (confirmDelete) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { confirmDelete = false },
+        title = { Text("نقل إلى سلة المهملات؟") },
+        text = { Text(if (form?.kind == DirKind.SQUARE) "يُنقل المربع مع مخيماته، ويمكنك استرجاعهم خلال 30 يوماً." else "يمكنك استرجاعه خلال 30 يوماً.") },
+        confirmButton = { androidx.compose.material3.TextButton({ confirmDelete = false; vm.trashEditing() }) { Text("حذف", color = c.redDeep) } },
+        dismissButton = { androidx.compose.material3.TextButton({ confirmDelete = false }) { Text("إلغاء") } },
+    )
 }

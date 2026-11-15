@@ -36,7 +36,7 @@ data class DirectoryUi(
     val canCamp: Boolean = false,
 )
 
-data class DirForm(val kind: DirKind, val parentId: String? = null, val values: Map<String, String> = emptyMap(), val errors: Map<String, String> = emptyMap())
+data class DirForm(val kind: DirKind, val parentId: String? = null, val values: Map<String, String> = emptyMap(), val errors: Map<String, String> = emptyMap(), val editId: String? = null)
 
 @HiltViewModel
 class DirectoryViewModel @Inject constructor(
@@ -67,6 +67,37 @@ class DirectoryViewModel @Inject constructor(
 
     fun open(kind: DirKind, parentId: String? = null) { form.value = DirForm(kind, parentId) }
     fun close() { form.value = null }
+
+    fun openEdit(kind: DirKind, id: String) {
+        val u = ui.value
+        val values: Map<String, String>? = when (kind) {
+            DirKind.SQUARE -> u.squares.firstOrNull { it.square.id == id }?.square?.let {
+                mapOf("name" to it.name, "managerName" to it.managerName.orEmpty(), "idNumber" to it.idNumber.orEmpty(), "phone" to it.phone.orEmpty())
+            }
+            DirKind.CAMP -> u.squares.flatMap { it.camps }.firstOrNull { it.id == id }?.let {
+                mapOf("name" to it.name, "managerName" to it.managerName.orEmpty(), "idNumber" to it.idNumber.orEmpty(), "phone" to it.phone.orEmpty())
+            }
+            DirKind.REGION -> null
+        }
+        values?.let { form.value = DirForm(kind, values = it, editId = id) }
+    }
+
+    fun trashEditing() {
+        val me = profile.value ?: return
+        val f = form.value ?: return
+        val id = f.editId ?: return
+        viewModelScope.launch {
+            val r = when (f.kind) {
+                DirKind.SQUARE -> repo.trashSquare(me, id)
+                DirKind.CAMP -> repo.trashCamp(me, id)
+                DirKind.REGION -> return@launch
+            }
+            when (r) {
+                is Outcome.Ok -> { form.value = null; message.value = "نُقل إلى سلة المهملات"; scheduler.kick() }
+                is Outcome.Failure -> message.value = r.reason
+            }
+        }
+    }
     fun change(key: String, v: String) = form.update { f -> f?.copy(values = f.values + (key to v), errors = f.errors - key) }
     fun dismissMessage() { message.value = null }
 
@@ -74,7 +105,11 @@ class DirectoryViewModel @Inject constructor(
         val me = profile.value ?: return
         val f = form.value ?: return
         viewModelScope.launch {
-            val r = when (f.kind) {
+            val r: Outcome<*> = if (f.editId != null) when (f.kind) {
+                DirKind.SQUARE -> repo.updateSquare(me, f.editId, f.values)
+                DirKind.CAMP -> repo.updateCamp(me, f.editId, f.values)
+                DirKind.REGION -> return@launch
+            } else when (f.kind) {
                 DirKind.REGION -> repo.createRegion(me, f.values)
                 DirKind.SQUARE -> repo.createSquare(me, f.values["regionId"] ?: f.parentId, f.values)
                 DirKind.CAMP -> repo.createCamp(me, f.parentId, f.values)

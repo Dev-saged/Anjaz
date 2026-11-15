@@ -15,7 +15,7 @@ data class Dashboard(val title: String, val sliceLabel: String, val slices: List
 object DashboardBuilder {
     fun build(p: Profile, tasks: List<TaskEntity>, regions: Map<String, String>, squares: Map<String, String>, users: Map<String, String>, now: Long): Dashboard {
         val role = p.roleEnum
-        val scoped = tasks.filter { !it.archived }.filter {
+        val scoped = tasks.filter { !it.archived && it.deletedAt == null }.filter {
             when (role) {
                 Role.CENTRAL -> true
                 Role.REGION_MANAGER, Role.REGION_ADMIN -> it.regionId == p.regionId

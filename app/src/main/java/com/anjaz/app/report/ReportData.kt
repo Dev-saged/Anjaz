@@ -11,7 +11,7 @@ data class ReportTable(val title: String, val subtitle: String, val headers: Lis
 object ReportData {
     fun tasks(tasks: List<TaskEntity>, users: List<UserEntity>, generatedAt: Long, scope: String): ReportTable {
         val names = users.associate { it.id to it.displayName }
-        val sorted = tasks.filter { !it.archived }.sortedByDescending { it.createdAt }
+        val sorted = tasks.filter { !it.archived && it.deletedAt == null }.sortedByDescending { it.createdAt }
         val rows = sorted.map { t ->
             listOf(
                 t.number?.toString().orEmpty(), t.title,

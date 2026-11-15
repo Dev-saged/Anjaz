@@ -41,6 +41,11 @@ class FirestoreRemoteStore : RemoteStore {
         Unit
     }
 
+    override suspend fun setTaskDeleted(taskId: String, deletedAt: Long?, updatedAt: Long) = guard {
+        fs.collection("tasks").document(taskId).update(mapOf("deletedAt" to deletedAt, "updatedAt" to updatedAt)).await()
+        Unit
+    }
+
     override suspend fun appendEvent(event: TaskEventEntity) = guard {
         val data = hashMapOf<String, Any?>(
             "actorId" to event.actorId, "fromStatus" to event.fromStatus, "toStatus" to event.toStatus,
@@ -94,16 +99,19 @@ class FirestoreRemoteStore : RemoteStore {
         val data = hashMapOf<String, Any?>("regionId" to square.regionId, "name" to square.name, "updatedAt" to square.updatedAt)
         square.idNumber?.let { data["idNumber"] = it }
         square.phone?.let { data["phone"] = it }
-        fs.collection("squares").document(square.id).set(data).await()
+        data["managerName"] = square.managerName
+        data["deletedAt"] = square.deletedAt
+        fs.collection("squares").document(square.id).set(data, com.google.firebase.firestore.SetOptions.merge()).await()
         Unit
     }
 
     override suspend fun createCamp(camp: CampEntity) = guard {
         val data = hashMapOf<String, Any?>("regionId" to camp.regionId, "squareId" to camp.squareId, "name" to camp.name, "updatedAt" to camp.updatedAt)
-        camp.managerName?.let { data["managerName"] = it }
         camp.idNumber?.let { data["idNumber"] = it }
         camp.phone?.let { data["phone"] = it }
-        fs.collection("camps").document(camp.id).set(data).await()
+        data["managerName"] = camp.managerName
+        data["deletedAt"] = camp.deletedAt
+        fs.collection("camps").document(camp.id).set(data, com.google.firebase.firestore.SetOptions.merge()).await()
         Unit
     }
 
@@ -128,7 +136,7 @@ class FirestoreRemoteStore : RemoteStore {
         return snapshots(q) { snap ->
             snap.documents.mapNotNull { d ->
                 d.data?.let {
-                    SquareEntity(d.id, it["regionId"] as? String ?: "", it["name"] as? String ?: "", it["managerId"] as? String, it["idNumber"] as? String, it["phone"] as? String, (it["updatedAt"] as? Number)?.toLong() ?: 0L)
+                    SquareEntity(d.id, it["regionId"] as? String ?: "", it["name"] as? String ?: "", it["managerId"] as? String, it["idNumber"] as? String, it["phone"] as? String, (it["updatedAt"] as? Number)?.toLong() ?: 0L, it["managerName"] as? String, (it["deletedAt"] as? Number)?.toLong())
                 }
             }
         }
@@ -144,7 +152,7 @@ class FirestoreRemoteStore : RemoteStore {
         return snapshots(q) { snap ->
             snap.documents.mapNotNull { d ->
                 d.data?.let {
-                    CampEntity(d.id, it["regionId"] as? String ?: "", it["squareId"] as? String ?: "", it["name"] as? String ?: "", it["managerName"] as? String, it["idNumber"] as? String, it["phone"] as? String, (it["updatedAt"] as? Number)?.toLong() ?: 0L)
+                    CampEntity(d.id, it["regionId"] as? String ?: "", it["squareId"] as? String ?: "", it["name"] as? String ?: "", it["managerName"] as? String, it["idNumber"] as? String, it["phone"] as? String, (it["updatedAt"] as? Number)?.toLong() ?: 0L, (it["deletedAt"] as? Number)?.toLong())
                 }
             }
         }
@@ -294,7 +302,7 @@ class FirestoreRemoteStore : RemoteStore {
         fun taskMap(t: TaskEntity): Map<String, Any?> = mapOf(
             "title" to t.title, "description" to t.description, "priority" to t.priority, "status" to t.status,
             "regionId" to t.regionId, "squareId" to t.squareId, "assigneeId" to t.assigneeId, "createdBy" to t.createdBy,
-            "deadline" to t.deadline, "createdAt" to t.createdAt, "updatedAt" to t.updatedAt,
+            "deadline" to t.deadline, "campId" to t.campId, "deletedAt" to t.deletedAt, "createdAt" to t.createdAt, "updatedAt" to t.updatedAt,
         )
 
         fun taskFrom(id: String, m: Map<String, Any?>): TaskEntity = TaskEntity(
@@ -304,6 +312,7 @@ class FirestoreRemoteStore : RemoteStore {
             priority = m["priority"] as? String ?: "NORMAL", status = m["status"] as? String ?: "NEW",
             deadline = (m["deadline"] as? Number)?.toLong(), createdAt = (m["createdAt"] as? Number)?.toLong() ?: 0L,
             updatedAt = (m["updatedAt"] as? Number)?.toLong() ?: 0L, archived = false,
+            campId = m["campId"] as? String, deletedAt = (m["deletedAt"] as? Number)?.toLong(),
         )
     }
 }

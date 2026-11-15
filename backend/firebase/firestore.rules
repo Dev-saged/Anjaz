@@ -40,7 +40,8 @@ service cloud.firestore {
     match /squares/{sid} {
       allow read: if isCentral() || inRegion(resource.data.regionId);
       allow create: if (isCentral() || isRegionManager(request.resource.data.regionId))
-        && str(request.resource.data.name, 80) && optStr(request.resource.data, 'phone', 20);
+        && str(request.resource.data.name, 80) && optStr(request.resource.data, 'phone', 20)
+        && optStr(request.resource.data, 'managerName', 80);
       allow update: if (isCentral() || isRegionManager(resource.data.regionId))
         && unchanged(['regionId']) && str(request.resource.data.name, 80);
       allow delete: if false;
@@ -49,7 +50,8 @@ service cloud.firestore {
     match /camps/{cid} {
       allow read: if isCentral() || isRegionLead(resource.data.regionId) || inSquare(resource.data.regionId, resource.data.squareId);
       allow create: if lead(request.resource.data.regionId, request.resource.data.squareId)
-        && str(request.resource.data.name, 80) && optStr(request.resource.data, 'phone', 20);
+        && str(request.resource.data.name, 80) && optStr(request.resource.data, 'phone', 20)
+        && optStr(request.resource.data, 'managerName', 80);
       allow update: if lead(resource.data.regionId, resource.data.squareId)
         && unchanged(['regionId', 'squareId']) && str(request.resource.data.name, 80);
       allow delete: if false;
@@ -84,21 +86,25 @@ service cloud.firestore {
         && str(request.resource.data.description, 1000)
         && request.resource.data.priority in ['NORMAL', 'HIGH', 'URGENT'];
 
-      allow update: if active()
-        && !(resource.data.status in ['APPROVED', 'REJECTED', 'CANCELLED'])
-        && unchanged(['createdBy', 'regionId', 'createdAt'])
-        && str(request.resource.data.title, 120) && str(request.resource.data.description, 1000)
-        && (
-          // الإداري ينفّذ أي انتقال صالح ويعدّل بيانات المهمة
-          (lead(resource.data.regionId, resource.data.squareId)
-            && (request.resource.data.status == resource.data.status
-                || validTransition(resource.data.status, request.resource.data.status)))
-          ||
-          // المُكلَّف يحرّك الحالة للأمام فقط
-          (resource.data.assigneeId == request.auth.uid
-            && only(['status', 'updatedAt'])
-            && assigneeMove(resource.data.status, request.resource.data.status))
-        );
+      allow update: if active() && (
+        // الحذف الناعم والاسترجاع: للإداري فقط ولأي حالة
+        (lead(resource.data.regionId, resource.data.squareId) && only(['deletedAt', 'updatedAt']))
+        ||
+        (!(resource.data.status in ['APPROVED', 'REJECTED', 'CANCELLED'])
+          && unchanged(['createdBy', 'regionId', 'createdAt'])
+          && str(request.resource.data.title, 120) && str(request.resource.data.description, 1000)
+          && (
+            // الإداري ينفّذ أي انتقال صالح ويعدّل بيانات المهمة
+            (lead(resource.data.regionId, resource.data.squareId)
+              && (request.resource.data.status == resource.data.status
+                  || validTransition(resource.data.status, request.resource.data.status)))
+            ||
+            // المُكلَّف يحرّك الحالة للأمام فقط
+            (resource.data.assigneeId == request.auth.uid
+              && only(['status', 'updatedAt'])
+              && assigneeMove(resource.data.status, request.resource.data.status))
+          ))
+      );
 
       allow delete: if false;
 

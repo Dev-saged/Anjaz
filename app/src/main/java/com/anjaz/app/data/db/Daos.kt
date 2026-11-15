@@ -11,10 +11,10 @@ data class SquareCount(val squareId: String, val n: Int)
 
 @Dao
 interface TaskDao {
-    @Query("SELECT squareId AS squareId, COUNT(*) AS n FROM tasks WHERE squareId IS NOT NULL AND status = 'APPROVED' AND updatedAt >= :since GROUP BY squareId")
+    @Query("SELECT squareId AS squareId, COUNT(*) AS n FROM tasks WHERE deletedAt IS NULL AND squareId IS NOT NULL AND status = 'APPROVED' AND updatedAt >= :since GROUP BY squareId")
     fun doneBySquare(since: Long): Flow<List<SquareCount>>
 
-    @Query("SELECT squareId AS squareId, COUNT(*) AS n FROM tasks WHERE squareId IS NOT NULL AND status IN ('NEW','SEEN','IN_PROGRESS','AWAITING_REVIEW') AND deadline IS NOT NULL AND deadline < :now GROUP BY squareId")
+    @Query("SELECT squareId AS squareId, COUNT(*) AS n FROM tasks WHERE deletedAt IS NULL AND squareId IS NOT NULL AND status IN ('NEW','SEEN','IN_PROGRESS','AWAITING_REVIEW') AND deadline IS NOT NULL AND deadline < :now GROUP BY squareId")
     fun overdueBySquare(now: Long): Flow<List<SquareCount>>
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
@@ -26,22 +26,34 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE id = :id")
     suspend fun byId(id: String): TaskEntity?
 
-    @Query("SELECT * FROM tasks WHERE archived = 0 ORDER BY createdAt DESC")
+    @Query("SELECT * FROM tasks WHERE deletedAt > 1 ORDER BY deletedAt DESC")
+    fun observeTrashed(): Flow<List<TaskEntity>>
+
+    @Query("UPDATE tasks SET deletedAt = :at, updatedAt = :now WHERE id = :id")
+    suspend fun setDeleted(id: String, at: Long?, now: Long)
+
+    @Query("DELETE FROM tasks WHERE deletedAt IS NOT NULL AND deletedAt < :cutoff")
+    suspend fun purgeBefore(cutoff: Long): Int
+
+    @Query("DELETE FROM tasks WHERE id = :id")
+    suspend fun remove(id: String)
+
+    @Query("SELECT * FROM tasks WHERE deletedAt IS NULL AND archived = 0 ORDER BY createdAt DESC")
     fun observeAll(): Flow<List<TaskEntity>>
 
-    @Query("SELECT * FROM tasks WHERE archived = 0 AND deadline >= :from AND deadline < :to ORDER BY deadline")
+    @Query("SELECT * FROM tasks WHERE deletedAt IS NULL AND archived = 0 AND deadline >= :from AND deadline < :to ORDER BY deadline")
     fun observeByDeadline(from: Long, to: Long): Flow<List<TaskEntity>>
 
-    @Query("SELECT COUNT(*) FROM tasks WHERE archived = 0 AND status = :status")
+    @Query("SELECT COUNT(*) FROM tasks WHERE deletedAt IS NULL AND archived = 0 AND status = :status")
     fun countByStatus(status: String): Flow<Int>
 
     @Query(
-        "SELECT COUNT(*) FROM tasks WHERE archived = 0 AND status NOT IN ('APPROVED','REJECTED','CANCELLED') " +
+        "SELECT COUNT(*) FROM tasks WHERE deletedAt IS NULL AND archived = 0 AND status NOT IN ('APPROVED','REJECTED','CANCELLED') " +
             "AND deadline IS NOT NULL AND deadline < :now",
     )
     fun countOverdue(now: Long): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM tasks WHERE archived = 0 AND status <> 'CANCELLED'")
+    @Query("SELECT COUNT(*) FROM tasks WHERE deletedAt IS NULL AND archived = 0 AND status <> 'CANCELLED'")
     fun countActiveTotal(): Flow<Int>
 
     @Query("SELECT COUNT(*) FROM tasks")
@@ -128,11 +140,29 @@ interface DirectoryDao {
     @Query("SELECT * FROM regions ORDER BY name")
     fun observeRegions(): Flow<List<RegionEntity>>
 
-    @Query("SELECT * FROM squares ORDER BY name")
+    @Query("SELECT * FROM squares WHERE deletedAt IS NULL ORDER BY name")
     fun observeSquares(): Flow<List<SquareEntity>>
 
-    @Query("SELECT * FROM camps ORDER BY name")
+    @Query("SELECT * FROM camps WHERE deletedAt IS NULL ORDER BY name")
     fun observeCamps(): Flow<List<CampEntity>>
+
+    @Query("SELECT * FROM squares WHERE deletedAt > 1 ORDER BY deletedAt DESC")
+    fun observeTrashedSquares(): Flow<List<SquareEntity>>
+
+    @Query("SELECT * FROM camps WHERE deletedAt > 1 ORDER BY deletedAt DESC")
+    fun observeTrashedCamps(): Flow<List<CampEntity>>
+
+    @Query("DELETE FROM squares WHERE deletedAt IS NOT NULL AND deletedAt < :cutoff")
+    suspend fun purgeSquares(cutoff: Long): Int
+
+    @Query("DELETE FROM camps WHERE deletedAt IS NOT NULL AND deletedAt < :cutoff")
+    suspend fun purgeCamps(cutoff: Long): Int
+
+    @Query("DELETE FROM squares WHERE id = :id")
+    suspend fun removeSquare(id: String)
+
+    @Query("DELETE FROM camps WHERE id = :id")
+    suspend fun removeCamp(id: String)
 
     @Query("SELECT * FROM regions WHERE id = :id")
     suspend fun regionById(id: String): RegionEntity?
@@ -155,10 +185,10 @@ interface DirectoryDao {
     @Query("SELECT * FROM users")
     suspend fun allUsers(): List<UserEntity>
 
-    @Query("SELECT COUNT(*) FROM camps")
+    @Query("SELECT COUNT(*) FROM camps WHERE deletedAt IS NULL")
     fun observeCampCount(): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM squares")
+    @Query("SELECT COUNT(*) FROM squares WHERE deletedAt IS NULL")
     fun observeSquareCount(): Flow<Int>
 
     @Query("SELECT COUNT(*) FROM users WHERE active = 1")

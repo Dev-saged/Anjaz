@@ -8,6 +8,8 @@ import com.anjaz.app.data.db.TaskEntity
 import com.anjaz.app.data.db.TaskEventEntity
 import com.anjaz.app.domain.Outcome
 import com.anjaz.app.domain.Priority
+import com.anjaz.app.domain.Profile
+import com.anjaz.app.domain.Role
 import com.anjaz.app.domain.TaskStatus
 import com.anjaz.app.schema.SchemaValidator
 import com.anjaz.app.schema.Schemas
@@ -35,6 +37,7 @@ class TaskRepository @Inject constructor(
         regionId: String? = null,
         squareId: String? = null,
         assigneeId: String? = null,
+        deadline: Long? = null,
     ): Outcome<String> {
         val errors = SchemaValidator.validate(Schemas.task, values)
         if (errors.isNotEmpty()) return Outcome.Failure(errors.values.first())
@@ -45,7 +48,7 @@ class TaskRepository @Inject constructor(
             id = id, number = null, title = clean.getValue("title"), description = clean.getValue("description"),
             createdBy = actorId, regionId = regionId, squareId = squareId, assigneeId = assigneeId?.takeIf { it.isNotBlank() },
             priority = Priority.parse(clean.getValue("priority")).name,
-            status = TaskStatus.NEW.name, deadline = deadlineFor(clean.getValue("deadline"), now),
+            status = TaskStatus.NEW.name, deadline = deadline ?: deadlineFor(values["deadline"].orEmpty(), now),
             createdAt = now, updatedAt = now, archived = false,
         )
         return runCatching {
@@ -57,6 +60,85 @@ class TaskRepository @Inject constructor(
             }
             Outcome.Ok(id)
         }.getOrElse { Outcome.Failure("تعذّر الحفظ محلياً") }
+    }
+
+    private data class Spec(val regionId: String?, val squareId: String?, val assigneeId: String? = null, val campId: String? = null)
+
+    /** تكليف واحد أو أكثر: مهمة مستقلة لكل جهة ليُتابَع إنجازها على حدة. */
+    suspend fun createBatch(values: Map<String, String>, actor: Profile, deadline: Long?, target: TaskTarget): Outcome<Int> {
+        val errors = SchemaValidator.validate(Schemas.task, values)
+        if (errors.isNotEmpty()) return Outcome.Failure(errors.values.first())
+        val clean = SchemaValidator.clean(Schemas.task, values)
+        val dir = db.directory()
+        val specs: List<Spec> = when (target.kind) {
+            TargetKind.ALL_SQUARES -> DirectoryRepository.squaresInScope(actor, dir.allSquares()).map { Spec(it.regionId, it.id) }
+            TargetKind.ALL_CAMPS -> DirectoryRepository.campsInScope(actor, dir.allCamps()).map { Spec(it.regionId.ifEmpty { actor.regionId.orEmpty() }, it.squareId, null, it.id) }
+            TargetKind.SQUARE -> target.ids.mapNotNull { dir.squareById(it) }
+                .let { DirectoryRepository.squaresInScope(actor, it) }.map { Spec(it.regionId, it.id) }
+            TargetKind.CAMP -> target.ids.mapNotNull { dir.campById(it) }
+                .let { DirectoryRepository.campsInScope(actor, it) }.map { Spec(it.regionId.ifEmpty { actor.regionId.orEmpty() }, it.squareId, null, it.id) }
+            TargetKind.PERSONS -> target.ids.distinct().filter { it.isNotBlank() }.map { Spec(actor.regionId, actor.squareId, it) }
+        }
+        if (specs.isEmpty()) return Outcome.Failure("لا توجد جهة مطابقة لهذا التكليف")
+        val now = clock.now()
+        return runCatching {
+            db.withTransaction {
+                specs.forEach { sp ->
+                    val id = UUID.randomUUID().toString()
+                    db.tasks().insert(
+                        TaskEntity(
+                            id = id, number = null, title = clean.getValue("title"), description = clean.getValue("description"),
+                            createdBy = actor.uid, regionId = sp.regionId, squareId = sp.squareId, assigneeId = sp.assigneeId,
+                            priority = Priority.parse(clean.getValue("priority")).name, status = TaskStatus.NEW.name,
+                            deadline = deadline, createdAt = now, updatedAt = now, archived = false, campId = sp.campId,
+                        ),
+                    )
+                    val ev = event(id, null, TaskStatus.NEW, actor.uid, null, now)
+                    db.taskEvents().insert(ev)
+                    db.outbox().insertIgnore(outbox("task", "create", TaskOpPayload(id, TaskStatus.NEW.name, null, ev.id), now))
+                }
+            }
+            Outcome.Ok(specs.size)
+        }.getOrElse { Outcome.Failure("تعذّر الحفظ محلياً") }
+    }
+
+    fun canDelete(p: Profile) = p.roleEnum.rank >= Role.SQUARE_MANAGER.rank
+
+    suspend fun delete(taskId: String, actor: Profile): Outcome<Unit> {
+        if (!canDelete(actor)) return Outcome.Failure("ليس لديك صلاحية حذف المهام")
+        val now = clock.now()
+        return runCatching {
+            db.withTransaction {
+                val t = db.tasks().byId(taskId) ?: return@withTransaction Outcome.Failure("المهمة غير موجودة")
+                db.tasks().setDeleted(taskId, now, now)
+                db.outbox().insertIgnore(outbox("task", "delete", TaskOpPayload(taskId, t.status), now))
+                Outcome.Ok(Unit)
+            }
+        }.getOrElse { Outcome.Failure("تعذّر الحذف محلياً") }
+    }
+
+    suspend fun restore(taskId: String): Outcome<Unit> {
+        val now = clock.now()
+        return runCatching {
+            db.withTransaction {
+                val t = db.tasks().byId(taskId) ?: return@withTransaction Outcome.Failure("المهمة غير موجودة")
+                db.tasks().setDeleted(taskId, null, now)
+                db.outbox().insertIgnore(outbox("task", "restore", TaskOpPayload(taskId, t.status), now))
+                Outcome.Ok(Unit)
+            }
+        }.getOrElse { Outcome.Failure("تعذّر الاسترجاع محلياً") }
+    }
+
+    suspend fun purge(taskId: String): Outcome<Unit> {
+        val now = clock.now()
+        return runCatching {
+            db.withTransaction {
+                val t = db.tasks().byId(taskId) ?: return@withTransaction Outcome.Ok(Unit)
+                db.tasks().setDeleted(taskId, Trash.EXPIRED, now)
+                db.outbox().insertIgnore(outbox("task", "purge", TaskOpPayload(taskId, t.status), now))
+                Outcome.Ok(Unit)
+            }
+        }.getOrElse { Outcome.Failure("تعذّر الحذف النهائي") }
     }
 
     suspend fun transition(taskId: String, to: TaskStatus, actorId: String, note: String? = null): Outcome<Unit> {

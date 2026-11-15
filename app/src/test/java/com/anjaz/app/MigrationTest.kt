@@ -54,6 +54,7 @@ class MigrationTest {
         createV1("mig.db")
         val db = Room.databaseBuilder(ctx, AnjazDatabase::class.java, "mig.db").addMigrations(*AnjazDatabase.MIGRATIONS).build()
         assertEquals("مهمة قديمة", db.tasks().byId("t1")?.title)
+        assertTrue(db.tasks().byId("t1")?.deletedAt == null && db.tasks().byId("t1")?.campId == null)
         assertEquals(0, db.sos().observeOpenCountNow())
         assertTrue(db.chat().roomById("none") == null)
         db.close()

@@ -59,6 +59,7 @@ import androidx.compose.runtime.setValue
 @Composable
 fun TasksScreen(vm: TasksViewModel, onNewTask: () -> Unit) {
     val s by vm.state.collectAsStateWithLifecycle()
+    val names by vm.names.collectAsStateWithLifecycle()
     val c = Anjaz.colors
     var selected by remember { mutableStateOf<TaskEntity?>(null) }
     Column(Modifier.fillMaxSize().background(c.surface).statusBarsPadding()) {
@@ -82,19 +83,29 @@ fun TasksScreen(vm: TasksViewModel, onNewTask: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             if (!s.loading && s.tasks.isEmpty()) item { EmptyState(AnjazIcons.Tasks, "لا توجد مهام هنا", "المهام التي تنشئها تظهر في هذه القائمة") }
-            items(s.tasks, key = { it.id }) { t -> TaskCard(t, s.now, { selected = t }) }
+            items(s.tasks, key = { it.id }) { t -> TaskCard(t, s.now, { selected = t }, subtitle = targetLabel(t, names)) }
         }
     }
     selected?.let { t ->
         val live = s.tasks.firstOrNull { it.id == t.id } ?: t
         val history by vm.history.collectAsStateWithLifecycle()
         androidx.compose.runtime.DisposableEffect(live.id) { vm.watch(live.id); onDispose { vm.watch(null) } }
-        TaskDetailSheet(live, s.now, history, onMove = { vm.move(live, it) }, onDismiss = { selected = null })
+        TaskDetailSheet(
+            live, s.now, history, targetLabel(live, names), vm.canDelete,
+            onMove = { vm.move(live, it) },
+            onDuplicate = { selected = null; vm.duplicate(live) },
+            onDelete = { selected = null; vm.delete(live) },
+            onDismiss = { selected = null },
+        )
     }
 }
 
 @Composable
-private fun TaskDetailSheet(task: TaskEntity, now: Long, history: List<com.anjaz.app.data.db.TaskEventEntity>, onMove: (TaskStatus) -> Unit, onDismiss: () -> Unit) {
+private fun TaskDetailSheet(
+    task: TaskEntity, now: Long, history: List<com.anjaz.app.data.db.TaskEventEntity>, target: String?, canDelete: Boolean,
+    onMove: (TaskStatus) -> Unit, onDuplicate: () -> Unit, onDelete: () -> Unit, onDismiss: () -> Unit,
+) {
+    var confirm by remember { mutableStateOf(false) }
     val c = Anjaz.colors
     val status = TaskStatus.parse(task.status)
     val primary = when (status) {
@@ -112,6 +123,7 @@ private fun TaskDetailSheet(task: TaskEntity, now: Long, history: List<com.anjaz
                 Priority.parse(task.priority).takeIf { it != Priority.NORMAL }?.let { Tag(it.label, if (it == Priority.URGENT) Tone.Danger else Tone.Warning) }
                 DayMath.dueLabel(task.deadline, now)?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodySmall) }
             }
+            target?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodyMedium) }
             if (task.description.isNotBlank()) Text(task.description, color = c.ink, style = MaterialTheme.typography.bodyLarge)
             TaskPhotosSection(task.id)
             if (primary != null) PrimaryButton(primaryLabel(primary), { onMove(primary) })
@@ -131,8 +143,30 @@ private fun TaskDetailSheet(task: TaskEntity, now: Long, history: List<com.anjaz
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { onMove(to) }.padding(vertical = 12.dp),
                 )
             }
+            Text(
+                "تكرار المهمة", color = c.ink, style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClick = onDuplicate).padding(vertical = 12.dp),
+            )
+            if (canDelete) Text(
+                "حذف المهمة", color = c.redDeep, style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { confirm = true }.padding(vertical = 12.dp),
+            )
         }
     }
+    if (confirm) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { confirm = false },
+        title = { Text("حذف المهمة؟") },
+        text = { Text("تنتقل إلى سلة المهملات وتبقى 30 يوماً يمكنك استرجاعها خلالها.") },
+        confirmButton = { androidx.compose.material3.TextButton({ confirm = false; onDelete() }) { Text("حذف", color = Anjaz.colors.redDeep) } },
+        dismissButton = { androidx.compose.material3.TextButton({ confirm = false }) { Text("إلغاء") } },
+    )
+}
+
+private fun targetLabel(t: TaskEntity, names: Map<String, String>): String? = when {
+    t.campId != null -> names[t.campId]?.let { "المخيم: $it" }
+    t.assigneeId != null -> names[t.assigneeId]?.let { "المكلّف: $it" }
+    t.squareId != null -> names[t.squareId]?.let { "المربع: $it" }
+    else -> null
 }
 
 private fun primaryLabel(to: TaskStatus) = when (to) {
@@ -153,8 +187,10 @@ private fun quietLabel(to: TaskStatus) = when (to) {
 fun NewTaskSheet(vm: TasksViewModel) {
     val f by vm.form.collectAsStateWithLifecycle()
     val team by vm.team.collectAsStateWithLifecycle()
+    val squares by vm.squares.collectAsStateWithLifecycle()
+    val camps by vm.camps.collectAsStateWithLifecycle()
     if (!f.visible) return
-    val schema = Schemas.taskWithAssignee(team)
+    val schema = Schemas.task
     val c = Anjaz.colors
     ModalBottomSheet(onDismissRequest = vm::closeForm, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = c.surface) {
         Column(
@@ -163,8 +199,9 @@ fun NewTaskSheet(vm: TasksViewModel) {
         ) {
             ScreenTitle(schema.title)
             SchemaForm(schema, f.values, f.errors, vm::edit)
+            DeadlineField(f.deadline, vm::setDeadline)
+            TargetField(f.kind, f.targets, f.errors["target"], squares, camps, team, vm::pickKind, vm::toggleTarget)
             PrimaryButton(if (f.saving) "جارٍ الحفظ…" else "حفظ المهمة", vm::submit, enabled = !f.saving)
         }
     }
 }
-

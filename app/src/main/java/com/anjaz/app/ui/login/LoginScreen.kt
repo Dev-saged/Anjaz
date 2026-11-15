@@ -54,9 +54,10 @@ fun LoginScreen(vm: LoginViewModel = hiltViewModel()) {
     Box(Modifier.fillMaxSize().background(c.surface)) {
         AmbientBackground(c.emerald.copy(alpha = .18f), c.navyHigh.copy(alpha = .16f))
         BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
+            val minH = this.maxHeight
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                 Column(
-                    Modifier.fillMaxWidth().heightIn(min = maxHeight).padding(horizontal = 24.dp),
+                    Modifier.fillMaxWidth().heightIn(min = minH).padding(horizontal = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Spacer(Modifier.height(16.dp))

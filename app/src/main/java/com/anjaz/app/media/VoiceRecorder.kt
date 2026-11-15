@@ -5,6 +5,8 @@ import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.os.Build
 import android.os.SystemClock
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import java.io.File
 
 /** تسجيل صوت AAC أحادي بمعدل 32kbps: ≈240KB للدقيقة بجودة كلام واضحة. */

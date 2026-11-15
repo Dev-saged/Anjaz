@@ -96,7 +96,7 @@ fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSo
         }
     }
     if (bell) BellSheet(alerts) { bell = false }
-    if (syncOpen) com.anjaz.app.ui.sync.SyncSheet { syncOpen = false }
+    if (syncOpen) com.anjaz.app.ui.sync.SyncSheet(onDismiss = { syncOpen = false })
 }
 
 @Composable

@@ -4,7 +4,7 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 207 ملفاً · 30747 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> 207 ملفاً · 30758 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
 > الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · MediaUi.kt 313 · FirestoreRemoteStore.kt 310
 
 ### ./
@@ -114,7 +114,7 @@
 - SyncWorker.kt (54): SyncWorker, SyncScheduler
 ### app/src/main/java/com/anjaz/app/ui/about/
 - AboutCard.kt (83): AboutCard
-- Changelog.kt (47): ChangelogSheet
+- Changelog.kt (48): ChangelogSheet
 ### app/src/main/java/com/anjaz/app/ui/accounts/
 - AccountsScreen.kt (158): AccountsScreen
 - AccountsViewModel.kt (127): AccountsUi, AccountsViewModel
@@ -145,7 +145,7 @@
 ### app/src/main/java/com/anjaz/app/ui/icons/
 - Icons.kt (170): AnjazIcons
 ### app/src/main/java/com/anjaz/app/ui/login/
-- LoginScreen.kt (100): LoginScreen
+- LoginScreen.kt (110): LoginScreen
 - LoginViewModel.kt (66): SessionState, LoginUiState, AppSessionViewModel, LoginViewModel
 ### app/src/main/java/com/anjaz/app/ui/map/
 - LiveMapScreen.kt (227): LiveMapScreen

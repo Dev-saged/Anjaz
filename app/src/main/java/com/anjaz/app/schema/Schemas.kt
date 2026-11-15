@@ -1,7 +1,7 @@
 package com.anjaz.app.schema
 
 object Schemas {
-    val priorities = listOf(Choice("NORMAL", "عادية"), Choice("HIGH", "مهمة"), Choice("URGENT", "عاجلة"))
+    val priorities = listOf(Choice("NORMAL", "عادية"), Choice("URGENT", "عاجلة"))
     val task = ModuleSchema(
         id = "tasks", title = "مهمة جديدة",
         fields = listOf(
@@ -20,8 +20,8 @@ object Schemas {
         id = "accounts", title = "حساب جديد",
         fields = buildList {
             add(FieldSchema("displayName", "الاسم", FieldType.TEXT, required = true, maxLength = 80))
-            add(FieldSchema("username", "اسم المستخدم أو بريد كامل (مثل sajed@anjaz.ps)", FieldType.TEXT, required = true, maxLength = 80))
-            add(FieldSchema("password", "كلمة المرور (8 أحرف فأكثر)", FieldType.TEXT, required = true, maxLength = 64))
+            add(FieldSchema("username", "اسم المستخدم (يُضاف له @anjaz.ps تلقائياً)", FieldType.TEXT, required = true, maxLength = 80))
+            add(FieldSchema("password", "كلمة المرور", FieldType.TEXT, required = true, maxLength = 64))
             add(FieldSchema("role", "الدور", FieldType.CHOICE, required = true, choices = roles))
             if (!regions.isNullOrEmpty()) add(FieldSchema("regionId", "المنطقة", FieldType.CHOICE, choices = regions))
             if (!squares.isNullOrEmpty()) add(FieldSchema("squareId", "المربع", FieldType.CHOICE, choices = squares))
@@ -54,7 +54,8 @@ object Schemas {
         fields = listOf(
             FieldSchema("name", "اسم المخيم", FieldType.TEXT, required = true, maxLength = 80),
             FieldSchema("managerName", "مدير المخيم", FieldType.TEXT, maxLength = 80),
-            FieldSchema("idNumber", "رقم الهوية", FieldType.NUMBER, maxLength = 12),
+            FieldSchema("families", "عدد الأسر في المخيم", FieldType.NUMBER, required = true, maxLength = 6),
+            FieldSchema("idNumber", "رقم هوية المدير", FieldType.NUMBER, maxLength = 12),
             FieldSchema("phone", "رقم التواصل", FieldType.PHONE),
         ),
         listColumns = listOf("name", "managerName"),

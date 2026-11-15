@@ -60,8 +60,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import kotlinx.coroutines.tasks.await
 
-class TaskPhoto(val id: String, val kind: String, val at: Long, val bytes: ByteArray)
+class TaskPhoto(val id: String, val kind: String, val at: Long, val bytes: ByteArray, val by: String)
 
 @HiltViewModel
 class TaskPhotosViewModel @Inject constructor(@ApplicationContext private val ctx: Context, private val auth: AuthRepository) : ViewModel() {
@@ -73,7 +78,7 @@ class TaskPhotosViewModel @Inject constructor(@ApplicationContext private val ct
         val reg = fs.collection("tasks").document(taskId).collection("photos").orderBy("at").addSnapshotListener { snap, err ->
             if (err != null) close(err) else if (snap != null) trySend(snap.documents.mapNotNull { d ->
                 val raw = d.getString("data") ?: return@mapNotNull null
-                runCatching { TaskPhoto(d.id, d.getString("kind") ?: "AFTER", d.getLong("at") ?: 0L, Base64.decode(raw, Base64.DEFAULT)) }.getOrNull()
+                runCatching { TaskPhoto(d.id, d.getString("kind") ?: "AFTER", d.getLong("at") ?: 0L, Base64.decode(raw, Base64.DEFAULT), d.getString("by").orEmpty()) }.getOrNull()
             })
         }
         awaitClose { reg.remove() }
@@ -92,6 +97,18 @@ class TaskPhotosViewModel @Inject constructor(@ApplicationContext private val ct
             busy.value = false
         }
     }
+
+    val me = auth.session
+
+    fun canRemove(p: TaskPhoto, uid: String?, role: String?) = p.by == uid || (role != null && role != "FIELD_STAFF")
+
+    fun remove(taskId: String, p: TaskPhoto) {
+        viewModelScope.launch {
+            runCatching { fs.collection("tasks").document(taskId).collection("photos").document(p.id).delete().await() }
+                .onSuccess { message.value = "حُذفت الصورة" }
+                .onFailure { message.value = "تعذّرت إزالة الصورة" }
+        }
+    }
 }
 
 @Composable
@@ -101,7 +118,10 @@ fun TaskPhotosSection(taskId: String, vm: TaskPhotosViewModel = hiltViewModel())
     val photos by remember(taskId) { vm.photos(taskId) }.collectAsStateWithLifecycle(emptyList())
     val msg by vm.message.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
+    val session by vm.me.collectAsStateWithLifecycle(null)
     var kind by remember { mutableStateOf("BEFORE") }
+    var viewing by remember { mutableStateOf<TaskPhoto?>(null) }
+    var removing by remember { mutableStateOf<TaskPhoto?>(null) }
     var shot by remember { mutableStateOf<Uri?>(null) }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { it?.let { u -> vm.add(taskId, kind, u) } }
     val take = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok -> if (ok) shot?.let { vm.add(taskId, kind, it) } }
@@ -110,8 +130,16 @@ fun TaskPhotosSection(taskId: String, vm: TaskPhotosViewModel = hiltViewModel())
         if (photos.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             photos.forEach { p ->
                 val bmp = remember(p.id) { BitmapFactory.decodeByteArray(p.bytes, 0, p.bytes.size)?.asImageBitmap() }
-                Box(Modifier.size(96.dp).clip(RoundedCornerShape(14.dp)).border(1.dp, c.line, RoundedCornerShape(14.dp)).background(c.card)) {
-                    if (bmp != null) Image(bmp, null, Modifier.size(96.dp), contentScale = ContentScale.Crop)
+                Box(Modifier.size(96.dp).clip(RoundedCornerShape(14.dp)).border(1.dp, c.line, RoundedCornerShape(14.dp)).background(c.card).clickable { viewing = p }) {
+                    if (bmp != null) Image(bmp, "صورة المهمة", Modifier.size(96.dp), contentScale = ContentScale.Crop)
+                    if (vm.canRemove(p, session?.uid, session?.role)) Box(
+                        Modifier.align(Alignment.TopEnd).size(44.dp).clickable { removing = p }.semantics { contentDescription = "حذف الصورة" },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Box(Modifier.size(28.dp).clip(CircleShape).background(c.redDeep), contentAlignment = Alignment.Center) {
+                            com.anjaz.app.ui.components.AnjazIcon(com.anjaz.app.ui.icons.AnjazIcons.Trash, c.onNavy, size = 16.dp)
+                        }
+                    }
                     Text(
                         if (p.kind == "BEFORE") "قبل" else "بعد", color = c.onNavy, style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.align(Alignment.BottomStart).padding(4.dp).clip(RoundedCornerShape(8.dp)).background(c.navy).padding(horizontal = 8.dp, vertical = 2.dp),
@@ -138,6 +166,23 @@ fun TaskPhotosSection(taskId: String, vm: TaskPhotosViewModel = hiltViewModel())
                 }.padding(horizontal = 10.dp, vertical = 12.dp),
             )
             Text("المعرض", color = c.ink, style = MaterialTheme.typography.labelLarge, modifier = Modifier.heightIn(min = 44.dp).clickable(enabled = !busy) { pick.launch("image/*") }.padding(horizontal = 10.dp, vertical = 12.dp))
+        }
+        viewing?.let { p ->
+            val big = remember(p.id) { BitmapFactory.decodeByteArray(p.bytes, 0, p.bytes.size)?.asImageBitmap() }
+            androidx.compose.ui.window.Dialog(onDismissRequest = { viewing = null }) {
+                Box(Modifier.clip(RoundedCornerShape(18.dp)).background(c.card).clickable { viewing = null }) {
+                    if (big != null) Image(big, "صورة المهمة", Modifier.fillMaxWidth(), contentScale = ContentScale.Fit)
+                }
+            }
+        }
+        removing?.let { p ->
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { removing = null },
+                title = { Text("حذف الصورة؟") },
+                text = { Text("ستُزال الصورة من المهمة لدى الجميع.") },
+                confirmButton = { androidx.compose.material3.TextButton({ removing = null; vm.remove(taskId, p) }) { Text("حذف", color = c.redDeep) } },
+                dismissButton = { androidx.compose.material3.TextButton({ removing = null }) { Text("إلغاء") } },
+            )
         }
         Notice(msg, msg?.startsWith("تعذّرت") == true || msg?.startsWith("الصورة كبيرة") == true, { vm.message.value = null })
     }

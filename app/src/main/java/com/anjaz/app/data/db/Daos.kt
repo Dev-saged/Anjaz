@@ -32,7 +32,7 @@ interface TaskDao {
     @Query("UPDATE tasks SET deletedAt = :at, updatedAt = :now WHERE id = :id")
     suspend fun setDeleted(id: String, at: Long?, now: Long)
 
-    @Query("DELETE FROM tasks WHERE deletedAt IS NOT NULL AND deletedAt < :cutoff")
+    @Query("DELETE FROM tasks WHERE deletedAt IS NOT NULL AND deletedAt < :cutoff AND NOT EXISTS (SELECT 1 FROM outbox o WHERE o.state <> 'SYNCED' AND o.payload LIKE '%' || tasks.id || '%')")
     suspend fun purgeBefore(cutoff: Long): Int
 
     @Query("DELETE FROM tasks WHERE id = :id")
@@ -88,6 +88,9 @@ interface TaskEventDao {
 interface OutboxDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIgnore(op: OutboxEntity): Long
+
+    @Query("DELETE FROM outbox WHERE state = 'SYNCED' AND COALESCE(sentAt, createdAt) < :before")
+    suspend fun pruneSynced(before: Long): Int
 
     @Query("SELECT * FROM outbox WHERE state IN ('LOCAL','FAILED') ORDER BY createdAt")
     suspend fun pending(): List<OutboxEntity>
@@ -152,10 +155,10 @@ interface DirectoryDao {
     @Query("SELECT * FROM camps WHERE deletedAt > 1 ORDER BY deletedAt DESC")
     fun observeTrashedCamps(): Flow<List<CampEntity>>
 
-    @Query("DELETE FROM squares WHERE deletedAt IS NOT NULL AND deletedAt < :cutoff")
+    @Query("DELETE FROM squares WHERE deletedAt IS NOT NULL AND deletedAt < :cutoff AND NOT EXISTS (SELECT 1 FROM outbox o WHERE o.state <> 'SYNCED' AND o.payload LIKE '%' || squares.id || '%')")
     suspend fun purgeSquares(cutoff: Long): Int
 
-    @Query("DELETE FROM camps WHERE deletedAt IS NOT NULL AND deletedAt < :cutoff")
+    @Query("DELETE FROM camps WHERE deletedAt IS NOT NULL AND deletedAt < :cutoff AND NOT EXISTS (SELECT 1 FROM outbox o WHERE o.state <> 'SYNCED' AND o.payload LIKE '%' || camps.id || '%')")
     suspend fun purgeCamps(cutoff: Long): Int
 
     @Query("DELETE FROM squares WHERE id = :id")
@@ -190,6 +193,9 @@ interface DirectoryDao {
 
     @Query("SELECT COUNT(*) FROM squares WHERE deletedAt IS NULL")
     fun observeSquareCount(): Flow<Int>
+
+    @Query("SELECT COALESCE(SUM(families), 0) FROM camps WHERE deletedAt IS NULL")
+    fun observeFamilies(): Flow<Int>
 
     @Query("SELECT COUNT(*) FROM users WHERE active = 1")
     fun observeActiveUsers(): Flow<Int>
@@ -256,6 +262,9 @@ interface ChatDao {
 
     @Query("DELETE FROM messages WHERE id = :id")
     suspend fun deleteMessage(id: String)
+
+    @Query("UPDATE messages SET type = 'deleted', text = '', mediaId = '', localPath = '', transcript = '', lat = NULL, lng = NULL WHERE id = :id")
+    suspend fun markUnsent(id: String)
 
     @Query("UPDATE messages SET localPath = :path, mediaState = :state WHERE id = :id")
     suspend fun setMedia(id: String, path: String, state: String)

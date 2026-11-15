@@ -63,6 +63,7 @@ object Routes {
     const val SEARCH = "search"
     const val DOWNLOADS = "downloads"
     const val TRASH = "trash"
+    const val STATS = "stats"
     const val ROOM = "room/{roomId}"
     fun room(id: String) = "room/$id"
 }
@@ -119,7 +120,7 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
             popEnterTransition = { fadeIn(tween(240)) },
             popExitTransition = { fadeOut(tween(160)) },
         ) {
-            composable(Routes.HOME) { HomeScreen(onOpenTask = { nav.navigateTab(Routes.TASKS) }, onNewTask = tasksVm::openForm, onOpenSos = { nav.navigateTab(Routes.SOS) }, onSearch = { nav.navigate(Routes.SEARCH) }, onOpenMap = { nav.navigate(Routes.MAP) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, canAssign = profile.canAssign) }
+            composable(Routes.HOME) { HomeScreen(onOpenTask = { nav.navigateTab(Routes.TASKS) }, onNewTask = tasksVm::openForm, onOpenSos = { nav.navigateTab(Routes.SOS) }, onSearch = { nav.navigate(Routes.SEARCH) }, onOpenMap = { nav.navigate(Routes.MAP) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, canAssign = profile.canAssign, onOpenStats = { nav.navigate(Routes.STATS) }) }
             composable(Routes.TASKS) { TasksScreen(tasksVm, onNewTask = tasksVm::openForm) }
             composable(Routes.CHAT) { ChatListScreen(onOpenRoom = { nav.navigate(Routes.room(it)) }) }
             composable(Routes.ROOM) { ChatRoomScreen(onBack = { nav.popBackStack() }, onCall = { nav.navigate("call/new?members=" + it.joinToString(",")) }) }
@@ -130,7 +131,7 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
                 )
             }
             composable(Routes.SOS) { SosScreen() }
-            composable(Routes.MORE) { MoreScreen(profile, onSignOut = onSignOut, onOpenSelfTest = { nav.navigate(Routes.TEST) }, onOpenAccounts = { nav.navigate(Routes.ACCOUNTS) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, onOpenReports = { nav.navigate(Routes.REPORTS) }, onOpenDashboard = { nav.navigate(Routes.DASHBOARD) }, onOpenAudit = { nav.navigate(Routes.AUDIT) }, onOpenMap = { nav.navigate(Routes.MAP) }, onOpenTemplates = { nav.navigate(Routes.TEMPLATES) }, onOpenDownloads = { nav.navigate(Routes.DOWNLOADS) }, onOpenTrash = { nav.navigate(Routes.TRASH) }) }
+            composable(Routes.MORE) { MoreScreen(profile, onSignOut = onSignOut, onOpenSelfTest = { nav.navigate(Routes.TEST) }, onOpenAccounts = { nav.navigate(Routes.ACCOUNTS) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, onOpenReports = { nav.navigate(Routes.REPORTS) }, onOpenDashboard = { nav.navigate(Routes.DASHBOARD) }, onOpenAudit = { nav.navigate(Routes.AUDIT) }, onOpenMap = { nav.navigate(Routes.MAP) }, onOpenTemplates = { nav.navigate(Routes.TEMPLATES) }, onOpenDownloads = { nav.navigate(Routes.DOWNLOADS) }, onOpenTrash = { nav.navigate(Routes.TRASH) }, onOpenStats = { nav.navigate(Routes.STATS) }) }
             composable(Routes.TRASH) { com.anjaz.app.ui.trash.TrashScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.DOWNLOADS) { com.anjaz.app.downloads.DownloadsScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.SEARCH) {
@@ -149,10 +150,11 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
             composable(Routes.DASHBOARD) { com.anjaz.app.ui.dashboard.DashboardScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.REPORTS) { ReportsScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.DIRECTORY) { DirectoryScreen(onBack = { nav.popBackStack() }) }
+            composable(Routes.STATS) { com.anjaz.app.ui.stats.StatsScreen(onBack = { nav.popBackStack() }, onManage = { nav.navigate(Routes.DIRECTORY) }) }
             composable(Routes.ACCOUNTS) { AccountsScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.TEST) { SelfTestScreen() }
         }
-        if (route != Routes.TEST && route != Routes.ROOM && route != Routes.ACCOUNTS && route != Routes.DIRECTORY && route != Routes.REPORTS && route != Routes.DASHBOARD && route != Routes.AUDIT && route != Routes.MAP && route != Routes.TEMPLATES && route != Routes.SEARCH && route != Routes.DOWNLOADS && route != Routes.TRASH && !route.startsWith("call/")) {
+        if (route != Routes.TEST && route != Routes.ROOM && route != Routes.ACCOUNTS && route != Routes.DIRECTORY && route != Routes.REPORTS && route != Routes.DASHBOARD && route != Routes.AUDIT && route != Routes.MAP && route != Routes.TEMPLATES && route != Routes.SEARCH && route != Routes.DOWNLOADS && route != Routes.TRASH && route != Routes.STATS && !route.startsWith("call/")) {
             GlassNavBar(
                 items, route, { nav.navigateTab(it) },
                 onFab = {

@@ -24,6 +24,7 @@ class CleanupWorker @AssistedInject constructor(
         media.cleanOrphans()
         purgeTrash()
         purgeCache()
+        db.outbox().pruneSynced(clock.now() - 7L * 24 * 3_600_000)
     }.fold({ Result.success() }, { Result.retry() })
 
     /** ما مضى على حذفه 30 يوماً (أو حُذف نهائياً) يُزال محلياً؛ المربع لا يُزال قبل مخيماته. */

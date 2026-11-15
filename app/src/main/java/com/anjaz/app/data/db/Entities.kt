@@ -43,6 +43,7 @@ data class CampEntity(
     val phone: String?,
     val updatedAt: Long,
     val deletedAt: Long? = null,
+    val families: Int? = null,
 )
 
 @Entity(tableName = "users", indices = [Index("username", unique = true)])

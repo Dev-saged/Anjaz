@@ -107,8 +107,9 @@ fun AccountsScreen(onBack: () -> Unit, vm: AccountsViewModel = hiltViewModel()) 
             }
             Notice(ui.message, ui.isError, vm::dismissMessage)
             SchemaForm(s, ui.values, ui.errors, vm::change)
-            val user = ui.values["username"].orEmpty().trim().lowercase()
-            if (user.isNotEmpty()) Text("يدخل بـ: " + ltr(user) + if ('@' in user) "" else "  (يُضاف نطاق النظام تلقائياً)", color = c.mute, style = MaterialTheme.typography.bodySmall)
+            val raw = ui.values["username"].orEmpty().trim().lowercase()
+            val full = if ('@' in raw) raw else "$raw@${com.anjaz.app.BrandConfig.ACCOUNT_DOMAIN}"
+            if (raw.isNotEmpty()) Text("يدخل بـ: " + ltr(full), color = c.mute, style = MaterialTheme.typography.bodySmall)
             PasswordMeter(ui.values["password"].orEmpty())
             QuietButton("توليد كلمة مرور قوية", onClick = vm::generatePassword)
             PrimaryButton(if (ui.busy) "جارٍ الإنشاء" else "إنشاء الحساب", onClick = vm::submit, enabled = !ui.busy)
@@ -152,6 +153,6 @@ private fun PasswordMeter(p: String) {
     val color = when (score) { 0, 1 -> c.red; 2 -> c.amber; else -> c.emerald }
     Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
         repeat(4) { Box(Modifier.weight(1f).height(5.dp).clip(CircleShape).background(if (it < score) color else c.line)) }
-        Text(when (score) { 0, 1 -> "ضعيفة"; 2 -> "متوسطة"; 3 -> "جيدة"; else -> "قوية" }, color = color, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(start = 8.dp))
+        Text(when (score) { 0, 1 -> "ضعيفة"; 2 -> "متوسطة"; 3 -> "جيدة"; else -> "قوية" } + " · " + ltr(p.trim().length.toString()) + " حرفاً", color = color, style = MaterialTheme.typography.labelSmall, maxLines = 1, modifier = Modifier.padding(start = 8.dp))
     }
 }

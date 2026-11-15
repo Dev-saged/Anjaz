@@ -40,6 +40,7 @@ class AccountsViewModel @Inject constructor(
     private val repo: AccountsRepository,
     auth: AuthRepository,
     private val scheduler: SyncScheduler,
+    private val directory: com.anjaz.app.data.DirectoryRepository,
 ) : ViewModel() {
     private val profile: StateFlow<Profile?> = auth.session.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val ui = MutableStateFlow(AccountsUi())
@@ -62,21 +63,45 @@ class AccountsViewModel @Inject constructor(
         val me = profile.value ?: return
         val cur = ui.value
         val sch = schema.value ?: return
-        val errors = SchemaValidator.validate(sch, cur.values).toMutableMap()
-        val user = com.anjaz.app.domain.Username.normalize(cur.values["username"].orEmpty())
-        if ("username" !in errors && !com.anjaz.app.domain.Username.isValid(user)) errors["username"] = "اسم لاتيني (3-32) أو بريد كامل مثل name@domain.com"
+        val domain = com.anjaz.app.BrandConfig.ACCOUNT_DOMAIN
+        val values = cur.values.toMutableMap()
+        values["password"] = com.anjaz.app.domain.Username.cleanSecret(values["password"].orEmpty())
+        val errors = SchemaValidator.validate(sch, values).toMutableMap()
+        val user = com.anjaz.app.domain.Username.forAccount(values["username"].orEmpty(), domain)
+        if ("username" !in errors && user == null) errors["username"] = "حروف لاتينية وأرقام فقط، والنطاق @$domain"
+        val pw = values["password"].orEmpty()
+        if ("password" !in errors && pw.length < 8) errors["password"] = "طولها ${pw.length} — المطلوب 8 أحرف أو أكثر"
+        val role = values["role"].orEmpty()
+        val regionPicked = !values["regionId"].isNullOrBlank()
+        val squarePicked = !values["squareId"].isNullOrBlank()
+        val hasRegionField = sch.fields.any { it.key == "regionId" }
+        val hasSquareField = sch.fields.any { it.key == "squareId" }
+        when (role) {
+            "REGION_MANAGER", "REGION_ADMIN" -> if (hasRegionField && !regionPicked) errors["regionId"] = "اختر المنطقة لهذا الدور"
+            "SQUARE_MANAGER", "FIELD_STAFF" -> if (hasSquareField && !squarePicked) errors["squareId"] = "اختر المربع لهذا الدور"
+        }
         if (errors.isNotEmpty()) { ui.update { it.copy(errors = errors) }; return }
+        values["username"] = user!!
+        if (role in setOf("REGION_MANAGER", "REGION_ADMIN")) values.remove("squareId")
         ui.update { it.copy(busy = true) }
         viewModelScope.launch {
-            when (val r = repo.create(me, cur.values, sch)) {
+            when (val r = repo.create(me, values, sch)) {
                 is Outcome.Ok -> {
-                    val name = cur.values["displayName"].orEmpty()
-                    ui.update { AccountsUi(message = "أُنشئ حساب $name", isError = false, revealedPassword = cur.values["username"].orEmpty() to cur.values["password"].orEmpty()) }
+                    val name = values["displayName"].orEmpty().trim()
+                    if (role == "SQUARE_MANAGER") values["squareId"]?.let { linkManager(me, it, name) }
+                    ui.update { AccountsUi(message = "أُنشئ حساب $name", isError = false, revealedPassword = user to pw) }
                     scheduler.kick()
                 }
                 is Outcome.Failure -> ui.update { it.copy(busy = false, message = r.reason, isError = true) }
             }
         }
+    }
+
+    /** مدير المربع الجديد يصبح مسؤول المربع المعروض إن لم يُسجَّل له مسؤول. */
+    private suspend fun linkManager(me: Profile, squareId: String, name: String) {
+        val sq = directory.squareById(squareId) ?: return
+        if (!sq.managerName.isNullOrBlank()) return
+        directory.updateSquare(me, squareId, mapOf("name" to sq.name, "managerName" to name, "idNumber" to sq.idNumber.orEmpty(), "phone" to sq.phone.orEmpty()))
     }
 
     fun reset(u: UserEntity) = viewModelScope.launch {

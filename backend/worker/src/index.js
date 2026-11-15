@@ -3,6 +3,7 @@ import { readBackup, runBackup } from './backup.js';
 import { escalate } from './cron.js';
 import { runRecurring, weeklyReport } from './recurring.js';
 import { ackMedia, getMedia, purgeMedia, putMedia } from './media.js';
+import { purgeTrash } from './trash.js';
 import { Firestore } from './firestore.js';
 import { Identity } from './identity.js';
 import { sendFcm, targetsFor } from './notify.js';
@@ -46,10 +47,16 @@ async function audit(fs, actorId, action, targetId, regionId, now) {
 async function createUser(ctx) {
   const b = await body(ctx.request);
   const target = { role: b.role, regionId: b.regionId ?? null, squareId: b.squareId ?? null };
-  if (!validUsername(b.username)) throw new HttpError(400, 'اسم المستخدم: 3-32 حرفاً لاتينياً أو أرقاماً، أو بريد كامل مثل name@domain.com');
+  const domain = (ctx.env.ACCOUNT_DOMAIN || 'anjaz.ps').toLowerCase();
+  const raw = typeof b.username === 'string' ? b.username.trim().toLowerCase() : '';
+  b.username = raw.includes('@') ? raw : `${raw}@${domain}`;
+  if (!validUsername(b.username)) throw new HttpError(400, 'اسم المستخدم: حروف لاتينية وأرقام، مثل ahmad أو ahmad@' + domain);
+  if (!b.username.endsWith(`@${domain}`)) throw new HttpError(400, `الحسابات تُنشأ على النطاق @${domain} فقط`);
+  if (typeof b.password === 'string') b.password = b.password.trim();
   if (!validPassword(b.password)) throw new HttpError(400, 'كلمة المرور 8 أحرف على الأقل');
   if (!str(b.displayName, 80)) throw new HttpError(400, 'الاسم مطلوب');
-  if (!shapeOk(target) || !canCreateUser(ctx.actor, target)) throw new HttpError(403, 'ليس لديك صلاحية إنشاء هذا الحساب');
+  if (!shapeOk(target)) throw new HttpError(400, target.role === 'REGION_MANAGER' || target.role === 'REGION_ADMIN' ? 'حدّد المنطقة لهذا الدور' : 'حدّد المنطقة والمربع لهذا الدور');
+  if (!canCreateUser(ctx.actor, target)) throw new HttpError(403, 'ليس لديك صلاحية إنشاء هذا الدور في هذا النطاق');
   const created = await ctx.identity.createUser(b.username, b.password, b.displayName.trim());
   if (created.error) throw new HttpError(409, 'اسم المستخدم مستخدم مسبقاً');
   try {
@@ -231,6 +238,7 @@ export default {
       ctx.waitUntil((async () => {
         await runBackup(env);
         await purgeMedia(env);
+        await purgeTrash(env);
         await weeklyReport(env);
       })());
     } else {

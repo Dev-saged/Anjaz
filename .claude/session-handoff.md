@@ -1,19 +1,16 @@
 # Session handoff — Anjaz
 
 ## الحالة
-- الإصدار 0.10.0 (VERSION_CODE 13) على الفرع feature/v0100-tasks-trash ثم main؛ البناء أخضر في CI (الاختبارات لا تعمل في CI ولا محلياً).
-- الجديد: تكليف (كل المربعات/المخيمات/مربع/مخيم/أشخاص) عبر `TaskRepository.createBatch` (مهمة لكل جهة)، منتقي تاريخ، حذف ناعم للمهام مع تراجع، سلة مهملات ui/trash، مسؤول المربع، تعديل/حذف المربعات والمخيمات، تنظيف شهري في CleanupWorker.
-- Room v6 (MIGRATION_5_6)؛ حقول: tasks.campId/deletedAt، squares.managerName/deletedAt، camps.deletedAt.
+- الإصدار 0.11.0 (VERSION_CODE 14)، الفرع feature/v0110-stats-layout يُدمج في main؛ البناء في CI، اختبارات الـ Worker (12) خضراء محلياً.
+- الجديد: شاشة الإحصائيات ui/stats (مربعات/مخيمات/أسر)، camps.families (Room v7)، أقسام المهام الأربعة `TaskCategory`، أولوية مستويان (HIGH القديم = عادية)، مربعات منسدلة، حذف صور المهام، حذف الرسالة لدى الجميع، الحسابات على @anjaz.ps فقط (BrandConfig.ACCOUNT_DOMAIN + Worker ACCOUNT_DOMAIN).
+- إصلاح الخطوط: Type.kt (lineHeight واسع + Trim.None + includeFontPadding)، حد fontScale 0.85–1.3 في AnjazTheme، `FitText` للنصوص ذات السطر الواحد.
 
 ## قرارات
-- حذف نهائي = deletedAt=1 (`Trash.EXPIRED`) فيزيله CleanupWorker ولا تعيده المزامنة (Firestore يمنع delete).
-- حذف المربع ينقل مخيماته بالطابع نفسه ويعيدها معه.
-- قواعد Firestore تغيّرت (مهام: حذف ناعم للإداري؛ managerName) وتُنشر يدوياً.
+- السلة: الحذف النهائي يضع deletedAt=1؛ الـ Worker (trash.js، كرون 21:00) يحذف فعلياً ما deletedAt < الآن−30 يوماً مع events/photos. القواعد تسمح بالحذف الفعلي فقط لما deletedAt رقم.
+- الدخول باسم بلا نطاق يجرّب @anjaz.ps ثم النطاق القديم users.anjaz.local.
 
 ## مفتوح
-- غير مجرَّب على جهاز: التكليف الجماعي، التقويم، السلة، مزامنة الحذف/الاسترجاع.
-- رسائل المحادثة غير مشمولة بالسلة.
-- ملف schemas/6.json يولّده Room عند البناء؛ يلزم commit له.
+- غير مجرَّب على جهاز. قواعد Firestore تغيّرت وتُنشر يدوياً. الـ Worker يُنشر عبر deploy-worker.yml.
 
 ## الخطوة التالية
-- نشر firestore.rules من backend/firebase ثم تجربة السيناريوهات على جهاز.
+- نشر firestore.rules، والتأكد من نجاح deploy-worker، ثم تجربة الإحصائيات وإنشاء حساب مدير مربع على جهاز.

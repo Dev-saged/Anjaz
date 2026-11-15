@@ -7,7 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -22,6 +23,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.anjaz.app.ui.theme.Anjaz
 
 data class DayChip(val offset: Int, val weekday: String, val dayOfMonth: String, val hasTasks: Boolean)
@@ -34,14 +36,15 @@ fun DayStrip(days: List<DayChip>, selected: Int, onSelect: (Int) -> Unit, modifi
             val on = d.offset == selected
             val shape = RoundedCornerShape(16.dp)
             Column(
-                Modifier.weight(1f).height(72.dp).clip(shape)
+                Modifier.weight(1f).heightIn(min = 72.dp).clip(shape)
                     .background(if (on) c.navy else c.card)
                     .clickable { onSelect(d.offset) }
-                    .semantics { this.selected = on; contentDescription = "${d.weekday} ${d.dayOfMonth}" },
+                    .semantics { this.selected = on; contentDescription = "${d.weekday} ${d.dayOfMonth}" }
+                    .padding(horizontal = 2.dp, vertical = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
             ) {
-                Text(d.weekday, color = if (on) c.onNavy.copy(.8f) else c.mute, style = MaterialTheme.typography.labelSmall)
-                Text(d.dayOfMonth, color = if (on) c.onNavy else c.ink, style = MaterialTheme.typography.titleMedium)
+                FitText(d.weekday, if (on) c.onNavy.copy(.85f) else c.mute, MaterialTheme.typography.labelSmall, Modifier.fillMaxWidth(), minSize = 7.sp)
+                FitText(d.dayOfMonth, if (on) c.onNavy else c.ink, MaterialTheme.typography.titleMedium, Modifier.fillMaxWidth())
                 Box(
                     Modifier.size(6.dp).clip(CircleShape)
                         .background(if (d.hasTasks) c.emerald else androidx.compose.ui.graphics.Color.Transparent),

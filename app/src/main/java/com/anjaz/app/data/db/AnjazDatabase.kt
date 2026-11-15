@@ -10,7 +10,7 @@ import androidx.room.migration.Migration
         TaskEntity::class, TaskEventEntity::class, OutboxEntity::class,
         SosEntity::class, RoomEntity::class, MessageEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 abstract class AnjazDatabase : RoomDatabase() {
@@ -27,6 +27,6 @@ abstract class AnjazDatabase : RoomDatabase() {
         const val NAME = "anjaz.db"
 
         // ترحيلات مرقّمة للإضافة فقط، لا يُعدَّل القديم
-        val MIGRATIONS: Array<Migration> = arrayOf(Migrations.MIGRATION_1_2, Migrations.MIGRATION_2_3, Migrations.MIGRATION_3_4, Migrations.MIGRATION_4_5, Migrations.MIGRATION_5_6)
+        val MIGRATIONS: Array<Migration> = arrayOf(Migrations.MIGRATION_1_2, Migrations.MIGRATION_2_3, Migrations.MIGRATION_3_4, Migrations.MIGRATION_4_5, Migrations.MIGRATION_5_6, Migrations.MIGRATION_6_7)
     }
 }

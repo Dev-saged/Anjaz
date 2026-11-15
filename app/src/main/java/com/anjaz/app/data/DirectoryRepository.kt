@@ -43,6 +43,9 @@ class DirectoryRepository @Inject constructor(private val db: AnjazDatabase, pri
         }
     }
 
+    private fun families(values: Map<String, String>): Int? =
+        com.anjaz.app.domain.Username.cleanSecret(values["families"].orEmpty()).toIntOrNull()?.coerceIn(0, 100_000)
+
     private fun clean(values: Map<String, String>, key: String) = values[key]?.let(SchemaValidator::sanitize)?.takeIf { it.isNotEmpty() }
 
     suspend fun createRegion(actor: Profile, values: Map<String, String>): Outcome<String> {
@@ -84,6 +87,7 @@ class DirectoryRepository @Inject constructor(private val db: AnjazDatabase, pri
         val camp = CampEntity(
             UUID.randomUUID().toString(), square.regionId, square.id, clean(values, "name").orEmpty(),
             clean(values, "managerName"), clean(values, "idNumber"), clean(values, "phone"), now,
+            families = families(values),
         )
         db.withTransaction {
             db.directory().upsertCamp(camp)
@@ -91,6 +95,8 @@ class DirectoryRepository @Inject constructor(private val db: AnjazDatabase, pri
         }
         return Outcome.Ok(camp.id)
     }
+
+    suspend fun squareById(id: String) = db.directory().squareById(id)
 
     suspend fun updateSquare(actor: Profile, id: String, values: Map<String, String>): Outcome<Unit> {
         if (!canCreateSquare(actor)) return Outcome.Failure("ليس لديك صلاحية تعديل المربع")
@@ -120,6 +126,7 @@ class DirectoryRepository @Inject constructor(private val db: AnjazDatabase, pri
         val next = cur.copy(
             name = clean(values, "name").orEmpty(), managerName = clean(values, "managerName"),
             idNumber = clean(values, "idNumber"), phone = clean(values, "phone"), updatedAt = now,
+            families = families(values),
         )
         db.withTransaction {
             db.directory().upsertCamp(next)

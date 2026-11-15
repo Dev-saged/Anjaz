@@ -30,7 +30,10 @@ enum class TaskStatus(val label: String, val terminal: Boolean = false) {
 }
 
 enum class Priority(val label: String) {
-    NORMAL("عادية"), HIGH("مهمة"), URGENT("عاجلة");
+    /** HIGH قديم يُعامل كعادية؛ الأولوية الآن مستويان فقط. */
+    NORMAL("عادية"), HIGH("عادية"), URGENT("عاجلة");
+
+    val urgent: Boolean get() = this == URGENT
 
     companion object {
         fun parse(value: String): Priority = entries.firstOrNull { it.name == value } ?: NORMAL

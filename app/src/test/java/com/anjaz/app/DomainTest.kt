@@ -59,7 +59,7 @@ class TaskStatusTest {
 }
 
 class SchemaValidatorTest {
-    private val ok = mapOf("title" to "مهمة", "description" to "", "priority" to "HIGH", "deadline" to "today")
+    private val ok = mapOf("title" to "مهمة", "description" to "", "priority" to "URGENT", "deadline" to "today")
 
     @Test fun validTaskHasNoErrors() = assertTrue(SchemaValidator.validate(Schemas.task, ok).isEmpty())
 

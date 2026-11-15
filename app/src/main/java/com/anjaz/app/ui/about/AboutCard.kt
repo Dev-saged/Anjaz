@@ -75,7 +75,7 @@ fun AboutCard(modifier: Modifier = Modifier) {
             Icon(painterResource(R.drawable.ic_heart), null, tint = Color(0xFFE5486D), modifier = Modifier.size(12.dp))
         }
         Text(
-            "© ${BrandConfig.Dev.YEAR} ساجد العبادلة — جميع الحقوق محفوظة  •  " + com.anjaz.app.ui.theme.ltr("v${com.anjaz.app.BuildConfig.VERSION_NAME} · b${com.anjaz.app.BuildConfig.BUILD_NUMBER}"),
+            "© ${com.anjaz.app.ui.theme.ltr(BrandConfig.Dev.YEAR.toString())} ساجد العبادلة — جميع الحقوق محفوظة",
             color = c.mute, fontSize = 10.sp, textAlign = TextAlign.Center,
         )
     }

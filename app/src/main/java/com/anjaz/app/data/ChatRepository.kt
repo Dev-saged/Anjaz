@@ -74,6 +74,18 @@ class ChatRepository @Inject constructor(private val db: AnjazDatabase, private 
         }
     }
 
+    /** حذف رسالة مُرسلة لدى الجميع: تبقى أثراً «حُذفت هذه الرسالة» ويُمسح محتواها وملفها. */
+    suspend fun unsend(messageId: String, me: Profile): Outcome<Unit> {
+        val m = db.chat().messageById(messageId) ?: return Outcome.Failure("الرسالة غير موجودة")
+        if (m.senderId != me.uid) return Outcome.Failure("تحذف رسائلك فقط")
+        if (m.localPath.isNotEmpty()) runCatching { java.io.File(m.localPath).delete() }
+        db.withTransaction {
+            db.chat().markUnsent(m.id)
+            db.outbox().insertIgnore(Outbox.op("message", "unsend", EntityOp(m.id, m.roomId), clock.now()))
+        }
+        return Outcome.Ok(Unit)
+    }
+
     /** حذف رسالة لم تُرسل بعد (ومعها ملفها المحلي)؛ عمليتها الصادرة تُتجاوز لأن الرسالة غير موجودة. */
     suspend fun deleteUnsent(messageId: String) {
         val m = db.chat().messageById(messageId) ?: return

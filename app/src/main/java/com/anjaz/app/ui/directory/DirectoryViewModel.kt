@@ -75,7 +75,7 @@ class DirectoryViewModel @Inject constructor(
                 mapOf("name" to it.name, "managerName" to it.managerName.orEmpty(), "idNumber" to it.idNumber.orEmpty(), "phone" to it.phone.orEmpty())
             }
             DirKind.CAMP -> u.squares.flatMap { it.camps }.firstOrNull { it.id == id }?.let {
-                mapOf("name" to it.name, "managerName" to it.managerName.orEmpty(), "idNumber" to it.idNumber.orEmpty(), "phone" to it.phone.orEmpty())
+                mapOf("name" to it.name, "managerName" to it.managerName.orEmpty(), "families" to (it.families?.toString() ?: ""), "idNumber" to it.idNumber.orEmpty(), "phone" to it.phone.orEmpty())
             }
             DirKind.REGION -> null
         }

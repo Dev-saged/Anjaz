@@ -1,7 +1,6 @@
 # repo-map — Anjaz (إنجاز)
 
 ## Quick index (ميزة → ملف → ابحث بـ)
-- هوية → brand/ (`build_brand.py`)
 - ثيم → ui/theme؛ مكوّنات → ui/components (`GlassNavBar`، `SchemaForm`)
 - الرئيسية → ui/home → `HomeViewModel`؛ المهام → ui/tasks → `TasksViewModel`، `NewTaskSheet`؛ التنقل → ui/nav → `AnjazRoot`
 - المنطق المحلي → data/ (`TaskRepository`، `DashboardRepository`، `DemoSeeder`)؛ اختبار ذاتي → core/SelfTest
@@ -11,13 +10,14 @@
 ## Features (v0.8.0)
 - SOS: data/SosRepository → ui/sos؛ محادثة: data/ChatRepository → ui/chat (SyncEngine.listenRoom).
 - حسابات: data/AccountsRepository → ui/accounts؛ دليل: ui/directory؛ حول: ui/about/AboutCard؛ README: brand/tools/make_readme_assets.py.
-- Room v6: Migrations 1→6 (5→6 deletedAt/campId/managerName)؛ PdfLayout منفصل لأن PdfDocument لا يعمل تحت Robolectric.
+- Room v7: Migrations 1→7 (6→7 camps.families)؛ PdfLayout منفصل لأن PdfDocument لا يعمل تحت Robolectric.
 - وسائط: media/{MediaRepository، VoiceRecorder، MediaTransport}؛ Worker جسر مؤقت media.js؛ واجهة ui/chat/MediaUi.
 - صوت→نص: stt/{WhisperModel، Transcriber، AudioPcm، SttViewModel}؛ AAR يُنزَّل ببصمة (fetchSherpa). فيديو: media/VideoCompressor.
 - تنظيف: sync/CleanupWorker (يومي، MediaRepository.cleanOrphans)؛ ما الجديد: ui/about/Changelog؛ حالة فارغة: components/EmptyState؛ النشر: docs/DEPLOY.md.
-- v0.8.0: خريطة geo/+ui/map؛ مهام متكررة ui/templates+recurring.js؛ مكالمات call/`CallManager`؛ قفل security/`AppLock`؛ بحث ui/search؛ صور ui/tasks/TaskPhotos.
+- v0.8.0: خريطة ui/map؛ متكررة ui/templates؛ مكالمات `CallManager`؛ قفل `AppLock`؛ بحث ui/search؛ صور TaskPhotos.
 - حجم: splits.abi؛ version.json فيه apks/sizes.
 - v0.8.3: مكتبات onnx/sherpa/webrtc خارج الـ APK (excludes في gradle) → pack/`NativePacks` (يُنزَّل من release packs-v1، SHA-256، `PackPrefetchWorker` على Wi-Fi)؛ إن غيّرت هذه المكتبات ارفع PACK_ID/PACK_TAG وbuild.yml؛ الرئيسية: ui/home/HomeShortcuts (`MapCard`،`PlacesRow`).
+- v0.11.0: إحصائيات ui/stats؛ أقسام المهام `TaskCategory`؛ `FitText`+حد الخط 1.3 في AnjazTheme؛ `Plural`؛ حذف سلة فعلي Worker trash.js؛ حذف الرسالة `unsend`.
 - v0.10.0: تكليف `TaskRepository.createBatch`+`TaskTarget`؛ ui/tasks/`TaskTargetPicker`؛ سلة ui/trash+`Trash`؛ حذف ناعم deletedAt (حذف نهائي=EXPIRED=1)؛ تنظيف CleanupWorker.
 - v0.9.0: صوت ui/chat/VoiceUi (`VoiceBubble`،`HoldToRecord`) + media/VoicePlayer؛ تنزيلات downloads/`DownloadCenter` (إشعار+شاشة، نموذج Whisper tiny/base/small)؛ مزامنة ui/sync/`SyncSheet`؛ رئيسية `CampsCard`.
 - تحديث ذاتي: update/؛ build.yml ينشر Release+version.json؛ versionCode=VERSION_CODE*10000+BUILD_NUMBER.
@@ -26,7 +26,7 @@
 - كل شيء مجاني وبلا بطاقة: Firebase Spark (Auth + Firestore + FCM) + Cloudflare Workers/D1/Cron. السبب: قرار ساجد.
 - هوية: حلقة+مربع أخضر، #102E52/#24C27D (brand/، build_brand.py). Storage/Functions تحتاج Blaze فالبديل Worker+D1.
 - العزل بين المناطق في Firestore Rules + تحقق Worker بالتوكن، لا في الواجهة.
-- minSdk 24؛ targetSdk 36؛ توزيع APK مباشر.
+- minSdk 24؛ targetSdk 36.
 
 ## Solved bugs (never reintroduce)
 - رسالة صوتية فاشلة (Worker غير منشور) كانت توقف الصندوق الصادر كله؛ الإصلاح: SyncEngine.pushPending يتجاوز الفاشل ويكمل (تتوقف الجولة فقط عند انقطاع الشبكة)، وFAILED + إعادة إرسال/حذف بالضغط المطول.

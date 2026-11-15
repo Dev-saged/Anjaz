@@ -41,6 +41,14 @@ class FirestoreRemoteStore : RemoteStore {
         Unit
     }
 
+    override suspend fun unsendMessage(roomId: String, messageId: String) = guard {
+        fs.collection("rooms").document(roomId).collection("messages").document(messageId).update(
+            mapOf("type" to "deleted", "text" to "", "media" to com.google.firebase.firestore.FieldValue.delete(),
+                "lat" to com.google.firebase.firestore.FieldValue.delete(), "lng" to com.google.firebase.firestore.FieldValue.delete()),
+        ).await()
+        Unit
+    }
+
     override suspend fun setTaskDeleted(taskId: String, deletedAt: Long?, updatedAt: Long) = guard {
         fs.collection("tasks").document(taskId).update(mapOf("deletedAt" to deletedAt, "updatedAt" to updatedAt)).await()
         Unit
@@ -111,6 +119,7 @@ class FirestoreRemoteStore : RemoteStore {
         camp.phone?.let { data["phone"] = it }
         data["managerName"] = camp.managerName
         data["deletedAt"] = camp.deletedAt
+        data["families"] = camp.families
         fs.collection("camps").document(camp.id).set(data, com.google.firebase.firestore.SetOptions.merge()).await()
         Unit
     }
@@ -152,7 +161,7 @@ class FirestoreRemoteStore : RemoteStore {
         return snapshots(q) { snap ->
             snap.documents.mapNotNull { d ->
                 d.data?.let {
-                    CampEntity(d.id, it["regionId"] as? String ?: "", it["squareId"] as? String ?: "", it["name"] as? String ?: "", it["managerName"] as? String, it["idNumber"] as? String, it["phone"] as? String, (it["updatedAt"] as? Number)?.toLong() ?: 0L, (it["deletedAt"] as? Number)?.toLong())
+                    CampEntity(d.id, it["regionId"] as? String ?: "", it["squareId"] as? String ?: "", it["name"] as? String ?: "", it["managerName"] as? String, it["idNumber"] as? String, it["phone"] as? String, (it["updatedAt"] as? Number)?.toLong() ?: 0L, (it["deletedAt"] as? Number)?.toLong(), (it["families"] as? Number)?.toInt())
                 }
             }
         }

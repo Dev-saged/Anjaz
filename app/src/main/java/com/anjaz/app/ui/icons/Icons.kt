@@ -62,6 +62,11 @@ object AnjazIcons {
             "m9.5 6 6 6-6 6")
     }
 
+    val Users: ImageVector by lazy {
+        build("users", false,
+            "M9 11a3.2 3.2 0 1 0 0-6.4a3.2 3.2 0 0 0 0 6.4M3.5 19.5c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M16 11.2a2.6 2.6 0 1 0 0-5.2M17.5 14.6c1.7.5 2.8 2.1 3.1 4.4")
+    }
+
     val User: ImageVector by lazy {
         build("user", false,
             "M8.5,8.5a3.5,3.5 0 1,0 7,0a3.5,3.5 0 1,0 -7,0z",
@@ -135,6 +140,11 @@ object AnjazIcons {
             "M7.5,4.5a2.2,2.2 0 0 1 4.4,0v5a2.2,2.2 0 0 1 -4.4,0z",
             "M4 9.5a5.7 5.7 0 0 0 11.4 0M9.7 15.2v2.3",
             "M17.5 6h3M17.5 10h3M17.5 14h3")
+    }
+
+    val Edit: ImageVector by lazy {
+        build("edit", false,
+            "M4 20h4L18.5 9.5a2.1 2.1 0 0 0-4-4L4 16v4M13.5 6.5l4 4")
     }
 
     val Down: ImageVector by lazy {

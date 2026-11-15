@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.anjaz.app.ui.theme.Anjaz
 import com.anjaz.app.ui.theme.Display
 import kotlin.math.cos
@@ -62,7 +64,7 @@ fun toneColors(tone: Tone): Pair<Color, Color> {
 fun Tag(text: String, tone: Tone = Tone.Neutral, modifier: Modifier = Modifier) {
     val (bg, fg) = toneColors(tone)
     Text(
-        text, color = fg, style = MaterialTheme.typography.labelSmall,
+        text, color = fg, style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false,
         modifier = modifier.clip(RoundedCornerShape(10.dp)).background(bg).padding(horizontal = 10.dp, vertical = 2.dp),
     )
 }
@@ -88,12 +90,12 @@ fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
     val bg = if (emerald) c.emerald else c.navy
     val fg = if (emerald) c.onEmerald else c.onNavy
     Box(
-        modifier.fillMaxWidth().height(52.dp).clip(RoundedCornerShape(18.dp))
+        modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(18.dp))
             .background(if (enabled) bg else c.line)
             .clickable(enabled = enabled, onClick = onClick)
-            .semantics { role = Role.Button },
+            .semantics { role = Role.Button }.padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center,
-    ) { Text(text, color = if (enabled) fg else c.mute, style = MaterialTheme.typography.labelLarge) }
+    ) { Text(text, color = if (enabled) fg else c.mute, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center) }
 }
 
 @Composable
@@ -101,10 +103,10 @@ fun QuietButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit
     val c = Anjaz.colors
     val shape = RoundedCornerShape(18.dp)
     Box(
-        modifier.fillMaxWidth().height(48.dp).clip(shape).border(BorderStroke(1.dp, c.line), shape)
-            .clickable(onClick = onClick).semantics { role = Role.Button },
+        modifier.fillMaxWidth().heightIn(min = 48.dp).clip(shape).border(BorderStroke(1.dp, c.line), shape)
+            .clickable(onClick = onClick).semantics { role = Role.Button }.padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center,
-    ) { Text(text, color = c.ink, style = MaterialTheme.typography.labelLarge) }
+    ) { Text(text, color = c.ink, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center) }
 }
 
 @Composable
@@ -116,8 +118,8 @@ fun KpiCard(value: String, label: String, tone: Tone, modifier: Modifier = Modif
             .padding(vertical = 10.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(value, color = color, style = MaterialTheme.typography.titleLarge)
-        Text(label, color = c.mute, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
+        FitText(value, color, MaterialTheme.typography.titleLarge, Modifier.fillMaxWidth())
+        FitText(label, c.mute, MaterialTheme.typography.labelSmall, Modifier.fillMaxWidth(), minSize = 7.sp)
     }
 }
 
@@ -149,7 +151,7 @@ fun GlassNavBar(items: List<NavItem>, selected: String, onSelect: (String) -> Un
     Box(modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 14.dp).padding(bottom = 10.dp), contentAlignment = Alignment.BottomCenter) {
         val shape = RoundedCornerShape(26.dp)
         Row(
-            Modifier.fillMaxWidth().height(64.dp).shadow(14.dp, shape, ambientColor = c.navy.copy(.25f), spotColor = c.navy.copy(.25f))
+            Modifier.fillMaxWidth().heightIn(min = 64.dp).shadow(14.dp, shape, ambientColor = c.navy.copy(.25f), spotColor = c.navy.copy(.25f))
                 .clip(shape).background(c.card.copy(alpha = .94f)).border(BorderStroke(1.dp, c.line), shape).padding(horizontal = 4.dp),
             horizontalArrangement = Arrangement.SpaceAround, verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -173,7 +175,7 @@ private fun NavButton(item: NavItem, selected: Boolean, onClick: () -> Unit) {
     val c = Anjaz.colors
     val tint = if (selected) (if (c.dark) c.ink else c.navy) else c.mute
     Column(
-        Modifier.width(58.dp).height(56.dp).clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick)
+        Modifier.width(62.dp).heightIn(min = 56.dp).clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick)
             .semantics { role = Role.Tab; contentDescription = item.label },
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
     ) {
@@ -186,7 +188,7 @@ private fun NavButton(item: NavItem, selected: Boolean, onClick: () -> Unit) {
                 )
             }
         }
-        Text(item.label, color = tint, style = MaterialTheme.typography.labelSmall, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium)
+        FitText(item.label, tint, MaterialTheme.typography.labelSmall.copy(fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium), Modifier.fillMaxWidth(), minSize = 7.sp)
         Box(Modifier.padding(top = 1.dp).width(if (selected) 18.dp else 0.dp).height(3.dp).clip(RoundedCornerShape(2.dp)).background(c.emerald))
     }
 }
@@ -194,7 +196,7 @@ private fun NavButton(item: NavItem, selected: Boolean, onClick: () -> Unit) {
 @Composable
 fun SectionTitle(title: String, trailing: String? = null) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
-        Text(title, color = Anjaz.colors.ink, style = MaterialTheme.typography.titleMedium)
+        Text(title, color = Anjaz.colors.ink, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
         if (trailing != null) Text(trailing, color = Anjaz.colors.mute, style = MaterialTheme.typography.bodySmall)
     }
 }

@@ -55,6 +55,12 @@ import com.anjaz.app.ui.theme.Anjaz
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.anjaz.app.ui.theme.ltr
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.shape.CircleShape
 
 @Composable
 fun TasksScreen(vm: TasksViewModel, onNewTask: () -> Unit) {
@@ -63,27 +69,35 @@ fun TasksScreen(vm: TasksViewModel, onNewTask: () -> Unit) {
     val c = Anjaz.colors
     var selected by remember { mutableStateOf<TaskEntity?>(null) }
     Column(Modifier.fillMaxSize().background(c.surface).statusBarsPadding()) {
-        ScreenTitle("المهام", Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
-        Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 18.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TaskFilter.entries.forEach { f ->
-                val on = f == s.filter
-                val shape = RoundedCornerShape(14.dp)
-                Text(
-                    f.label, color = if (on) c.onNavy else c.ink, style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.heightIn(min = 44.dp).clip(shape)
-                        .background(if (on) c.navy else c.card)
-                        .border(BorderStroke(1.dp, if (on) c.navy else c.line), shape)
-                        .clickable { vm.setFilter(f) }
-                        .padding(horizontal = 16.dp, vertical = 11.dp),
-                )
+        val cat = s.category
+        androidx.activity.compose.BackHandler(enabled = cat != null) { vm.openCategory(null) }
+        if (cat == null) {
+            ScreenTitle("المهام", Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
+            TaskHub(s, vm::openCategory)
+        } else {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(48.dp).clip(CircleShape).clickable { vm.openCategory(null) }.semantics { contentDescription = "رجوع إلى الأقسام" }, contentAlignment = Alignment.Center) {
+                    AnjazIcon(AnjazIcons.Back, c.ink)
+                }
+                ScreenTitle(cat.label, Modifier.weight(1f))
+                Text(ltr(s.tasks.size.toString()), color = c.mute, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 14.dp))
             }
-        }
-        LazyColumn(
-            Modifier.fillMaxSize(), contentPadding = PaddingValues(18.dp, 14.dp, 18.dp, 120.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            if (!s.loading && s.tasks.isEmpty()) item { EmptyState(AnjazIcons.Tasks, "لا توجد مهام هنا", "المهام التي تنشئها تظهر في هذه القائمة") }
-            items(s.tasks, key = { it.id }) { t -> TaskCard(t, s.now, { selected = t }, subtitle = targetLabel(t, names)) }
+            androidx.compose.material3.OutlinedTextField(
+                value = s.query, onValueChange = vm::search, singleLine = true,
+                placeholder = { Text("ابحث في ${cat.label}") },
+                leadingIcon = { AnjazIcon(AnjazIcons.Search, c.mute, 20.dp) },
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp),
+            )
+            LazyColumn(
+                Modifier.fillMaxSize(), contentPadding = PaddingValues(18.dp, 14.dp, 18.dp, 120.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                if (!s.loading && s.tasks.isEmpty()) item {
+                    EmptyState(AnjazIcons.Tasks, if (s.query.isBlank()) "لا توجد مهام هنا" else "لا نتائج", if (s.query.isBlank()) "ستظهر هنا مهام هذا القسم" else "جرّب كلمة أخرى")
+                }
+                items(s.tasks, key = { it.id }) { t -> TaskCard(t, s.now, { selected = t }, subtitle = targetLabel(t, names)) }
+            }
         }
     }
     selected?.let { t ->
@@ -120,7 +134,7 @@ private fun TaskDetailSheet(
             Text(task.title, color = c.ink, style = MaterialTheme.typography.titleLarge)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Tag(status.label, statusTone(status))
-                Priority.parse(task.priority).takeIf { it != Priority.NORMAL }?.let { Tag(it.label, if (it == Priority.URGENT) Tone.Danger else Tone.Warning) }
+                Priority.parse(task.priority).takeIf { it.urgent }?.let { Tag(it.label, Tone.Danger) }
                 DayMath.dueLabel(task.deadline, now)?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodySmall) }
             }
             target?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodyMedium) }
@@ -160,6 +174,48 @@ private fun TaskDetailSheet(
         confirmButton = { androidx.compose.material3.TextButton({ confirm = false; onDelete() }) { Text("حذف", color = Anjaz.colors.redDeep) } },
         dismissButton = { androidx.compose.material3.TextButton({ confirm = false }) { Text("إلغاء") } },
     )
+}
+
+@Composable
+private fun TaskHub(s: TasksUiState, onOpen: (TaskCategory) -> Unit) {
+    val c = Anjaz.colors
+    androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+        columns = androidx.compose.foundation.lazy.grid.GridCells.Adaptive(minSize = 150.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(18.dp, 4.dp, 18.dp, 120.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items(TaskCategory.tiles.size) { i ->
+            val cat = TaskCategory.tiles[i]
+            val (tint, bg, icon) = when (cat) {
+                TaskCategory.NORMAL -> Triple(if (c.dark) c.ink else c.navy, c.navy.copy(alpha = .10f), AnjazIcons.Tasks)
+                TaskCategory.URGENT -> Triple(c.redDeep, c.red.copy(alpha = .12f), AnjazIcons.Bell)
+                TaskCategory.REVIEW -> Triple(c.amberDeep, c.amber.copy(alpha = .16f), AnjazIcons.Report)
+                else -> Triple(c.emeraldDeep, c.emerald.copy(alpha = .14f), AnjazIcons.Check)
+            }
+            val count = s.counts[cat] ?: 0
+            val late = s.overdue[cat] ?: 0
+            Column(
+                Modifier.fillMaxWidth().heightIn(min = 150.dp).clip(RoundedCornerShape(22.dp)).background(c.card)
+                    .border(BorderStroke(1.dp, c.line), RoundedCornerShape(22.dp))
+                    .clickable { onOpen(cat) }.semantics { contentDescription = "${cat.label}: $count" }.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(bg), contentAlignment = Alignment.Center) { AnjazIcon(icon, tint, 22.dp) }
+                    Spacer(Modifier.weight(1f))
+                    if (late > 0) Tag("${ltr(late.toString())} متأخرة", Tone.Danger)
+                }
+                com.anjaz.app.ui.components.FitText(ltr(count.toString()), tint, MaterialTheme.typography.displayLarge.copy(fontFamily = com.anjaz.app.ui.theme.Display), Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Start)
+                Text(cat.label, color = c.ink, style = MaterialTheme.typography.titleMedium)
+                Text(cat.hint, color = c.mute, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+            com.anjaz.app.ui.components.QuietButton("عرض كل المهام (${ltr((s.counts[TaskCategory.ALL] ?: 0).toString())})") { onOpen(TaskCategory.ALL) }
+        }
+    }
 }
 
 private fun targetLabel(t: TaskEntity, names: Map<String, String>): String? = when {

@@ -197,12 +197,21 @@ private fun Bubble(m: MessageEntity, mine: Boolean, vm: ChatRoomViewModel, stt: 
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     val unsent = mine && m.state != MessageState.SENT
+    var confirmUnsend by remember { mutableStateOf(false) }
+    if (confirmUnsend) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { confirmUnsend = false },
+        title = { Text("حذف الرسالة لدى الجميع؟") },
+        text = { Text("ستظهر مكانها «حُذفت هذه الرسالة».") },
+        confirmButton = { androidx.compose.material3.TextButton({ confirmUnsend = false; vm.unsend(m.id) }) { Text("حذف", color = c.redDeep) } },
+        dismissButton = { androidx.compose.material3.TextButton({ confirmUnsend = false }) { Text("إلغاء") } },
+    )
     Box(Modifier.fillMaxWidth(), contentAlignment = if (mine) Alignment.CenterEnd else Alignment.CenterStart) {
         androidx.compose.material3.DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             if (unsent) {
                 androidx.compose.material3.DropdownMenuItem(text = { Text("إعادة الإرسال") }, onClick = { menu = false; vm.resend(m.id) })
                 androidx.compose.material3.DropdownMenuItem(text = { Text("حذف", color = c.redDeep) }, onClick = { menu = false; vm.deleteUnsent(m.id) })
             }
+            if (mine && !unsent && m.type != "deleted") androidx.compose.material3.DropdownMenuItem(text = { Text("حذف لدى الجميع", color = c.redDeep) }, onClick = { menu = false; confirmUnsend = true })
             if (m.type == "text") androidx.compose.material3.DropdownMenuItem(text = { Text("نسخ") }, onClick = { menu = false; clipboard.setText(androidx.compose.ui.text.AnnotatedString(m.text)) })
         }
         Column(
@@ -213,7 +222,8 @@ private fun Bubble(m: MessageEntity, mine: Boolean, vm: ChatRoomViewModel, stt: 
         ) {
             val tint = if (mine) c.onNavy else c.ink
             if (!mine && sender != null) Text(sender, color = c.emerald, style = MaterialTheme.typography.labelMedium)
-            if (m.type == "text") Text(m.text, color = tint, style = MaterialTheme.typography.bodyLarge)
+            if (m.type == "deleted") Text("حُذفت هذه الرسالة", color = tint.copy(alpha = .7f), style = MaterialTheme.typography.bodyMedium.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic))
+            else if (m.type == "text") Text(m.text, color = tint, style = MaterialTheme.typography.bodyLarge)
             else MediaContent(m, tint, onDownload = { vm.download(m.id) }, onTranscribe = { stt.transcribeFile(m.id, m.localPath) { vm.setTranscript(m.id, it) } }, transcribing = sttBusy == m.id)
             Row(Modifier.align(Alignment.End), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(DayMath.time(m.createdAt), color = if (mine) c.onNavy.copy(.7f) else c.mute, style = MaterialTheme.typography.labelSmall)

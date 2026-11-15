@@ -51,9 +51,10 @@ import com.anjaz.app.ui.theme.Display
 import com.anjaz.app.ui.theme.ltr
 
 @Composable
-fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSos: () -> Unit, onSearch: () -> Unit, onOpenMap: () -> Unit, onOpenDirectory: () -> Unit, canAssign: Boolean, vm: HomeViewModel = hiltViewModel()) {
+fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSos: () -> Unit, onSearch: () -> Unit, onOpenMap: () -> Unit, onOpenDirectory: () -> Unit, canAssign: Boolean, onOpenStats: () -> Unit = onOpenDirectory, vm: HomeViewModel = hiltViewModel()) {
     val s by vm.state.collectAsStateWithLifecycle()
     val places by vm.places.collectAsStateWithLifecycle()
+    val families by vm.families.collectAsStateWithLifecycle()
     val c = Anjaz.colors
     var bell by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     var syncOpen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
@@ -74,7 +75,7 @@ fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSo
             if (s.openSos > 0) item { SosBanner(s.openSos, onOpenSos) }
             item { Stagger(1) { Hero(s.counts.done, s.counts.total, s.counts.progress) } }
             item { Stagger(2) { MapCard(onOpenMap) } }
-            item { Stagger(2) { CampsCard(camps = places.second, squares = places.first, onOpen = onOpenDirectory) } }
+            item { Stagger(2) { CampsCard(camps = places.second, squares = places.first, families = families, onOpen = onOpenStats) } }
             item {
                 Stagger(3) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -102,17 +103,17 @@ fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSo
 @Composable
 private fun Header(unsynced: Int, onBell: () -> Unit, onSearch: () -> Unit) {
     val c = Anjaz.colors
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        Column {
-            Text("مرحباً بك", color = c.mute, style = MaterialTheme.typography.bodySmall)
-            Text(BrandConfig.NAME, color = if (c.dark) c.ink else c.navy, fontFamily = Display, style = MaterialTheme.typography.headlineMedium)
+    Box(Modifier.fillMaxWidth().heightIn(min = 64.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.align(Alignment.CenterStart).size(48.dp).clip(CircleShape).background(c.card).clickable(onClick = onSearch), contentAlignment = Alignment.Center) {
+            AnjazIcon(AnjazIcons.Search, c.ink, description = "بحث")
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Box(Modifier.size(48.dp).clip(CircleShape).background(c.card).clickable(onClick = onSearch), contentAlignment = Alignment.Center) { AnjazIcon(AnjazIcons.Search, c.ink, description = "بحث") }
-        Box(Modifier.size(48.dp).clip(CircleShape).background(c.card).clickable(onClick = onBell), contentAlignment = Alignment.Center) {
+        Column(Modifier.padding(horizontal = 60.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("مرحباً بك في", color = c.mute, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+            com.anjaz.app.ui.components.FitText(BrandConfig.NAME, if (c.dark) c.ink else c.navy, MaterialTheme.typography.headlineMedium.copy(fontFamily = Display))
+        }
+        Box(Modifier.align(Alignment.CenterEnd).size(48.dp).clip(CircleShape).background(c.card).clickable(onClick = onBell), contentAlignment = Alignment.Center) {
             AnjazIcon(AnjazIcons.Bell, c.ink, description = "الإشعارات")
             if (unsynced > 0) Box(Modifier.align(Alignment.TopEnd).padding(10.dp).size(9.dp).clip(CircleShape).background(c.amber))
-        }
         }
     }
 }
@@ -129,11 +130,11 @@ private fun Hero(done: Int, total: Int, progress: Float) {
     ) {
         Box(Modifier.size(112.dp), contentAlignment = Alignment.Center) {
             ProgressRing(progress, Modifier.size(112.dp), track = c.onNavy.copy(.16f), ring = c.emerald, square = c.emerald)
-            Text(ltr("${(progress * 100).toInt()}%"), color = c.onNavy, fontFamily = Display, style = MaterialTheme.typography.titleLarge)
+            com.anjaz.app.ui.components.FitText(ltr("${(progress * 100).toInt()}%"), c.onNavy, MaterialTheme.typography.titleLarge.copy(fontFamily = Display), Modifier.size(width = 64.dp, height = 36.dp))
         }
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("إنجاز المهام", color = c.onNavy.copy(.78f), style = MaterialTheme.typography.bodySmall)
-            Text("${ltr(done.toString())} من ${ltr(total.toString())}", color = c.onNavy, fontFamily = Display, style = MaterialTheme.typography.headlineMedium)
+            com.anjaz.app.ui.components.FitText("${ltr(done.toString())} من ${ltr(total.toString())}", c.onNavy, MaterialTheme.typography.headlineMedium.copy(fontFamily = Display), textAlign = androidx.compose.ui.text.style.TextAlign.Start)
             Text(if (total == 0) "لا توجد مهام بعد" else "مهمة معتمدة", color = c.onNavy.copy(.78f), style = MaterialTheme.typography.bodySmall)
         }
     }

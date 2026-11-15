@@ -15,8 +15,9 @@
 - وسائط: media/{MediaCompressor، MediaRepository (إرسال/تنزيل/تأكيد/تنظيف)، VoiceRecorder، MediaTransport}؛ الـ Worker جسر مؤقت backend/worker/src/media.js (يُحذف بعد ساعة من تأكيد الجميع أو 14 يوماً)؛ واجهة ui/chat/MediaUi.
 - صوت→نص: stt/{WhisperModel (تنزيل 160MB مرة واحدة)، Transcriber (sherpa-onnx)، AudioPcm، SttViewModel}؛ الـ AAR يُنزَّل ببصمة في app/build.gradle.kts (fetchSherpa) وليس في Git. فيديو: media/VideoCompressor (Media3، تحت 9MB). تسجيل: RecorderState/HoldToRecord/RecordingBar في ui/chat/MediaUi.
 - تنظيف: sync/CleanupWorker (يومي، MediaRepository.cleanOrphans)؛ ما الجديد: ui/about/Changelog؛ حالة فارغة: components/EmptyState؛ النشر: docs/DEPLOY.md.
-- v0.8.0: خريطة geo/ + ui/map (`LiveOverlay`)؛ مهام متكررة ui/templates + Worker recurring.js؛ مكالمات call/`CallManager` (إشارات meetings/{id}/signals)؛ قفل security/`AppLock`؛ بحث ui/search + `SearchDao`؛ صور المهمة ui/tasks/TaskPhotos.
-- حجم (v0.8.1): splits.abi في build.gradle.kts + useLegacyPackaging؛ build.yml ينشر 3 ملفات وversion.json فيه apks/sizes؛ UpdateChecker.parseVersionJson يختار ABI.
+- v0.8.0: خريطة geo/+ui/map؛ مهام متكررة ui/templates+recurring.js؛ مكالمات call/`CallManager`؛ قفل security/`AppLock`؛ بحث ui/search؛ صور ui/tasks/TaskPhotos.
+- حجم: splits.abi + useLegacyPackaging؛ version.json فيه apks/sizes؛ `parseVersionJson` يختار ABI.
+- v0.8.3: مكتبات onnx/sherpa/webrtc خارج الـ APK (excludes في gradle) → pack/`NativePacks` (يُنزَّل من release packs-v1، SHA-256، `PackPrefetchWorker` على Wi-Fi)؛ إن غيّرت هذه المكتبات ارفع PACK_ID/PACK_TAG وbuild.yml؛ الرئيسية: ui/home/HomeShortcuts (`MapCard`،`PlacesRow`).
 - تحديث ذاتي: update/ (UpdateChecker، UpdateManager، UpdateUi)؛ build.yml ينشر Release + version.json؛ versionCode=VERSION_CODE*10000+BUILD_NUMBER.
 
 ## Decisions

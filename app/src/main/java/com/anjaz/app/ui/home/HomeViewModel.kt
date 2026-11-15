@@ -27,7 +27,10 @@ data class HomeUiState(
 )
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(private val repo: DashboardRepository) : ViewModel() {
+class HomeViewModel @Inject constructor(private val repo: DashboardRepository, db: com.anjaz.app.data.db.AnjazDatabase) : ViewModel() {
+    val places: StateFlow<Pair<Int, Int>> = combine(db.directory().observeSquareCount(), db.directory().observeCampCount()) { a, b -> a to b }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0 to 0)
+
     private val selected = MutableStateFlow(0)
     private val start = DayMath.startOfDay(repo.now())
 

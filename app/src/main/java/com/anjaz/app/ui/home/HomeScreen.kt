@@ -51,8 +51,9 @@ import com.anjaz.app.ui.theme.Display
 import com.anjaz.app.ui.theme.ltr
 
 @Composable
-fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSos: () -> Unit, onSearch: () -> Unit, canAssign: Boolean, vm: HomeViewModel = hiltViewModel()) {
+fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSos: () -> Unit, onSearch: () -> Unit, onOpenMap: () -> Unit, onOpenDirectory: () -> Unit, canAssign: Boolean, vm: HomeViewModel = hiltViewModel()) {
     val s by vm.state.collectAsStateWithLifecycle()
+    val places by vm.places.collectAsStateWithLifecycle()
     val c = Anjaz.colors
     var bell by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     val alerts = buildList {
@@ -71,8 +72,10 @@ fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSo
             item { Stagger(0) { Header(alerts.sumOf { it.second }, onBell = { bell = true }, onSearch = onSearch) } }
             if (s.openSos > 0) item { SosBanner(s.openSos, onOpenSos) }
             item { Stagger(1) { Hero(s.counts.done, s.counts.total, s.counts.progress) } }
+            item { Stagger(2) { MapCard(onOpenMap) } }
+            item { Stagger(2) { PlacesRow(places.first, places.second, onOpenDirectory) } }
             item {
-                Stagger(2) {
+                Stagger(3) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         KpiCard(ltr(s.counts.inProgress.toString()), "قيد المتابعة", Tone.Neutral, Modifier.weight(1f))
                         KpiCard(ltr(s.counts.awaiting.toString()), "بانتظار الاعتماد", Tone.Warning, Modifier.weight(1f))
@@ -80,7 +83,7 @@ fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSo
                     }
                 }
             }
-            item { Stagger(3) { DayStrip(s.days, s.selectedDay, vm::select) } }
+            item { Stagger(4) { DayStrip(s.days, s.selectedDay, vm::select) } }
             item { SectionTitle(if (s.selectedDay == 0) "مهام اليوم" else "مهام اليوم المحدد", ltr(s.dayTasks.size.toString())) }
             if (s.loading) {
                 items(2) { Skeleton() }

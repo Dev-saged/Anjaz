@@ -143,6 +143,9 @@ interface DirectoryDao {
     @Query("SELECT * FROM users")
     suspend fun allUsers(): List<UserEntity>
 
+    @Query("SELECT COUNT(*) FROM camps")
+    fun observeCampCount(): Flow<Int>
+
     @Query("SELECT COUNT(*) FROM squares")
     fun observeSquareCount(): Flow<Int>
 

@@ -69,6 +69,7 @@ class CallManager @Inject constructor(
     private val auth: AuthRepository,
     private val db: AnjazDatabase,
     private val api: ApiClient,
+    private val packs: com.anjaz.app.pack.NativePacks,
 ) {
     val state = MutableStateFlow(CallState())
 
@@ -115,7 +116,15 @@ class CallManager @Inject constructor(
     fun join() {
         val id = state.value.meetingId ?: return
         if (state.value.phase != CallPhase.RINGING) return
-        state.update { it.copy(phase = CallPhase.CONNECTING) }
+        state.update { it.copy(phase = CallPhase.CONNECTING, note = if (packs.present()) null else "جارٍ تنزيل مكوّن المكالمات…") }
+        scope.launch {
+            if (packs.ensure().isFailure) { end("تعذّر تنزيل مكوّن المكالمات، تأكد من الإنترنت وأعد المحاولة"); return@launch }
+            state.update { it.copy(note = null) }
+            startJoin(id)
+        }
+    }
+
+    private fun startJoin(id: String) {
         joinedAt = System.currentTimeMillis()
         ensureFactory()
         val am = ctx.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -165,7 +174,7 @@ class CallManager @Inject constructor(
 
     private fun ensureFactory() {
         if (factory != null) return
-        PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(ctx).createInitializationOptions())
+        PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(ctx).setNativeLibraryLoader(packs.webrtcLoader).createInitializationOptions())
         val f = PeerConnectionFactory.builder().setAudioDeviceModule(JavaAudioDeviceModule.builder(ctx).createAudioDeviceModule()).createPeerConnectionFactory()
         factory = f
         audioTrack = f.createAudioTrack("anjaz-a0", f.createAudioSource(MediaConstraints()))

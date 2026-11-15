@@ -109,7 +109,7 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
             popEnterTransition = { fadeIn(tween(240)) },
             popExitTransition = { fadeOut(tween(160)) },
         ) {
-            composable(Routes.HOME) { HomeScreen(onOpenTask = { nav.navigateTab(Routes.TASKS) }, onNewTask = tasksVm::openForm, onOpenSos = { nav.navigateTab(Routes.SOS) }, onSearch = { nav.navigate(Routes.SEARCH) }, canAssign = profile.canAssign) }
+            composable(Routes.HOME) { HomeScreen(onOpenTask = { nav.navigateTab(Routes.TASKS) }, onNewTask = tasksVm::openForm, onOpenSos = { nav.navigateTab(Routes.SOS) }, onSearch = { nav.navigate(Routes.SEARCH) }, onOpenMap = { nav.navigate(Routes.MAP) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, canAssign = profile.canAssign) }
             composable(Routes.TASKS) { TasksScreen(tasksVm, onNewTask = tasksVm::openForm) }
             composable(Routes.CHAT) { ChatListScreen(onOpenRoom = { nav.navigate(Routes.room(it)) }) }
             composable(Routes.ROOM) { ChatRoomScreen(onBack = { nav.popBackStack() }, onCall = { nav.navigate("call/new?members=" + it.joinToString(",")) }) }

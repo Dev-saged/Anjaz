@@ -113,6 +113,18 @@ object AnjazIcons {
             "M9.8,10a2.2,2.2 0 1,0 4.4,0a2.2,2.2 0 1,0 -4.4,0z")
     }
 
+    val Plot: ImageVector by lazy {
+        build("plot", false,
+            "M4.5,6.5a2,2 0 0 1 2,-2h11a2,2 0 0 1 2,2v11a2,2 0 0 1 -2,2h-11a2,2 0 0 1 -2,-2z",
+            "M4.5 12h15M12 4.5v15")
+    }
+
+    val Camp: ImageVector by lazy {
+        build("camp", false,
+            "M3 19.5 12 5l9 14.5z",
+            "M12 19.5v-6M9 19.5l3-6 3 6")
+    }
+
     val Shield: ImageVector by lazy {
         build("shield", false,
             "M12 3.5 19 6v5.5c0 4.3-2.8 7.3-7 9-4.2-1.7-7-4.7-7-9V6z",

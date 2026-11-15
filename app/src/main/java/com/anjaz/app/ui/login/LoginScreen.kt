@@ -27,6 +27,10 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
@@ -49,31 +53,37 @@ fun LoginScreen(vm: LoginViewModel = hiltViewModel()) {
     val c = Anjaz.colors
     Box(Modifier.fillMaxSize().background(c.surface)) {
         AmbientBackground(c.emerald.copy(alpha = .18f), c.navyHigh.copy(alpha = .16f))
-        Column(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
-            Column(
-                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 24.dp, end = 24.dp, bottom = 200.dp),
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
-            ) {
-                ProgressRing(.78f, Modifier.size(88.dp), stroke = 9.dp, track = c.line, ring = if (c.dark) c.ink else c.navy, square = c.emerald)
-                Text(BrandConfig.NAME, color = if (c.dark) c.ink else c.navy, fontFamily = Display, style = MaterialTheme.typography.displayLarge, modifier = Modifier.padding(top = 10.dp))
-                Text(BrandConfig.TAGLINE, color = c.mute, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 22.dp))
+        BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
+            val minH = this.maxHeight
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                 Column(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.card).border(1.dp, c.line, RoundedCornerShape(22.dp)).padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    Modifier.fillMaxWidth().heightIn(min = minH).padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text("تسجيل الدخول", color = c.ink, style = MaterialTheme.typography.titleMedium)
-                    Field(s.username, vm::username, "اسم المستخدم", AnjazIcons.User, KeyboardType.Ascii, ImeAction.Next, false)
-                    Field(s.password, vm::password, "كلمة المرور", AnjazIcons.Lock, KeyboardType.Password, ImeAction.Done, true, vm::submit)
-                    s.error?.let { Text(it, color = c.redDeep, style = MaterialTheme.typography.bodySmall) }
-                    PrimaryButton(if (s.busy) "جارٍ الدخول…" else "دخول", vm::submit, Modifier.padding(top = 4.dp), enabled = !s.busy)
+                    Spacer(Modifier.height(16.dp))
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        ProgressRing(.78f, Modifier.size(88.dp), stroke = 9.dp, track = c.line, ring = if (c.dark) c.ink else c.navy, square = c.emerald)
+                        Text(BrandConfig.NAME, color = if (c.dark) c.ink else c.navy, fontFamily = Display, style = MaterialTheme.typography.displayLarge, modifier = Modifier.padding(top = 10.dp))
+                        Text(BrandConfig.TAGLINE, color = c.mute, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center, modifier = Modifier.padding(bottom = 22.dp))
+                        Column(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.card).border(1.dp, c.line, RoundedCornerShape(22.dp)).padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Text("تسجيل الدخول", color = c.ink, style = MaterialTheme.typography.titleMedium)
+                            Field(s.username, vm::username, "اسم المستخدم", AnjazIcons.User, KeyboardType.Ascii, ImeAction.Next, false)
+                            Field(s.password, vm::password, "كلمة المرور", AnjazIcons.Lock, KeyboardType.Password, ImeAction.Done, true, vm::submit)
+                            s.error?.let { Text(it, color = c.redDeep, style = MaterialTheme.typography.bodySmall) }
+                            PrimaryButton(if (s.busy) "جارٍ الدخول…" else "دخول", vm::submit, Modifier.padding(top = 4.dp), enabled = !s.busy)
+                        }
+                        Text(
+                            "نسيت كلمة المرور؟ تواصل مع مدير منطقتك لإعادة ضبطها.",
+                            color = c.mute, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 14.dp),
+                        )
+                    }
+                    AboutCard(Modifier.navigationBarsPadding().padding(top = 28.dp, bottom = 12.dp))
                 }
-                Text(
-                    "نسيت كلمة المرور؟ تواصل مع مدير منطقتك لإعادة ضبطها.",
-                    color = c.mute, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 14.dp),
-                )
             }
         }
-        AboutCard(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 24.dp).padding(bottom = 12.dp))
     }
 }
 

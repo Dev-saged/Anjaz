@@ -15,6 +15,7 @@ data class RegionEntity(
     val phone: String?,
     val active: Boolean,
     val updatedAt: Long,
+    val deletedAt: Long? = null,
 )
 
 @Entity(tableName = "squares", indices = [Index("regionId")])

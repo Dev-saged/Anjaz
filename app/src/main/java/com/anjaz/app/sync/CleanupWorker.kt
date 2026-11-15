@@ -33,6 +33,7 @@ class CleanupWorker @AssistedInject constructor(
         db.tasks().purgeBefore(cutoff)
         db.directory().purgeCamps(cutoff)
         db.directory().purgeSquares(cutoff)
+        db.directory().purgeRegions(cutoff)
     }
 
     private fun purgeCache() {

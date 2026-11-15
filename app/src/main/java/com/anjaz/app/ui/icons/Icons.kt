@@ -142,6 +142,10 @@ object AnjazIcons {
             "M17.5 6h3M17.5 10h3M17.5 14h3")
     }
 
+    val Close: ImageVector by lazy {
+        build("close", false, "M6 6l12 12M18 6L6 18")
+    }
+
     val Edit: ImageVector by lazy {
         build("edit", false,
             "M4 20h4L18.5 9.5a2.1 2.1 0 0 0-4-4L4 16v4M13.5 6.5l4 4")

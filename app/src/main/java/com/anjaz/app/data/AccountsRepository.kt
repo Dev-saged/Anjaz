@@ -50,7 +50,7 @@ class AccountsRepository @Inject constructor(private val db: AnjazDatabase, priv
         val body = buildJsonObject {
             put("username", values.getValue("username").trim().lowercase())
             put("displayName", SchemaValidator.sanitize(values.getValue("displayName")))
-            put("password", values.getValue("password"))
+            put("password", com.anjaz.app.domain.Username.authPassword(values.getValue("password")))
             put("role", role.name)
             put("regionId", region?.let(::JsonPrimitive) ?: kotlinx.serialization.json.JsonNull)
             put("squareId", square?.let(::JsonPrimitive) ?: kotlinx.serialization.json.JsonNull)

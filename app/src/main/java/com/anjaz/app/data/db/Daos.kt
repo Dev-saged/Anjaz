@@ -140,8 +140,17 @@ interface DirectoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertUser(user: UserEntity)
 
-    @Query("SELECT * FROM regions ORDER BY name")
+    @Query("SELECT * FROM regions WHERE deletedAt IS NULL ORDER BY name")
     fun observeRegions(): Flow<List<RegionEntity>>
+
+    @Query("SELECT * FROM regions WHERE deletedAt > 1 ORDER BY deletedAt DESC")
+    fun observeTrashedRegions(): Flow<List<RegionEntity>>
+
+    @Query("DELETE FROM regions WHERE deletedAt IS NOT NULL AND deletedAt < :cutoff AND NOT EXISTS (SELECT 1 FROM outbox o WHERE o.state <> 'SYNCED' AND o.payload LIKE '%' || regions.id || '%')")
+    suspend fun purgeRegions(cutoff: Long): Int
+
+    @Query("DELETE FROM regions WHERE id = :id")
+    suspend fun removeRegion(id: String)
 
     @Query("SELECT * FROM squares WHERE deletedAt IS NULL ORDER BY name")
     fun observeSquares(): Flow<List<SquareEntity>>
@@ -176,9 +185,6 @@ interface DirectoryDao {
     @Query("SELECT * FROM camps WHERE id = :id")
     suspend fun campById(id: String): CampEntity?
 
-    @Query("SELECT * FROM regions")
-    suspend fun allRegions(): List<RegionEntity>
-
     @Query("SELECT * FROM squares")
     suspend fun allSquares(): List<SquareEntity>
 
@@ -187,6 +193,9 @@ interface DirectoryDao {
 
     @Query("SELECT * FROM users")
     suspend fun allUsers(): List<UserEntity>
+
+    @Query("SELECT * FROM regions")
+    suspend fun allRegions(): List<RegionEntity>
 
     @Query("SELECT COUNT(*) FROM camps WHERE deletedAt IS NULL")
     fun observeCampCount(): Flow<Int>

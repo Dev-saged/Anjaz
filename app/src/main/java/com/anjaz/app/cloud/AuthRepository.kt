@@ -42,15 +42,18 @@ class AuthRepository @Inject constructor(
         if (!cloud.available) return Outcome.Failure("لم يُربط الخادم بعد")
         return try {
             val auth = FirebaseAuth.getInstance()
-            val result = if (user.contains('@')) auth.signInWithEmailAndPassword(user, password).await()
-            else try {
-                auth.signInWithEmailAndPassword("$user@${BrandConfig.ACCOUNT_DOMAIN}", password).await()
-            } catch (_: FirebaseAuthInvalidUserException) {
-                auth.signInWithEmailAndPassword(com.anjaz.app.domain.Username.emailFor(user, BrandConfig.EMAIL_DOMAIN), password).await()
-            } catch (_: com.google.firebase.auth.FirebaseAuthInvalidCredentialsException) {
-                auth.signInWithEmailAndPassword(com.anjaz.app.domain.Username.emailFor(user, BrandConfig.EMAIL_DOMAIN), password).await()
+            val emails = if (user.contains('@')) listOf(user)
+                else listOf("$user@${BrandConfig.ACCOUNT_DOMAIN}", com.anjaz.app.domain.Username.emailFor(user, BrandConfig.EMAIL_DOMAIN))
+            val secrets = listOf(com.anjaz.app.domain.Username.authPassword(com.anjaz.app.domain.Username.cleanSecret(password)), password).distinct()
+            var result: com.google.firebase.auth.AuthResult? = null
+            var last: Exception? = null
+            loop@ for (e in emails) for (p in secrets) {
+                try { result = auth.signInWithEmailAndPassword(e, p).await(); break@loop }
+                catch (x: FirebaseAuthInvalidUserException) { last = x; continue@loop }
+                catch (x: FirebaseAuthInvalidCredentialsException) { last = x }
             }
-            val uid = result.user?.uid ?: return Outcome.Failure("تعذّر تسجيل الدخول")
+            val ok = result ?: throw (last ?: FirebaseAuthInvalidCredentialsException("auth", "invalid"))
+            val uid = ok.user?.uid ?: return Outcome.Failure("تعذّر تسجيل الدخول")
             val doc = FirebaseFirestore.getInstance().collection("users").document(uid).get().await()
             if (!doc.exists() || doc.getBoolean("active") != true) {
                 auth.signOut()

@@ -61,7 +61,8 @@ test('إنشاء الحسابات: النجاح والرفض', async () => {
   assert.equal((await post('staffA1', newUser({ username: 'x1x1' }))).status, 403);
   assert.equal((await post('rmA', newUser({ regionId: 'B', squareId: 'B1' }))).status, 403);
   assert.equal((await post('rmA', newUser({ role: 'REGION_MANAGER', squareId: null }))).status, 403);
-  assert.equal((await post('rmA', newUser({ password: 'short' }))).status, 400);
+  assert.equal((await post('rmA', newUser({ password: '' }))).status, 400);
+  assert.equal((await post('rmA', newUser({ username: 'tiny', password: '12' }))).status, 201);
   assert.equal((await post('rmA', newUser({ username: 'Bad Name' }))).status, 400);
   assert.equal((await post('rmA', newUser({ username: 'sajed@anjaz' }))).status, 400);
   assert.equal((await post('rmA', newUser({ username: 'other@gmail.com' }))).status, 400);

@@ -34,7 +34,7 @@ service cloud.firestore {
     match /regions/{rid} {
       allow read: if isCentral() || inRegion(rid);
       allow create, update: if isCentral() && str(request.resource.data.name, 80);
-      allow delete: if false;
+      allow delete: if isCentral() && resource.data.deletedAt is number;
     }
 
     match /squares/{sid} {
@@ -42,8 +42,9 @@ service cloud.firestore {
       allow create: if (isCentral() || isRegionManager(request.resource.data.regionId))
         && str(request.resource.data.name, 80) && optStr(request.resource.data, 'phone', 20)
         && optStr(request.resource.data, 'managerName', 80);
-      allow update: if (isCentral() || isRegionManager(resource.data.regionId))
-        && unchanged(['regionId']) && str(request.resource.data.name, 80);
+      // نقل المربع بين المناطق للمركزي فقط
+      allow update: if (isCentral() || (isRegionManager(resource.data.regionId) && unchanged(['regionId'])))
+        && str(request.resource.data.name, 80);
       // الحذف الفعلي فقط لما هو في سلة المهملات
       allow delete: if (isCentral() || isRegionManager(resource.data.regionId)) && resource.data.deletedAt is number;
     }
@@ -55,7 +56,9 @@ service cloud.firestore {
         && str(request.resource.data.name, 80) && optStr(request.resource.data, 'phone', 20)
         && optStr(request.resource.data, 'managerName', 80) && families(request.resource.data);
       allow update: if lead(resource.data.regionId, resource.data.squareId)
-        && unchanged(['regionId', 'squareId']) && str(request.resource.data.name, 80) && families(request.resource.data);
+        && (unchanged(['regionId', 'squareId']) || isCentral()
+            || (isRegionManager(resource.data.regionId) && request.resource.data.regionId == resource.data.regionId))
+        && str(request.resource.data.name, 80) && families(request.resource.data);
       allow delete: if lead(resource.data.regionId, resource.data.squareId) && resource.data.deletedAt is number;
     }
 

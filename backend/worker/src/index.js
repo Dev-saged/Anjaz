@@ -52,8 +52,9 @@ async function createUser(ctx) {
   b.username = raw.includes('@') ? raw : `${raw}@${domain}`;
   if (!validUsername(b.username)) throw new HttpError(400, 'اسم المستخدم: حروف لاتينية وأرقام، مثل ahmad أو ahmad@' + domain);
   if (!b.username.endsWith(`@${domain}`)) throw new HttpError(400, `الحسابات تُنشأ على النطاق @${domain} فقط`);
-  if (typeof b.password === 'string') b.password = b.password.trim();
-  if (!validPassword(b.password)) throw new HttpError(400, 'كلمة المرور 8 أحرف على الأقل');
+  // أي طول مسموح؛ Firebase يشترط 6 فتُكمَّل الأقصر بلاحقة ثابتة يستخدمها التطبيق عند الدخول أيضاً
+  if (typeof b.password === 'string' && b.password.length > 0 && b.password.length < 6) b.password += '#anjaz';
+  if (!validPassword(b.password)) throw new HttpError(400, 'اكتب كلمة مرور');
   if (!str(b.displayName, 80)) throw new HttpError(400, 'الاسم مطلوب');
   if (!shapeOk(target)) throw new HttpError(400, target.role === 'REGION_MANAGER' || target.role === 'REGION_ADMIN' ? 'حدّد المنطقة لهذا الدور' : 'حدّد المنطقة والمربع لهذا الدور');
   if (!canCreateUser(ctx.actor, target)) throw new HttpError(403, 'ليس لديك صلاحية إنشاء هذا الدور في هذا النطاق');
@@ -82,8 +83,9 @@ async function resetPassword(ctx, uid) {
   if (limited(ctx.uid, 'reset', 10, ctx.now)) throw new HttpError(429, 'محاولات كثيرة');
   const t = await manageTarget(ctx, uid);
   const b = await body(ctx.request).catch(() => ({}));
-  const password = b.password ?? randomPassword();
-  if (!validPassword(password)) throw new HttpError(400, 'كلمة المرور 8 أحرف على الأقل');
+  let password = b.password ?? randomPassword();
+  if (typeof password === 'string' && password.length > 0 && password.length < 6) password += '#anjaz';
+  if (!validPassword(password)) throw new HttpError(400, 'اكتب كلمة مرور');
   await ctx.identity.setPassword(uid, password);
   await audit(ctx.fs, ctx.uid, 'user.reset_password', uid, t.regionId, ctx.now);
   return json({ password: b.password ? undefined : password });

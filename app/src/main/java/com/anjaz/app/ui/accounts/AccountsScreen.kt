@@ -5,6 +5,7 @@ package com.anjaz.app.ui.accounts
 import com.anjaz.app.ui.components.EmptyState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +31,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -105,13 +107,12 @@ fun AccountsScreen(onBack: () -> Unit, vm: AccountsViewModel = hiltViewModel()) 
                     Text("بيانات الدخول تُعرض مرة واحدة بعد الإنشاء", color = c.mute, style = MaterialTheme.typography.bodySmall)
                 }
             }
-            Notice(ui.message, ui.isError, vm::dismissMessage)
-            SchemaForm(s, ui.values, ui.errors, vm::change)
-            val raw = ui.values["username"].orEmpty().trim().lowercase()
-            val full = if ('@' in raw) raw else "$raw@${com.anjaz.app.BrandConfig.ACCOUNT_DOMAIN}"
-            if (raw.isNotEmpty()) Text("يدخل بـ: " + ltr(full), color = c.mute, style = MaterialTheme.typography.bodySmall)
-            PasswordMeter(ui.values["password"].orEmpty())
-            QuietButton("توليد كلمة مرور قوية", onClick = vm::generatePassword)
+            if (ui.isError) com.anjaz.app.ui.components.FormAlert(ui.message, title = "لم يُنشأ الحساب بعد", onDismiss = vm::dismissMessage)
+            else Notice(ui.message, false, vm::dismissMessage)
+            SchemaForm(s.copy(fields = s.fields.filter { it.key == "displayName" }), ui.values, ui.errors, vm::change)
+            LoginField(ui.values["username"].orEmpty(), ui.errors["username"]) { vm.change("username", it) }
+            PasswordField(ui.values["password"].orEmpty(), ui.errors["password"], { vm.change("password", it) }, vm::generatePassword)
+            SchemaForm(s.copy(fields = s.fields.filter { it.key !in setOf("displayName", "username", "password") }), ui.values, ui.errors, vm::change)
             PrimaryButton(if (ui.busy) "جارٍ الإنشاء" else "إنشاء الحساب", onClick = vm::submit, enabled = !ui.busy)
         }
     }
@@ -145,14 +146,54 @@ fun AccountsScreen(onBack: () -> Unit, vm: AccountsViewModel = hiltViewModel()) 
     }
 }
 
+
+/** اسم الدخول مع نطاق الجهة ظاهراً ثابتاً؛ لو لُصق بريد كامل يُؤخذ ما قبل @ فقط. */
 @Composable
-private fun PasswordMeter(p: String) {
+private fun LoginField(value: String, error: String?, onChange: (String) -> Unit) {
     val c = Anjaz.colors
-    val score = listOf(p.length >= 8, p.length >= 12, p.any { it.isDigit() } && p.any { it.isLetter() }, p.any { !it.isLetterOrDigit() } || p.any { it.isUpperCase() }).count { it }
-    if (p.isEmpty()) return
-    val color = when (score) { 0, 1 -> c.red; 2 -> c.amber; else -> c.emerald }
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-        repeat(4) { Box(Modifier.weight(1f).height(5.dp).clip(CircleShape).background(if (it < score) color else c.line)) }
-        Text(when (score) { 0, 1 -> "ضعيفة"; 2 -> "متوسطة"; 3 -> "جيدة"; else -> "قوية" } + " · " + ltr(p.trim().length.toString()) + " حرفاً", color = color, style = MaterialTheme.typography.labelSmall, maxLines = 1, modifier = Modifier.padding(start = 8.dp))
+    val domain = com.anjaz.app.BrandConfig.ACCOUNT_DOMAIN
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text("اسم الدخول *", color = c.ink, style = MaterialTheme.typography.labelLarge)
+        androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr) {
+            androidx.compose.material3.OutlinedTextField(
+                value = value,
+                onValueChange = { onChange(com.anjaz.app.domain.Username.localPart(it)) },
+                singleLine = true, isError = error != null,
+                placeholder = { Text("ahmad") },
+                suffix = { Text("@$domain", color = c.mute) },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Email, autoCorrectEnabled = false),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        Text(error ?: "لا حاجة لبريد حقيقي: اكتب اسماً بالإنجليزية ويُضاف @$domain تلقائياً.", color = if (error != null) c.redDeep else c.mute, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+/** كلمة مرور بلا قيود: أي طول. مع إظهار/إخفاء وتوليد. */
+@Composable
+private fun PasswordField(value: String, error: String?, onChange: (String) -> Unit, onGenerate: () -> Unit) {
+    val c = Anjaz.colors
+    var shown by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text("كلمة المرور *", color = c.ink, style = MaterialTheme.typography.labelLarge)
+        androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr) {
+            androidx.compose.material3.OutlinedTextField(
+                value = value, onValueChange = onChange, singleLine = true, isError = error != null,
+                visualTransformation = if (shown) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                trailingIcon = {
+                    Text(if (shown) "إخفاء" else "إظهار", color = c.navy, style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.heightIn(min = 44.dp).clickable { shown = !shown }.padding(horizontal = 10.dp, vertical = 12.dp))
+                },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(autoCorrectEnabled = false),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(error ?: "أي كلمة مرور تناسبك، قصيرة أو طويلة.", color = if (error != null) c.redDeep else c.mute, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+            Text("توليد", color = c.navy, style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.heightIn(min = 44.dp).clickable(onClick = onGenerate).padding(horizontal = 12.dp, vertical = 12.dp))
+        }
     }
 }

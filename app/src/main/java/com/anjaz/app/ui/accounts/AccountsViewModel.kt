@@ -67,10 +67,10 @@ class AccountsViewModel @Inject constructor(
         val values = cur.values.toMutableMap()
         values["password"] = com.anjaz.app.domain.Username.cleanSecret(values["password"].orEmpty())
         val errors = SchemaValidator.validate(sch, values).toMutableMap()
+        com.anjaz.app.domain.Username.problem(values["username"].orEmpty())?.let { errors["username"] = it }
         val user = com.anjaz.app.domain.Username.forAccount(values["username"].orEmpty(), domain)
-        if ("username" !in errors && user == null) errors["username"] = "حروف لاتينية وأرقام فقط، والنطاق @$domain"
         val pw = values["password"].orEmpty()
-        if ("password" !in errors && pw.length < 8) errors["password"] = "طولها ${pw.length} — المطلوب 8 أحرف أو أكثر"
+        if (pw.isEmpty()) errors["password"] = "اكتب كلمة مرور (أي طول)"
         val role = values["role"].orEmpty()
         val regionPicked = !values["regionId"].isNullOrBlank()
         val squarePicked = !values["squareId"].isNullOrBlank()
@@ -80,7 +80,11 @@ class AccountsViewModel @Inject constructor(
             "REGION_MANAGER", "REGION_ADMIN" -> if (hasRegionField && !regionPicked) errors["regionId"] = "اختر المنطقة لهذا الدور"
             "SQUARE_MANAGER", "FIELD_STAFF" -> if (hasSquareField && !squarePicked) errors["squareId"] = "اختر المربع لهذا الدور"
         }
-        if (errors.isNotEmpty()) { ui.update { it.copy(errors = errors) }; return }
+        if (errors.isNotEmpty()) {
+            val reasons = errors.values.distinct().joinToString("\n") { "• $it" }
+            ui.update { it.copy(errors = errors, message = reasons, isError = true) }
+            return
+        }
         values["username"] = user!!
         if (role in setOf("REGION_MANAGER", "REGION_ADMIN")) values.remove("squareId")
         ui.update { it.copy(busy = true) }

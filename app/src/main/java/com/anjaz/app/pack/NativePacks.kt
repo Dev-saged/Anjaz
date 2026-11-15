@@ -31,7 +31,7 @@ sealed interface PackState {
  */
 @Singleton
 class NativePacks @Inject constructor(@ApplicationContext private val ctx: Context) {
-    val state = MutableStateFlow<PackState>(PackState.Idle)
+    val state = MutableStateFlow<PackState>(if (File(ctx.filesDir, "packs/$PACK_ID/${if (Process.is64Bit()) "arm64-v8a" else "armeabi-v7a"}/.ok").exists()) PackState.Ready else PackState.Idle)
     private val lock = Mutex()
     @Volatile private var installed = false
 
@@ -40,6 +40,12 @@ class NativePacks @Inject constructor(@ApplicationContext private val ctx: Conte
     private val marker get() = File(dir, ".ok")
 
     fun present() = marker.exists()
+
+    fun remove() {
+        if (state.value is PackState.Downloading) return
+        File(ctx.filesDir, "packs").deleteRecursively()
+        state.value = PackState.Idle
+    }
 
     suspend fun ensure(): Result<Unit> = lock.withLock {
         withContext(Dispatchers.IO) {

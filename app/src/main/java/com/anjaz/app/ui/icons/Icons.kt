@@ -125,6 +125,38 @@ object AnjazIcons {
             "M12 19.5v-6M9 19.5l3-6 3 6")
     }
 
+    val Phone: ImageVector by lazy {
+        build("phone", false,
+            "M6.6 3.5h3l1.4 4-2 1.3a11 11 0 0 0 5.2 5.2l1.3-2 4 1.4v3a2 2 0 0 1-2.2 2A15.5 15.5 0 0 1 4.6 5.7 2 2 0 0 1 6.6 3.5z")
+    }
+
+    val Dictate: ImageVector by lazy {
+        build("dictate", false,
+            "M7.5,4.5a2.2,2.2 0 0 1 4.4,0v5a2.2,2.2 0 0 1 -4.4,0z",
+            "M4 9.5a5.7 5.7 0 0 0 11.4 0M9.7 15.2v2.3",
+            "M17.5 6h3M17.5 10h3M17.5 14h3")
+    }
+
+    val Down: ImageVector by lazy {
+        build("down", false,
+            "M12 4v11M7.5 11 12 15.5 16.5 11M5 19.5h14")
+    }
+
+    val Retry: ImageVector by lazy {
+        build("retry", false,
+            "M19 8.5A7.5 7.5 0 1 0 19.5 13M19 4v4.5h-4.5")
+    }
+
+    val Pause: ImageVector by lazy {
+        build("pause", false,
+            "M9 5.5v13M15 5.5v13")
+    }
+
+    val Trash: ImageVector by lazy {
+        build("trash", false,
+            "M5 7h14M10 7V4.5h4V7M7 7l.8 12.5h8.4L17 7M10.5 11v5M13.5 11v5")
+    }
+
     val Shield: ImageVector by lazy {
         build("shield", false,
             "M12 3.5 19 6v5.5c0 4.3-2.8 7.3-7 9-4.2-1.7-7-4.7-7-9V6z",

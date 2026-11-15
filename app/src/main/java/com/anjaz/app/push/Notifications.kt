@@ -17,11 +17,13 @@ import com.anjaz.app.R
 object Notifications {
     const val DEFAULT = "default"
     const val SOS = "sos"
+    const val DOWNLOADS = "downloads"
 
     fun createChannels(ctx: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val nm = ctx.getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(NotificationChannel(DEFAULT, "الإشعارات العامة", NotificationManager.IMPORTANCE_DEFAULT))
+        nm.createNotificationChannel(NotificationChannel(DOWNLOADS, "التنزيلات", NotificationManager.IMPORTANCE_LOW))
         nm.createNotificationChannel(
             NotificationChannel(SOS, "نداءات الاستغاثة", NotificationManager.IMPORTANCE_HIGH).apply {
                 enableVibration(true)

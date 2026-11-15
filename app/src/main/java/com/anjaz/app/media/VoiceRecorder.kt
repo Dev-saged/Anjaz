@@ -29,6 +29,9 @@ class VoiceRecorder(private val ctx: Context) {
         }.getOrElse { runCatching { r.release() }; f.delete(); false }
     }
 
+    /** مستوى الصوت اللحظي 0..1 لرسم الموجة. */
+    fun level(): Float = runCatching { ((rec?.maxAmplitude ?: 0) / 24_000f).coerceIn(0f, 1f) }.getOrDefault(0f)
+
     /** يُنهي التسجيل ويعيد الملف والمدة، أو null عند الإلغاء/الفشل. */
     fun stop(cancel: Boolean): Pair<File, Long>? {
         val r = rec ?: return null
@@ -43,28 +46,51 @@ class VoiceRecorder(private val ctx: Context) {
     }
 }
 
-/** مشغّل واحد مشترك: تشغيل رسالة يوقف السابقة. */
+/** مشغّل واحد مشترك: تشغيل رسالة يوقف السابقة، مع إيقاف مؤقت وتقديم وسرعة 1× / 1.5× / 2×. */
 object VoicePlayer {
     private var mp: MediaPlayer? = null
-    var playingId: String? = null
+    var playingId: String? by androidx.compose.runtime.mutableStateOf(null)
+        private set
+    var playing: Boolean by androidx.compose.runtime.mutableStateOf(false)
+        private set
+    var speed: Float by androidx.compose.runtime.mutableFloatStateOf(1f)
         private set
 
-    fun toggle(id: String, path: String, onChange: () -> Unit) {
-        if (playingId == id) { stop(); onChange(); return }
+    fun position(): Int = runCatching { mp?.currentPosition ?: 0 }.getOrDefault(0)
+
+    fun play(id: String, path: String, startMs: Int = 0) {
+        if (playingId == id && mp != null) {
+            if (startMs > 0) runCatching { mp?.seekTo(startMs) }
+            if (playing && startMs == 0) { runCatching { mp?.pause() }; playing = false } else { runCatching { mp?.start(); mp?.let(::applySpeed) }; playing = true }
+            return
+        }
         stop()
         mp = runCatching {
             MediaPlayer().apply {
                 setDataSource(path); prepare()
-                setOnCompletionListener { stop(); onChange() }
+                setOnCompletionListener { stop() }
+                if (startMs > 0) seekTo(startMs)
                 start()
+                applySpeed(this)
             }
         }.getOrNull()
         playingId = if (mp != null) id else null
-        onChange()
+        playing = mp != null
+    }
+
+    fun seek(id: String, ms: Int) { if (playingId == id) runCatching { mp?.seekTo(ms) } }
+
+    fun cycleSpeed() {
+        speed = when (speed) { 1f -> 1.5f; 1.5f -> 2f; else -> 1f }
+        mp?.let { if (playing) applySpeed(it) }
+    }
+
+    private fun applySpeed(p: MediaPlayer) {
+        runCatching { p.playbackParams = p.playbackParams.setSpeed(speed) }
     }
 
     fun stop() {
         runCatching { mp?.stop() }; runCatching { mp?.release() }
-        mp = null; playingId = null
+        mp = null; playingId = null; playing = false
     }
 }

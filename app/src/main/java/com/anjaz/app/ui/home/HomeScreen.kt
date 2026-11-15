@@ -56,11 +56,12 @@ fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSo
     val places by vm.places.collectAsStateWithLifecycle()
     val c = Anjaz.colors
     var bell by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var syncOpen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     val alerts = buildList {
         if (s.openSos > 0) add(Triple("بلاغات طوارئ مفتوحة", s.openSos, onOpenSos))
         if (s.counts.overdue > 0) add(Triple("مهام متأخرة", s.counts.overdue, { onOpenTask(TaskEntity("", null, "", "", "", null, null, null, "NORMAL", "NEW", null, 0, 0, false)) }))
         if (s.counts.awaiting > 0) add(Triple("بانتظار الاعتماد", s.counts.awaiting, { onOpenTask(TaskEntity("", null, "", "", "", null, null, null, "NORMAL", "NEW", null, 0, 0, false)) }))
-        if (s.unsynced > 0) add(Triple("عمليات بانتظار المزامنة", s.unsynced, {}))
+        if (s.unsynced > 0) add(Triple("عمليات بانتظار المزامنة", s.unsynced, { syncOpen = true }))
     }
     Box(Modifier.fillMaxSize().background(c.surface)) {
         AmbientBackground(c.emerald.copy(alpha = .16f), c.navyHigh.copy(alpha = .14f))
@@ -73,7 +74,7 @@ fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSo
             if (s.openSos > 0) item { SosBanner(s.openSos, onOpenSos) }
             item { Stagger(1) { Hero(s.counts.done, s.counts.total, s.counts.progress) } }
             item { Stagger(2) { MapCard(onOpenMap) } }
-            item { Stagger(2) { PlacesRow(places.first, places.second, onOpenDirectory) } }
+            item { Stagger(2) { CampsCard(camps = places.second, squares = places.first, onOpen = onOpenDirectory) } }
             item {
                 Stagger(3) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -95,6 +96,7 @@ fun HomeScreen(onOpenTask: (TaskEntity) -> Unit, onNewTask: () -> Unit, onOpenSo
         }
     }
     if (bell) BellSheet(alerts) { bell = false }
+    if (syncOpen) com.anjaz.app.ui.sync.SyncSheet { syncOpen = false }
 }
 
 @Composable

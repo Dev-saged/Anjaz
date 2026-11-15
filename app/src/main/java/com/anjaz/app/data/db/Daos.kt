@@ -97,6 +97,18 @@ interface OutboxDao {
 
     @Query("SELECT COUNT(*) FROM outbox WHERE state = 'NEEDS_ATTENTION'")
     fun observeNeedsAttention(): Flow<Int>
+
+    @Query("SELECT * FROM outbox WHERE state <> 'SYNCED' ORDER BY createdAt")
+    fun observeOpen(): Flow<List<OutboxEntity>>
+
+    @Query("UPDATE outbox SET state = 'LOCAL', attempts = 0, lastError = NULL WHERE id = :key AND state IN ('FAILED','NEEDS_ATTENTION')")
+    suspend fun retry(key: String)
+
+    @Query("UPDATE outbox SET state = 'LOCAL', attempts = 0, lastError = NULL WHERE state IN ('FAILED','NEEDS_ATTENTION')")
+    suspend fun retryAll()
+
+    @Query("DELETE FROM outbox WHERE id = :key AND state <> 'SYNCED'")
+    suspend fun discard(key: String)
 }
 
 @Dao

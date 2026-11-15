@@ -70,8 +70,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
-private fun sizeLabel(b: Long) = if (b >= 1_000_000) "%.1f MB".format(b / 1_000_000.0) else "${maxOf(1, b / 1000)} KB"
-private fun clock(ms: Long) = "%d:%02d".format(ms / 60_000, ms / 1000 % 60)
+internal fun sizeLabel(b: Long) = if (b >= 1_000_000) "%.1f MB".format(b / 1_000_000.0) else "${maxOf(1, b / 1000)} KB"
+internal fun clock(ms: Long) = "%d:%02d".format(ms / 60_000, ms / 1000 % 60)
 
 private fun openFile(ctx: Context, m: MessageEntity) {
     val uri = FileProvider.getUriForFile(ctx, ctx.packageName + ".files", java.io.File(m.localPath))
@@ -121,27 +121,7 @@ fun MediaContent(m: MessageEntity, tint: androidx.compose.ui.graphics.Color, onD
                 if (!ready) Box(Modifier.align(Alignment.BottomEnd).padding(8.dp)) { StateText(m, androidx.compose.ui.graphics.Color.White) }
             }
         }
-        "voice" -> {
-            var tick by remember { mutableStateOf(0) }
-            val playing = VoicePlayer.playingId == m.id
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Box(
-                    Modifier.size(44.dp).clip(CircleShape).background(c.emerald).clickable {
-                        if (ready) VoicePlayer.toggle(m.id, m.localPath) { tick++ } else if (m.mediaState == MediaState.REMOTE || m.mediaState == MediaState.FAILED) onDownload()
-                    }.semantics { contentDescription = if (playing) "إيقاف" else "تشغيل" },
-                    contentAlignment = Alignment.Center,
-                ) { if (ready) AnjazIcon(AnjazIcons.Play, c.onEmerald) else AnjazIcon(AnjazIcons.Cloud, c.onEmerald) }
-                Column(Modifier.weight(1f)) {
-                    Text(if (playing) "قيد التشغيل" else "رسالة صوتية", color = tint, style = androidx.compose.material3.MaterialTheme.typography.bodyMedium)
-                    Text(if (ready || m.durMs > 0) clock(m.durMs) else "", color = tint.copy(.7f), style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
-                }
-                if (!ready) StateText(m, tint)
-            }
-            if (m.transcript.isNotBlank()) Text(m.transcript, color = tint, style = androidx.compose.material3.MaterialTheme.typography.bodyMedium)
-            else if (transcribing) Text("جارٍ التحويل إلى نص…", color = c.mute, style = androidx.compose.material3.MaterialTheme.typography.labelLarge, modifier = Modifier.padding(vertical = 8.dp))
-            else if (ready && onTranscribe != null) Text("تحويل إلى نص", color = c.emerald, style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
-                modifier = Modifier.clickable(onClick = onTranscribe).padding(vertical = 8.dp))
-        }
+        "voice" -> VoiceBubble(m, ready, tint, onDownload, onTranscribe, transcribing)
         "file" -> Row(
             Modifier.fillMaxWidth().clickable { if (ready) openFile(ctx, m) else if (m.mediaState == MediaState.REMOTE || m.mediaState == MediaState.FAILED) onDownload() },
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -229,84 +209,4 @@ private fun Choice(label: String, icon: androidx.compose.ui.graphics.vector.Imag
         Box(Modifier.size(56.dp).clip(CircleShape).background(c.card), contentAlignment = Alignment.Center) { AnjazIcon(icon, c.emerald, 26.dp) }
         Text(label, color = c.ink, style = androidx.compose.material3.MaterialTheme.typography.labelLarge)
     }
-}
-
-/** حالة التسجيل المشتركة بين زر الميكروفون وشريط التسجيل. */
-class RecorderState {
-    var recording by mutableStateOf(false)
-    var locked by mutableStateOf(false)
-    var cancelling by mutableStateOf(false)
-    var elapsedMs by mutableLongStateOf(0L)
-    var onStopRequested: ((cancel: Boolean) -> Unit)? = null
-}
-
-/** شريط التسجيل يحل محل حقل الكتابة: نقطة نابضة + مؤقت + تلميح السحب، وعند القفل أزرار إلغاء وإرسال. */
-@Composable
-fun RecordingBar(rs: RecorderState, modifier: Modifier = Modifier) {
-    val c = Anjaz.colors
-    val reduce = com.anjaz.app.ui.components.rememberReduceMotion()
-    LaunchedEffect(rs.recording) { while (rs.recording) { delay(100); rs.elapsedMs += 100 } }
-    val pulse = if (reduce) 1f else rememberInfiniteTransition(label = "rec").animateFloat(.35f, 1f, infiniteRepeatable(tween(700), RepeatMode.Reverse), label = "dot").value
-    Row(modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(c.card).padding(horizontal = 14.dp, vertical = 6.dp).heightIn(min = 52.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Box(Modifier.size(10.dp).clip(CircleShape).background(c.red.copy(alpha = pulse)))
-        Text(ltr(clock(rs.elapsedMs)), color = c.ink, style = androidx.compose.material3.MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"))
-        if (rs.locked) {
-            Box(Modifier.weight(1f))
-            Text("إلغاء", color = c.redDeep, style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
-                modifier = Modifier.clip(CircleShape).clickable { rs.onStopRequested?.invoke(true) }.padding(horizontal = 14.dp, vertical = 12.dp))
-        } else {
-            Text(if (rs.cancelling) "أفلت للإلغاء" else "اسحب للإلغاء  •  للأعلى للقفل", color = if (rs.cancelling) c.redDeep else c.mute,
-                style = androidx.compose.material3.MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-        }
-    }
-}
-
-/** زر الميكروفون على نمط واتساب: اضغط مطولًا، اسحب جانبًا للإلغاء أو للأعلى للقفل، أفلت للإرسال. */
-@Composable
-fun HoldToRecord(rs: RecorderState, onVoice: (java.io.File, Long) -> Unit, modifier: Modifier = Modifier) {
-    val c = Anjaz.colors
-    val ctx = LocalContext.current
-    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-    val rtl = androidx.compose.ui.platform.LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl
-    val recorder = remember { VoiceRecorder(ctx) }
-    val perm = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
-    val reduce = com.anjaz.app.ui.components.rememberReduceMotion()
-    val scale by androidx.compose.animation.core.animateFloatAsState(if (rs.recording && !rs.locked) 1.45f else 1f, androidx.compose.animation.core.spring(.6f, 400f), label = "mic")
-    fun finish(cancel: Boolean) {
-        if (!rs.recording) return
-        rs.recording = false; rs.locked = false; rs.cancelling = false
-        if (!reduce) haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-        recorder.stop(cancel)?.let { (f, d) -> onVoice(f, d) }
-    }
-    rs.onStopRequested = { cancel -> finish(cancel) }
-    val cancelPx = with(androidx.compose.ui.platform.LocalDensity.current) { 110.dp.toPx() }
-    val lockPx = with(androidx.compose.ui.platform.LocalDensity.current) { 80.dp.toPx() }
-    Box(
-        modifier.size(52.dp).graphicsLayer { scaleX = if (reduce) 1f else scale; scaleY = if (reduce) 1f else scale }
-            .clip(CircleShape).background(if (rs.locked) c.emerald else if (rs.recording) c.red else c.card)
-            .pointerInput(rtl) {
-                awaitEachGesture {
-                    val down = awaitFirstDown()
-                    if (rs.locked) { finish(false); return@awaitEachGesture }
-                    if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                        perm.launch(Manifest.permission.RECORD_AUDIO); waitForUpOrCancellation(); return@awaitEachGesture
-                    }
-                    if (!recorder.start()) return@awaitEachGesture
-                    rs.elapsedMs = 0; rs.recording = true; rs.locked = false; rs.cancelling = false
-                    if (!reduce) haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                    while (true) {
-                        val ev = awaitPointerEvent(); val ch = ev.changes.first()
-                        if (!ch.pressed) break
-                        val dx = (ch.position.x - down.position.x) * (if (rtl) 1 else -1)
-                        val dy = ch.position.y - down.position.y
-                        rs.cancelling = dx > cancelPx
-                        if (-dy > lockPx && !rs.cancelling) { rs.locked = true; ch.consume(); break }
-                        ch.consume()
-                    }
-                    if (!rs.locked) finish(cancel = rs.cancelling)
-                }
-            }.semantics { contentDescription = if (rs.locked) "إرسال التسجيل" else "اضغط مطولًا لتسجيل رسالة صوتية" },
-        contentAlignment = Alignment.Center,
-    ) { AnjazIcon(if (rs.locked) AnjazIcons.Send else AnjazIcons.Mic, if (rs.recording || rs.locked) c.onNavy else c.emerald) }
 }

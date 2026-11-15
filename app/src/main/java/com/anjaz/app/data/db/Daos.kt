@@ -185,9 +185,6 @@ interface DirectoryDao {
     @Query("SELECT * FROM camps WHERE id = :id")
     suspend fun campById(id: String): CampEntity?
 
-    @Query("SELECT * FROM regions")
-    suspend fun allRegions(): List<RegionEntity>
-
     @Query("SELECT * FROM squares")
     suspend fun allSquares(): List<SquareEntity>
 

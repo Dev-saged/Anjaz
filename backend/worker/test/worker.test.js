@@ -7,6 +7,7 @@ import { canCreateUser, canManageUser } from '../src/policy.js';
 import { escalate } from '../src/cron.js';
 import { purgeMedia } from '../src/media.js';
 import { runBackup, readBackup } from '../src/backup.js';
+import { purgeTrash, RETENTION_MS } from '../src/trash.js';
 import { world, idToken, PROJECT, NOW } from './harness.js';
 
 const users = {
@@ -222,4 +223,22 @@ test('التصعيد والتذكير مرة واحدة فقط', async () => {
   assert.equal(w.docs('tasks/soon').remindedAt, NOW);
   const r2 = await escalate(w.env, w.fetch, NOW + 1000);
   assert.deepEqual([r2.escalated, r2.reminded], [0, 0]);
+});
+
+test('سلة المهملات: الإزالة الفعلية بعد 30 يوماً مع المجموعات الفرعية', async () => {
+  const w = await world({});
+  await w.put('tasks/old', { title: 'قديمة', deletedAt: NOW - RETENTION_MS - 1 });
+  await w.put('tasks/old/photos/p1', { by: 'u' });
+  await w.put('tasks/old/events/e1', { toStatus: 'NEW' });
+  await w.put('tasks/fresh', { title: 'حديثة', deletedAt: NOW - 1000 });
+  await w.put('tasks/live', { title: 'حية' });
+  await w.put('camps/gone', { name: 'م', deletedAt: 1 });
+  const n = await purgeTrash(w.env, w.fetch, NOW);
+  assert.equal(n, 2);
+  assert.equal(w.docs('tasks/old'), null);
+  assert.equal(w.docs('tasks/old/photos/p1'), null);
+  assert.equal(w.docs('tasks/old/events/e1'), null);
+  assert.ok(w.docs('tasks/fresh'));
+  assert.ok(w.docs('tasks/live'));
+  assert.equal(w.docs('camps/gone'), null);
 });

@@ -55,6 +55,7 @@ export async function world(seedUsers = {}) {
     const { field, op, value } = where.fieldFilter;
     const actual = doc[field.fieldPath];
     const want = decodeDoc({ name: 'x/x', fields: { v: value } }).v;
+    if (op === 'LESS_THAN') return typeof actual === 'number' && actual < want;
     return op === 'EQUAL' ? actual === want : op === 'IN' ? want.includes(actual) : false;
   };
 
@@ -85,6 +86,7 @@ export async function world(seedUsers = {}) {
         return ok(rows.length ? rows : [{}]);
       }
       const segs = rel.split('/');
+      if (init.method === 'DELETE') { store.delete(rel); return ok({}); }
       if (init.method === 'PATCH') {
         const body = JSON.parse(init.body);
         const mask = u.searchParams.getAll('updateMask.fieldPaths');

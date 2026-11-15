@@ -4,8 +4,8 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 219 ملفاً · 32681 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
-> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · VoiceUi.kt 331 · FirestoreRemoteStore.kt 319
+> 224 ملفاً · 33441 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · VoiceUi.kt 331 · FirestoreRemoteStore.kt 328
 
 ### ./
 - CLAUDE.md (44)
@@ -33,7 +33,7 @@
 - AndroidManifest.xml (69)
 ### app/src/main/java/com/anjaz/app/
 - AnjazApp.kt (27): AnjazApp
-- BrandConfig.kt (53): BrandConfig
+- BrandConfig.kt (55): BrandConfig
 - MainActivity.kt (79): MainActivity
 ### app/src/main/java/com/anjaz/app/backup/
 - BackupManager.kt (84): BackupFile, RestoreSummary, BackupManager
@@ -41,18 +41,18 @@
 - CallManager.kt (315): CallPhase, CallPeer, CallState, CallManager
 - CallScreen.kt (146): CallViewModel, CallScreen
 ### app/src/main/java/com/anjaz/app/cloud/
-- AuthRepository.kt (75): CloudState, AuthRepository
+- AuthRepository.kt (82): CloudState, AuthRepository
 ### app/src/main/java/com/anjaz/app/core/
 - DayMath.kt (43): DayMath
 - Oklch.kt (36): Oklch, Color.toHex
 - SelfTest.kt (96): Check, SelfTest
 ### app/src/main/java/com/anjaz/app/data/
 - AccountsRepository.kt (89): AccountsRepository
-- ChatRepository.kt (85): directRoomId, String.csv, ChatRepository
+- ChatRepository.kt (97): directRoomId, String.csv, ChatRepository
 - Clock.kt (10): interface, SystemClock
 - DashboardRepository.kt (41): DashboardCounts, DashboardRepository
 - DemoSeeder.kt (39): DemoSeeder
-- DirectoryRepository.kt (211): DirectoryRepository
+- DirectoryRepository.kt (218): DirectoryRepository
 - Outbox.kt (24): EntityOp, Outbox
 - Session.kt (6): Session
 - SessionStore.kt (35): SessionStore
@@ -62,19 +62,20 @@
 - TaskTarget.kt (22): TargetKind, TaskTarget, Trash
 ### app/src/main/java/com/anjaz/app/data/db/
 - AnjazDatabase.kt (33): AnjazDatabase
-- Daos.kt (284): SquareCount, TaskDao, TaskEventDao, OutboxDao, DirectoryDao, SosDao, ChatDao +1
-- Entities.kt (183): RegionEntity, SquareEntity, CampEntity, UserEntity, TaskEntity, TaskEventEntity, OutboxEntity +6
-- Migrations.kt (52): Migrations
+- Daos.kt (293): SquareCount, TaskDao, TaskEventDao, OutboxDao, DirectoryDao, SosDao, ChatDao +1
+- Entities.kt (184): RegionEntity, SquareEntity, CampEntity, UserEntity, TaskEntity, TaskEventEntity, OutboxEntity +6
+- Migrations.kt (58): Migrations
 - SearchDao.kt (23): SearchDao
 ### app/src/main/java/com/anjaz/app/di/
 - DataModule.kt (37): DataModule
 ### app/src/main/java/com/anjaz/app/domain/
 - Dashboard.kt (50): Slice, Dashboard, DashboardBuilder
 - Outcome.kt (7): Outcome
+- Plural.kt (27): Noun, Plural
 - Profile.kt (17): Profile
 - Role.kt (12): Role
-- TaskStatus.kt (39): TaskStatus, Priority
-- Username.kt (14): Username
+- TaskStatus.kt (42): TaskStatus, Priority
+- Username.kt (30): Username
 ### app/src/main/java/com/anjaz/app/downloads/
 - DownloadCenter.kt (125): DlStatus, DlItem, DownloadCenter
 - DownloadsScreen.kt (108): DownloadsViewModel, DownloadsScreen
@@ -104,7 +105,7 @@
 - XlsxExporter.kt (56): XlsxExporter
 ### app/src/main/java/com/anjaz/app/schema/
 - Schema.kt (54): FieldType, Choice, FieldSchema, ModuleSchema, SchemaValidator
-- Schemas.kt (63): Schemas
+- Schemas.kt (64): Schemas
 ### app/src/main/java/com/anjaz/app/security/
 - AppLock.kt (29): AppLock
 ### app/src/main/java/com/anjaz/app/stt/
@@ -115,28 +116,29 @@
 - WhisperModel.kt (112): ModelState, WhisperModel
 ### app/src/main/java/com/anjaz/app/sync/
 - ApiClient.kt (95): ApiClient
-- CleanupWorker.kt (42): CleanupWorker
-- FirestoreRemoteStore.kt (319): FirestoreRemoteStore
-- RemoteStore.kt (55): RemoteDenied, AuditEntry, RemoteStore, NoRemoteStore, interface
-- SyncEngine.kt (213): PushResult, SyncEngine
+- CleanupWorker.kt (43): CleanupWorker
+- FirestoreRemoteStore.kt (328): FirestoreRemoteStore
+- RemoteStore.kt (56): RemoteDenied, AuditEntry, RemoteStore, NoRemoteStore, interface
+- SyncEngine.kt (215): PushResult, SyncEngine
 - SyncWorker.kt (54): SyncWorker, SyncScheduler
 ### app/src/main/java/com/anjaz/app/ui/about/
 - AboutCard.kt (83): AboutCard
-- Changelog.kt (51): ChangelogSheet
+- Changelog.kt (52): ChangelogSheet
 ### app/src/main/java/com/anjaz/app/ui/accounts/
-- AccountsScreen.kt (158): AccountsScreen
-- AccountsViewModel.kt (127): AccountsUi, AccountsViewModel
+- AccountsScreen.kt (159): AccountsScreen
+- AccountsViewModel.kt (152): AccountsUi, AccountsViewModel
 ### app/src/main/java/com/anjaz/app/ui/audit/
 - AuditScreen.kt (99): AuditRow, actionLabel, AuditViewModel, AuditScreen
 ### app/src/main/java/com/anjaz/app/ui/chat/
-- ChatScreens.kt (303): ChatListScreen, ChatRoomScreen
-- ChatViewModels.kt (133): RoomRow, ChatListViewModel, roomTitle, RoomUi, ChatRoomViewModel
+- ChatScreens.kt (313): ChatListScreen, ChatRoomScreen
+- ChatViewModels.kt (134): RoomRow, ChatListViewModel, roomTitle, RoomUi, ChatRoomViewModel
 - MediaUi.kt (213): sizeLabel, clock, MediaContent, AttachSheet
 - VoiceUi.kt (331): VoiceBubble, RecorderState, RecordingBar, HoldToRecord
 ### app/src/main/java/com/anjaz/app/ui/components/
 - AnimatedLogo.kt (79): AnimatedLogo, SplashOverlay
-- Components.kt (218): Tone, toneColors, Tag, AnjazCard, AnjazIcon, PrimaryButton, QuietButton +7
-- DayStrip.kt (53): DayChip, DayStrip
+- Components.kt (220): Tone, toneColors, Tag, AnjazCard, AnjazIcon, PrimaryButton, QuietButton +7
+- DayStrip.kt (56): DayChip, DayStrip
+- FitText.kt (36): FitText
 - LockLayer.kt (34): LockLayer
 - Motion.kt (69): rememberReduceMotion, Stagger, AmbientBackground
 - Notice.kt (54): Notice
@@ -146,14 +148,14 @@
 - DashboardScreen.kt (151): DashboardScreen
 - DashboardViewModel.kt (44): DashboardViewModel
 ### app/src/main/java/com/anjaz/app/ui/directory/
-- DirectoryScreen.kt (119): DirectoryScreen
+- DirectoryScreen.kt (165): DirectoryScreen
 - DirectoryViewModel.kt (124): DirKind, SquareRow, DirectoryUi, DirForm, DirectoryViewModel
 ### app/src/main/java/com/anjaz/app/ui/home/
-- HomeScreen.kt (192): HomeScreen
-- HomeShortcuts.kt (149): MapCard, CampsCard
-- HomeViewModel.kt (55): HomeUiState, HomeViewModel
+- HomeScreen.kt (193): HomeScreen
+- HomeShortcuts.kt (157): MapCard, CampsCard
+- HomeViewModel.kt (57): HomeUiState, HomeViewModel
 ### app/src/main/java/com/anjaz/app/ui/icons/
-- Icons.kt (214): AnjazIcons
+- Icons.kt (224): AnjazIcons
 ### app/src/main/java/com/anjaz/app/ui/login/
 - LoginScreen.kt (110): LoginScreen
 - LoginViewModel.kt (66): SessionState, LoginUiState, AppSessionViewModel, LoginViewModel
@@ -163,9 +165,9 @@
 - MapViewModel.kt (181): MapUi, MapViewModel
 ### app/src/main/java/com/anjaz/app/ui/more/
 - ChatPlaceholder.kt (29): ChatPlaceholder
-- MoreScreen.kt (210): MoreScreen
+- MoreScreen.kt (220): MoreScreen
 ### app/src/main/java/com/anjaz/app/ui/nav/
-- AnjazNav.kt (178): Routes, AnjazRoot
+- AnjazNav.kt (180): Routes, AnjazRoot
 - SyncViewModel.kt (36): SyncViewModel
 ### app/src/main/java/com/anjaz/app/ui/reports/
 - ReportsScreen.kt (83): ReportsScreen
@@ -175,20 +177,23 @@
 ### app/src/main/java/com/anjaz/app/ui/sos/
 - SosScreen.kt (188): SosScreen
 - SosViewModel.kt (50): SosViewModel
+### app/src/main/java/com/anjaz/app/ui/stats/
+- StatsScreen.kt (208): StatsScreen
+- StatsViewModel.kt (57): SquareStat, RegionChip, StatsUi, StatsViewModel
 ### app/src/main/java/com/anjaz/app/ui/sync/
 - SyncCenter.kt (95): SyncCenterViewModel, SyncSheet
 ### app/src/main/java/com/anjaz/app/ui/tasks/
-- TaskPhotos.kt (145): TaskPhoto, TaskPhotosViewModel, TaskPhotosSection
+- TaskPhotos.kt (190): TaskPhoto, TaskPhotosViewModel, TaskPhotosSection
 - TaskTargetPicker.kt (153): DeadlineField, TargetField
-- TasksScreen.kt (208): TasksScreen, NewTaskSheet
-- TasksViewModel.kt (197): TaskFilter, TasksUiState, NewTaskState, TasksViewModel
+- TasksScreen.kt (264): TasksScreen, NewTaskSheet
+- TasksViewModel.kt (240): TaskFilter, TaskCategory, TasksUiState, NewTaskState, TasksViewModel
 ### app/src/main/java/com/anjaz/app/ui/templates/
 - Templates.kt (223): Template, TemplatesRepository, TemplatesUi, TemplatesViewModel, TemplatesScreen
 ### app/src/main/java/com/anjaz/app/ui/test/
 - SelfTestScreen.kt (86): SeedViewModel, SelfTestScreen
 ### app/src/main/java/com/anjaz/app/ui/theme/
-- Theme.kt (62): AnjazColors, Anjaz, AnjazTheme
-- Type.kt (35): ltr
+- Theme.kt (65): AnjazColors, Anjaz, AnjazTheme
+- Type.kt (50): ltr
 ### app/src/main/java/com/anjaz/app/ui/trash/
 - TrashScreen.kt (113): TrashScreen
 - TrashViewModel.kt (76): TrashKind, TrashItem, TrashUi, TrashViewModel
@@ -240,7 +245,7 @@
 - README.md (28)
 ### backend/firebase/
 - firebase.json (5)
-- firestore.rules (262)
+- firestore.rules (271)
 - package-lock.json (10702)
 - package.json (8)
 ### backend/firebase/test/
@@ -253,17 +258,18 @@
 - b64.js (26): b64url, fromB64url, pemToDer
 - backup.js (43): gzip, runBackup, readBackup
 - cron.js (28): escalate
-- firestore.js (97): encodeValue, encodeFields, decodeValue, decodeFields, decodeDoc, Firestore
+- firestore.js (101): encodeValue, encodeFields, decodeValue, decodeFields, decodeDoc, Firestore
 - google.js (45): serviceAccount, signJwt, accessToken, resetTokenCache
 - identity.js (42): Identity
-- index.js (241): json, limited, body, str, profile, audit, createUser +12
+- index.js (249): json, limited, body, str, profile, audit, createUser +12
 - media.js (91): roomOf, putMedia, getMedia, ackMedia, purgeMedia
 - notify.js (57): sendFcm, leadsFor, targetsFor
 - policy.js (55): validUsername, validPassword, isActive, isLead, inScope, shapeOk, canCreateUser +3
 - recurring.js (56): localTime, due, runRecurring, weeklyReport
+- trash.js (27): purgeTrash
 ### backend/worker/test/
-- harness.js (117): keys, idToken, d1, world
-- worker.test.js (224): newUser
+- harness.js (119): keys, idToken, d1, world
+- worker.test.js (245): newUser
 ### brand/
 - BRAND.md (39)
 - board-spec.json (32)

@@ -62,6 +62,7 @@ object Routes {
     const val TEMPLATES = "templates"
     const val SEARCH = "search"
     const val DOWNLOADS = "downloads"
+    const val TRASH = "trash"
     const val ROOM = "room/{roomId}"
     fun room(id: String) = "room/$id"
 }
@@ -94,6 +95,14 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
     val snack = remember { SnackbarHostState() }
     val message by tasksVm.message.collectAsStateWithLifecycle()
     LaunchedEffect(message) { message?.let { snack.showSnackbar(it); tasksVm.consumeMessage() } }
+    val undo by tasksVm.undo.collectAsStateWithLifecycle()
+    LaunchedEffect(undo) {
+        undo?.let { id ->
+            val r = snack.showSnackbar("نُقلت المهمة إلى سلة المهملات", actionLabel = "تراجع", duration = androidx.compose.material3.SnackbarDuration.Long)
+            if (r == androidx.compose.material3.SnackbarResult.ActionPerformed) tasksVm.undoDelete(id)
+            tasksVm.consumeUndo()
+        }
+    }
 
     val items = remember {
         listOf(
@@ -121,7 +130,8 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
                 )
             }
             composable(Routes.SOS) { SosScreen() }
-            composable(Routes.MORE) { MoreScreen(profile, onSignOut = onSignOut, onOpenSelfTest = { nav.navigate(Routes.TEST) }, onOpenAccounts = { nav.navigate(Routes.ACCOUNTS) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, onOpenReports = { nav.navigate(Routes.REPORTS) }, onOpenDashboard = { nav.navigate(Routes.DASHBOARD) }, onOpenAudit = { nav.navigate(Routes.AUDIT) }, onOpenMap = { nav.navigate(Routes.MAP) }, onOpenTemplates = { nav.navigate(Routes.TEMPLATES) }, onOpenDownloads = { nav.navigate(Routes.DOWNLOADS) }) }
+            composable(Routes.MORE) { MoreScreen(profile, onSignOut = onSignOut, onOpenSelfTest = { nav.navigate(Routes.TEST) }, onOpenAccounts = { nav.navigate(Routes.ACCOUNTS) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, onOpenReports = { nav.navigate(Routes.REPORTS) }, onOpenDashboard = { nav.navigate(Routes.DASHBOARD) }, onOpenAudit = { nav.navigate(Routes.AUDIT) }, onOpenMap = { nav.navigate(Routes.MAP) }, onOpenTemplates = { nav.navigate(Routes.TEMPLATES) }, onOpenDownloads = { nav.navigate(Routes.DOWNLOADS) }, onOpenTrash = { nav.navigate(Routes.TRASH) }) }
+            composable(Routes.TRASH) { com.anjaz.app.ui.trash.TrashScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.DOWNLOADS) { com.anjaz.app.downloads.DownloadsScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.SEARCH) {
                 com.anjaz.app.ui.search.SearchScreen(onBack = { nav.popBackStack() }, onOpen = { h ->
@@ -142,7 +152,7 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
             composable(Routes.ACCOUNTS) { AccountsScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.TEST) { SelfTestScreen() }
         }
-        if (route != Routes.TEST && route != Routes.ROOM && route != Routes.ACCOUNTS && route != Routes.DIRECTORY && route != Routes.REPORTS && route != Routes.DASHBOARD && route != Routes.AUDIT && route != Routes.MAP && route != Routes.TEMPLATES && route != Routes.SEARCH && route != Routes.DOWNLOADS && !route.startsWith("call/")) {
+        if (route != Routes.TEST && route != Routes.ROOM && route != Routes.ACCOUNTS && route != Routes.DIRECTORY && route != Routes.REPORTS && route != Routes.DASHBOARD && route != Routes.AUDIT && route != Routes.MAP && route != Routes.TEMPLATES && route != Routes.SEARCH && route != Routes.DOWNLOADS && route != Routes.TRASH && !route.startsWith("call/")) {
             GlassNavBar(
                 items, route, { nav.navigateTab(it) },
                 onFab = {

@@ -31,7 +31,7 @@ fun statusTone(s: TaskStatus): Tone = when (s) {
 }
 
 @Composable
-fun TaskCard(task: TaskEntity, now: Long, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun TaskCard(task: TaskEntity, now: Long, onClick: () -> Unit, modifier: Modifier = Modifier, subtitle: String? = null) {
     val c = Anjaz.colors
     val status = TaskStatus.parse(task.status)
     val priority = Priority.parse(task.priority)
@@ -46,6 +46,7 @@ fun TaskCard(task: TaskEntity, now: Long, onClick: () -> Unit, modifier: Modifie
             Box(Modifier.width(4.dp).fillMaxHeight().clip(RoundedCornerShape(2.dp)).background(accent))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(task.title, color = c.ink, style = MaterialTheme.typography.titleMedium, maxLines = 2)
+                subtitle?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodySmall, maxLines = 1) }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Tag(status.label, statusTone(status))
                     if (priority != Priority.NORMAL) Tag(priority.label, if (priority == Priority.URGENT) Tone.Danger else Tone.Warning)

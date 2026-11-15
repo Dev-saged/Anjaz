@@ -18,6 +18,7 @@ interface RemoteStore {
     suspend fun createTask(task: TaskEntity)
     suspend fun updateTaskStatus(taskId: String, status: String, updatedAt: Long)
     suspend fun appendEvent(event: TaskEventEntity)
+    suspend fun setTaskDeleted(taskId: String, deletedAt: Long?, updatedAt: Long) = Unit
     fun tasks(profile: Profile): Flow<List<TaskEntity>>
     fun users(profile: Profile): Flow<List<UserEntity>>
     fun events(taskId: String): Flow<List<TaskEventEntity>> = kotlinx.coroutines.flow.emptyFlow()

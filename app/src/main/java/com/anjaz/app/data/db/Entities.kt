@@ -27,6 +27,8 @@ data class SquareEntity(
     val idNumber: String?,
     val phone: String?,
     val updatedAt: Long,
+    val managerName: String? = null,
+    val deletedAt: Long? = null,
 )
 
 @Entity(tableName = "camps", indices = [Index("squareId")])
@@ -40,6 +42,7 @@ data class CampEntity(
     val idNumber: String?,
     val phone: String?,
     val updatedAt: Long,
+    val deletedAt: Long? = null,
 )
 
 @Entity(tableName = "users", indices = [Index("username", unique = true)])
@@ -73,6 +76,8 @@ data class TaskEntity(
     val createdAt: Long,
     val updatedAt: Long,
     val archived: Boolean,
+    val campId: String? = null,
+    val deletedAt: Long? = null,
 )
 
 @Entity(tableName = "task_events", indices = [Index("taskId")])

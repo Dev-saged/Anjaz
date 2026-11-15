@@ -1,5 +1,6 @@
 package com.anjaz.app.sync
 
+import com.anjaz.app.data.Trash
 import com.anjaz.app.data.Clock
 import com.anjaz.app.data.Outbox
 import com.anjaz.app.data.csv
@@ -111,13 +112,14 @@ class SyncEngine @Inject constructor(
             // الإنشاء يُرسل بحالته الأولى ثم تلحقه العمليات بالترتيب، وإلا ترفضه القواعد
             "create" -> db.tasks().byId(p.taskId)?.let { remote.createTask(it.copy(status = "NEW", updatedAt = it.createdAt)) }
             "status" -> db.tasks().byId(p.taskId)?.let { remote.updateTaskStatus(it.id, p.status, event?.at ?: it.updatedAt) }
+            "delete", "restore", "purge" -> db.tasks().byId(p.taskId)?.let { remote.setTaskDeleted(it.id, it.deletedAt, it.updatedAt) }
         }
         event?.let { remote.appendEvent(it) }
     }
 
     private suspend fun notifyFor(op: OutboxEntity) {
         when {
-            op.entity == "task" -> notifier.notify("task", json.decodeFromString<TaskOpPayload>(op.payload).taskId)
+            op.entity == "task" && op.op in setOf("create", "status") -> notifier.notify("task", json.decodeFromString<TaskOpPayload>(op.payload).taskId)
             op.entity == "sos" && op.op == "create" -> notifier.notify("sos", Outbox.parse(op.payload).id)
             op.entity == "message" && op.op == "send" -> notifier.notify("chat", Outbox.parse(op.payload).roomId.orEmpty())
         }
@@ -166,7 +168,26 @@ class SyncEngine @Inject constructor(
         remoteTasks.forEach { r ->
             val local = db.tasks().byId(r.id)
             val pending = local != null && db.outbox().unsyncedFor(r.id) > 0
+            if (Trash.expired(r.deletedAt)) { if (local != null && !pending) db.tasks().remove(r.id); return@forEach }
             if (local == null || (!pending && r.updatedAt > local.updatedAt)) db.tasks().upsert(r.copy(number = r.number ?: local?.number))
+        }
+    }
+
+    private suspend fun applySquare(r: com.anjaz.app.data.db.SquareEntity) {
+        val local = db.directory().squareById(r.id)
+        val pending = local != null && db.outbox().unsyncedFor(r.id) > 0
+        when {
+            Trash.expired(r.deletedAt) -> if (local != null && !pending) db.directory().removeSquare(r.id)
+            local == null || (!pending && r.updatedAt >= local.updatedAt) -> db.directory().upsertSquare(r.copy(managerId = r.managerId ?: local?.managerId))
+        }
+    }
+
+    private suspend fun applyCamp(r: com.anjaz.app.data.db.CampEntity) {
+        val local = db.directory().campById(r.id)
+        val pending = local != null && db.outbox().unsyncedFor(r.id) > 0
+        when {
+            Trash.expired(r.deletedAt) -> if (local != null && !pending) db.directory().removeCamp(r.id)
+            local == null || (!pending && r.updatedAt >= local.updatedAt) -> db.directory().upsertCamp(r)
         }
     }
 
@@ -180,8 +201,8 @@ class SyncEngine @Inject constructor(
             scope.launch { remote.tasks(profile).catch { }.collect { applyTasks(it) } },
             scope.launch { remote.users(profile).catch { }.collect { applyUsers(it) } },
             scope.launch { remote.regions(profile).catch { }.collect { r -> r.forEach { db.directory().upsertRegion(it) } } },
-            scope.launch { remote.squares(profile).catch { }.collect { r -> r.forEach { db.directory().upsertSquare(it) } } },
-            scope.launch { remote.camps(profile).catch { }.collect { r -> r.forEach { db.directory().upsertCamp(it) } } },
+            scope.launch { remote.squares(profile).catch { }.collect { r -> r.forEach { applySquare(it) } } },
+            scope.launch { remote.camps(profile).catch { }.collect { r -> r.forEach { applyCamp(it) } } },
             scope.launch { remote.sos(profile).catch { }.collect { applySos(it) } },
             scope.launch { remote.rooms(profile).catch { }.collect { applyRooms(it) } },
         )

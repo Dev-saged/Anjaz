@@ -8,4 +8,8 @@ enum class Role(val rank: Int, val label: String) {
     FIELD_STAFF(1, "موظف ميداني");
 
     fun canCreate(target: Role): Boolean = target.rank < rank || (this == CENTRAL && target == CENTRAL)
+
+    companion object {
+        fun label(name: String?): String = entries.firstOrNull { it.name == name }?.label ?: ""
+    }
 }

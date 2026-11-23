@@ -60,4 +60,13 @@ object Migrations {
             db.execSQL("ALTER TABLE `regions` ADD COLUMN `deletedAt` INTEGER")
         }
     }
+
+    val MIGRATION_8_9 = object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `tasks` ADD COLUMN `createdByName` TEXT")
+            db.execSQL("ALTER TABLE `users` ADD COLUMN `campId` TEXT")
+            db.execSQL("ALTER TABLE `messages` ADD COLUMN `senderName` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `rooms` ADD COLUMN `memberNames` TEXT NOT NULL DEFAULT ''")
+        }
+    }
 }

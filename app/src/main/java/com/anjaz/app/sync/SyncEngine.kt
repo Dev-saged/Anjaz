@@ -31,6 +31,7 @@ class SyncEngine @Inject constructor(
     private val notifier: Notifier,
     private val clock: Clock,
     private val media: com.anjaz.app.media.MediaTransport = com.anjaz.app.media.NoMedia,
+    private val session: com.anjaz.app.data.SessionStore? = null,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -202,6 +203,13 @@ class SyncEngine @Inject constructor(
         }
     }
 
+    /** إن غيّر المدير دور المستخدم أو مربعه أو مخيمه تتحدّث جلسته فيُعاد الاستماع بالنطاق الصحيح. */
+    private suspend fun refreshMe(p: Profile, users: List<com.anjaz.app.data.db.UserEntity>) {
+        val me = users.firstOrNull { it.id == p.uid } ?: return
+        val next = p.copy(displayName = me.displayName, role = me.role, regionId = me.regionId, squareId = me.squareId, campId = me.campId)
+        if (next != p) session?.save(next)
+    }
+
     suspend fun applyUsers(users: List<com.anjaz.app.data.db.UserEntity>) {
         users.forEach { db.directory().upsertUser(it) }
     }
@@ -210,7 +218,7 @@ class SyncEngine @Inject constructor(
         if (!remote.enabled) return emptyList()
         return listOf(
             scope.launch { remote.tasks(profile).catch { }.collect { applyTasks(it) } },
-            scope.launch { remote.users(profile).catch { }.collect { applyUsers(it) } },
+            scope.launch { remote.users(profile).catch { }.collect { applyUsers(it); refreshMe(profile, it) } },
             scope.launch { remote.regions(profile).catch { }.collect { r -> r.forEach { applyRegion(it) } } },
             scope.launch { remote.squares(profile).catch { }.collect { r -> r.forEach { applySquare(it) } } },
             scope.launch { remote.camps(profile).catch { }.collect { r -> r.forEach { applyCamp(it) } } },

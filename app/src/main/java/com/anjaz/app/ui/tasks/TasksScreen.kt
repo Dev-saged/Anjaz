@@ -96,7 +96,7 @@ fun TasksScreen(vm: TasksViewModel, onNewTask: () -> Unit) {
                 if (!s.loading && s.tasks.isEmpty()) item {
                     EmptyState(AnjazIcons.Tasks, if (s.query.isBlank()) "لا توجد مهام هنا" else "لا نتائج", if (s.query.isBlank()) "ستظهر هنا مهام هذا القسم" else "جرّب كلمة أخرى")
                 }
-                items(s.tasks, key = { it.id }) { t -> TaskCard(t, s.now, { selected = t }, subtitle = targetLabel(t, names)) }
+                items(s.tasks, key = { it.id }) { t -> TaskCard(t, s.now, { selected = t }, subtitle = listOfNotNull(senderLabel(t, names), targetLabel(t, names)).joinToString(" · ").ifEmpty { null }) }
             }
         }
     }
@@ -105,7 +105,8 @@ fun TasksScreen(vm: TasksViewModel, onNewTask: () -> Unit) {
         val history by vm.history.collectAsStateWithLifecycle()
         androidx.compose.runtime.DisposableEffect(live.id) { vm.watch(live.id); onDispose { vm.watch(null) } }
         TaskDetailSheet(
-            live, s.now, history, targetLabel(live, names), vm.canDelete,
+            live, s.now, history, listOfNotNull(senderLabel(live, names), targetLabel(live, names)).joinToString("\n").ifEmpty { null }, vm.canDelete,
+            vm.leads(live),
             onMove = { vm.move(live, it) },
             onDuplicate = { selected = null; vm.duplicate(live) },
             onDelete = { selected = null; vm.delete(live) },
@@ -117,18 +118,20 @@ fun TasksScreen(vm: TasksViewModel, onNewTask: () -> Unit) {
 @Composable
 private fun TaskDetailSheet(
     task: TaskEntity, now: Long, history: List<com.anjaz.app.data.db.TaskEventEntity>, target: String?, canDelete: Boolean,
+    lead: Boolean = true,
     onMove: (TaskStatus) -> Unit, onDuplicate: () -> Unit, onDelete: () -> Unit, onDismiss: () -> Unit,
 ) {
     var confirm by remember { mutableStateOf(false) }
     val c = Anjaz.colors
     val status = TaskStatus.parse(task.status)
+    // المنفّذ يتقدّم بالمهمة فقط؛ الاعتماد والرفض والإلغاء للإدارة
     val primary = when (status) {
         TaskStatus.NEW, TaskStatus.SEEN -> TaskStatus.IN_PROGRESS
         TaskStatus.IN_PROGRESS -> TaskStatus.AWAITING_REVIEW
-        TaskStatus.AWAITING_REVIEW -> TaskStatus.APPROVED
+        TaskStatus.AWAITING_REVIEW -> if (lead) TaskStatus.APPROVED else null
         else -> null
     }
-    val quiet = TaskStatus.entries.filter { it != primary && status.canMoveTo(it) && it != TaskStatus.SEEN }
+    val quiet = if (!lead) emptyList() else TaskStatus.entries.filter { it != primary && status.canMoveTo(it) && it != TaskStatus.SEEN }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = c.surface) {
         Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 20.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text(task.title, color = c.ink, style = MaterialTheme.typography.titleLarge)
@@ -157,11 +160,11 @@ private fun TaskDetailSheet(
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { onMove(to) }.padding(vertical = 12.dp),
                 )
             }
-            Text(
+            if (lead) Text(
                 "تكرار المهمة", color = c.ink, style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClick = onDuplicate).padding(vertical = 12.dp),
             )
-            if (canDelete) Text(
+            if (canDelete && lead) Text(
                 "حذف المهمة", color = c.redDeep, style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { confirm = true }.padding(vertical = 12.dp),
             )
@@ -218,10 +221,13 @@ private fun TaskHub(s: TasksUiState, onOpen: (TaskCategory) -> Unit) {
     }
 }
 
+private fun senderLabel(t: TaskEntity, names: Map<String, String>): String? =
+    (names[t.createdBy] ?: t.createdByName)?.takeIf { it.isNotBlank() }?.let { "من: $it" }
+
 private fun targetLabel(t: TaskEntity, names: Map<String, String>): String? = when {
-    t.campId != null -> names[t.campId]?.let { "المخيم: $it" }
-    t.assigneeId != null -> names[t.assigneeId]?.let { "المكلّف: $it" }
-    t.squareId != null -> names[t.squareId]?.let { "المربع: $it" }
+    t.assigneeId != null -> names[t.assigneeId]?.let { "إلى: $it" }
+    t.campId != null -> names[t.campId]?.let { "إلى مخيم $it" }
+    t.squareId != null -> names[t.squareId]?.let { "إلى $it" }
     else -> null
 }
 

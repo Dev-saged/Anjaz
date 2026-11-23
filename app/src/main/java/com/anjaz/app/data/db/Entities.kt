@@ -59,6 +59,7 @@ data class UserEntity(
     val active: Boolean,
     val updatedAt: Long,
     val deleted: Boolean = false,
+    val campId: String? = null,
 )
 
 @Entity(tableName = "tasks", indices = [Index("status"), Index("deadline"), Index("assigneeId")])
@@ -80,6 +81,7 @@ data class TaskEntity(
     val archived: Boolean,
     val campId: String? = null,
     val deletedAt: Long? = null,
+    val createdByName: String? = null,
 )
 
 @Entity(tableName = "task_events", indices = [Index("taskId")])
@@ -140,6 +142,8 @@ data class RoomEntity(
     val members: String,
     val lastMessage: String,
     val lastAt: Long,
+    /** أسماء الأعضاء "uid=الاسم|uid=الاسم" ليعرف كل طرف مع من يتحدث ولو لم يكن ضمن جهات اتصاله. */
+    val memberNames: String = "",
 )
 
 @Entity(tableName = "messages", indices = [Index("roomId", "createdAt")])
@@ -165,6 +169,7 @@ data class MessageEntity(
     val localPath: String = "",
     val mediaState: String = MediaState.NONE,
     val transcript: String = "",
+    val senderName: String = "",
 )
 
 /** حالة الملف المرفق على هذا الجهاز: المحتوى لا يُخزَّن في السحابة بعد استلام الجميع. */

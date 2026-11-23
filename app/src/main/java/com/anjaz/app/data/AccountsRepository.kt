@@ -31,11 +31,15 @@ class AccountsRepository @Inject constructor(private val db: AnjazDatabase, priv
     fun creatableRoles(p: Profile): List<Choice> =
         Role.entries.filter { p.roleEnum.canCreate(it) }.map { Choice(it.name, it.label) }
 
-    fun schema(p: Profile, regions: List<RegionEntity> = emptyList(), squares: List<SquareEntity> = emptyList()) = Schemas.account(
+    fun schema(p: Profile, regions: List<RegionEntity> = emptyList(), squares: List<SquareEntity> = emptyList(), camps: List<com.anjaz.app.data.db.CampEntity> = emptyList(), squareId: String? = null) = Schemas.account(
         creatableRoles(p),
         regions = if (p.roleEnum == Role.CENTRAL) regions.map { Choice(it.id, it.name) } else null,
         squares = if (p.roleEnum.rank >= Role.REGION_ADMIN.rank) squares.map { Choice(it.id, it.name) } else null,
+        // المخيمات تتبع المربع المختار (أو مربع المدير نفسه)
+        camps = (squareId ?: p.squareId)?.let { sq -> camps.filter { it.squareId == sq && it.deletedAt == null }.map { Choice(it.id, it.name) } },
     )
+
+    fun camps(): Flow<List<com.anjaz.app.data.db.CampEntity>> = db.directory().observeCamps()
 
     fun regions(): Flow<List<RegionEntity>> = db.directory().observeRegions()
     fun squares(): Flow<List<SquareEntity>> = db.directory().observeSquares()
@@ -54,6 +58,7 @@ class AccountsRepository @Inject constructor(private val db: AnjazDatabase, priv
             put("role", role.name)
             put("regionId", region?.let(::JsonPrimitive) ?: kotlinx.serialization.json.JsonNull)
             put("squareId", square?.let(::JsonPrimitive) ?: kotlinx.serialization.json.JsonNull)
+            values["campId"]?.takeIf { it.isNotBlank() }?.let { put("campId", it) }
         }.toString()
         return call("/v1/users", body) { "ok" }
     }
@@ -69,6 +74,7 @@ class AccountsRepository @Inject constructor(private val db: AnjazDatabase, priv
             values["role"]?.takeIf { it.isNotBlank() }?.let { put("role", it) }
             if ("regionId" in values) put("regionId", values["regionId"]?.takeIf { it.isNotBlank() }?.let(::JsonPrimitive) ?: kotlinx.serialization.json.JsonNull)
             if ("squareId" in values) put("squareId", values["squareId"]?.takeIf { it.isNotBlank() }?.let(::JsonPrimitive) ?: kotlinx.serialization.json.JsonNull)
+            if ("campId" in values) put("campId", values["campId"]?.takeIf { it.isNotBlank() }?.let(::JsonPrimitive) ?: kotlinx.serialization.json.JsonNull)
         }.toString()
         return call("/v1/users/$uid/update", body) { "ok" }
     }

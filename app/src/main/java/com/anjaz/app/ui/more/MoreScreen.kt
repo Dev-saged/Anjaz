@@ -43,7 +43,7 @@ private data class Entry(val title: String, val icon: ImageVector)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Unit, onOpenAccounts: () -> Unit, onOpenDirectory: () -> Unit, onOpenReports: () -> Unit, onOpenDashboard: () -> Unit, onOpenAudit: () -> Unit, onOpenMap: () -> Unit = {}, onOpenTemplates: () -> Unit = {}, onOpenDownloads: () -> Unit = {}, onOpenTrash: () -> Unit = {}, onOpenStats: () -> Unit = {}) {
+fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Unit, onOpenAccounts: () -> Unit, onOpenDirectory: () -> Unit, onOpenReports: () -> Unit, onOpenDashboard: () -> Unit, onOpenAudit: () -> Unit, onOpenMap: () -> Unit = {}, onOpenTemplates: () -> Unit = {}, onOpenDownloads: () -> Unit = {}, onOpenTrash: () -> Unit = {}, onOpenStats: () -> Unit = {}, onOpenDistribute: () -> Unit = {}) {
     val c = Anjaz.colors
     val haptic = LocalHapticFeedback.current
     val upcoming = listOf(
@@ -69,7 +69,16 @@ fun MoreScreen(profile: Profile, onSignOut: () -> Unit, onOpenSelfTest: () -> Un
                 AnjazIcon(AnjazIcons.Users, c.emeraldDeep)
                 Column(Modifier.weight(1f)) {
                     Text("إحصائيات المنطقة", color = c.ink, style = MaterialTheme.typography.titleMedium)
-                    Text("المخيمات والأسر في كل مربع", color = c.mute, style = MaterialTheme.typography.bodySmall)
+                    Text("المخيمات والأسر والأوزان النسبية لكل مربع", color = c.mute, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+        AnjazCard(Modifier.fillMaxWidth(), onClick = onOpenDistribute) {
+            Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                AnjazIcon(AnjazIcons.Camp, c.emeraldDeep)
+                Column(Modifier.weight(1f)) {
+                    Text("توزيع كمية واردة", color = c.ink, style = MaterialTheme.typography.titleMedium)
+                    Text("قسمة عادلة على المربعات والمخيمات حسب عدد الأسر", color = c.mute, style = MaterialTheme.typography.bodySmall)
                 }
             }
         }

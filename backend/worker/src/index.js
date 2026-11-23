@@ -62,7 +62,7 @@ async function createUser(ctx) {
   if (created.error) throw new HttpError(409, 'اسم المستخدم مستخدم مسبقاً');
   try {
     await ctx.fs.set(`users/${created.uid}`, {
-      username: b.username, displayName: b.displayName.trim(), ...target, active: true, createdBy: ctx.uid, updatedAt: ctx.now,
+      username: b.username, displayName: b.displayName.trim(), ...target, campId: campOf(b.campId, target), active: true, createdBy: ctx.uid, updatedAt: ctx.now,
     });
   } catch (e) {
     await ctx.identity.setDisabled(created.uid, true);
@@ -70,6 +70,12 @@ async function createUser(ctx) {
   }
   await audit(ctx.fs, ctx.uid, 'user.create', created.uid, target.regionId, ctx.now);
   return json({ uid: created.uid }, 201);
+}
+
+// المخيم يُربط فقط بحسابات المربع (مدير مربع أو ميداني)
+function campOf(v, target) {
+  if (typeof v !== 'string' || v.length === 0 || v.length > 64) return null;
+  return target.squareId ? v : null;
 }
 
 async function manageTarget(ctx, uid) {
@@ -117,7 +123,8 @@ async function updateUser(ctx, uid) {
     if (uid === ctx.uid) throw new HttpError(400, 'لا يمكنك تغيير صلاحياتك');
     if (!shapeOk(next) || !canCreateUser(ctx.actor, next)) throw new HttpError(403, 'ليس لديك صلاحية على هذا الدور أو النطاق');
   }
-  await ctx.fs.patch(`users/${uid}`, { displayName: displayName.trim(), ...next, updatedAt: ctx.now });
+  const campId = b.campId === undefined ? (t.campId ?? null) : campOf(b.campId, next);
+  await ctx.fs.patch(`users/${uid}`, { displayName: displayName.trim(), ...next, campId, updatedAt: ctx.now });
   await ctx.identity.setDisplayName(uid, displayName.trim());
   await audit(ctx.fs, ctx.uid, 'user.update', uid, next.regionId, ctx.now);
   return json({ ok: true });

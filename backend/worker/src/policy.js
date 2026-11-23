@@ -44,7 +44,9 @@ export function taskReader(p, task, uid) {
   if (task.assigneeId === uid || task.createdBy === uid) return true;
   if (p.regionId !== task.regionId) return false;
   if (p.role === 'REGION_MANAGER' || p.role === 'REGION_ADMIN') return true;
-  return p.role === 'SQUARE_MANAGER' && p.squareId === task.squareId;
+  if (p.role === 'SQUARE_MANAGER' && p.squareId === task.squareId) return true;
+  // مهام المربع غير المسندة لشخص، ومهام المخيم لمن يرتبط به
+  return (!task.assigneeId && p.squareId != null && p.squareId === task.squareId) || (task.campId != null && p.campId === task.campId);
 }
 
 export function randomPassword(len = 10) {

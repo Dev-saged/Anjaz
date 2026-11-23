@@ -46,7 +46,7 @@ fun TaskCard(task: TaskEntity, now: Long, onClick: () -> Unit, modifier: Modifie
             Box(Modifier.width(4.dp).fillMaxHeight().clip(RoundedCornerShape(2.dp)).background(accent))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(task.title, color = c.ink, style = MaterialTheme.typography.titleMedium, maxLines = 2)
-                subtitle?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodySmall, maxLines = 1) }
+                subtitle?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodySmall, maxLines = 2) }
                 androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp), itemVerticalAlignment = Alignment.CenterVertically) {
                     Tag(status.label, statusTone(status))
                     if (priority.urgent) Tag(priority.label, Tone.Danger)

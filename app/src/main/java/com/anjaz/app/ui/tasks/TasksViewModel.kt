@@ -92,9 +92,15 @@ class TasksViewModel @Inject constructor(
 ) : ViewModel() {
     private val profile: StateFlow<Profile?> = auth.session.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    val team: StateFlow<List<Choice>> = queries.team()
-        .map { list -> list.map { Choice(it.id, it.displayName) } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val team: StateFlow<List<Choice>> = combine(profile, queries.people(), directory.squares(), directory.camps()) { p, list, sq, cp ->
+        if (p == null) return@combine emptyList()
+        val sqNames = sq.associate { it.id to it.name }
+        val cpNames = cp.associate { it.id to it.name }
+        list.filter { repo.canAssignTo(p, it) }.map { u ->
+            val place = u.campId?.let(cpNames::get) ?: u.squareId?.let(sqNames::get)
+            Choice(u.id, u.displayName + " — " + com.anjaz.app.domain.Role.label(u.role) + (place?.let { " · $it" } ?: ""))
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val squares: StateFlow<List<com.anjaz.app.data.db.SquareEntity>> = combine(profile, directory.squares()) { p, all ->
         p?.let { com.anjaz.app.data.DirectoryRepository.squaresInScope(it, all) }.orEmpty()
@@ -105,11 +111,21 @@ class TasksViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** أسماء الجهات والأشخاص لعرض «لمن هذه المهمة» على البطاقات. */
-    val names: StateFlow<Map<String, String>> = combine(queries.team(), squares, camps) { users, sq, cp ->
+    val names: StateFlow<Map<String, String>> = combine(queries.people(), squares, camps) { users, sq, cp ->
         users.associate { it.id to it.displayName } + sq.associate { it.id to it.name } + cp.associate { it.id to it.name }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     val canDelete: Boolean get() = profile.value?.let(repo::canDelete) == true
+
+    fun leads(t: TaskEntity): Boolean {
+        val p = profile.value ?: return false
+        return when (p.roleEnum) {
+            com.anjaz.app.domain.Role.CENTRAL -> true
+            com.anjaz.app.domain.Role.REGION_MANAGER, com.anjaz.app.domain.Role.REGION_ADMIN -> t.regionId == p.regionId
+            com.anjaz.app.domain.Role.SQUARE_MANAGER -> t.regionId == p.regionId && t.squareId == p.squareId && t.assigneeId != p.uid
+            com.anjaz.app.domain.Role.FIELD_STAFF -> false
+        }
+    }
 
     private val _undo = MutableStateFlow<String?>(null)
     val undo: StateFlow<String?> = _undo

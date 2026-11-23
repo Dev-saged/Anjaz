@@ -10,6 +10,7 @@ data class Profile(
     val role: String,
     val regionId: String? = null,
     val squareId: String? = null,
+    val campId: String? = null,
 ) {
     val roleEnum: Role get() = Role.entries.firstOrNull { it.name == role } ?: Role.FIELD_STAFF
     val canAssign: Boolean get() = roleEnum != Role.FIELD_STAFF

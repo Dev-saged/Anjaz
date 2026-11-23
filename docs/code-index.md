@@ -4,8 +4,8 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 225 ملفاً · 33807 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
-> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · VoiceUi.kt 331 · FirestoreRemoteStore.kt 329
+> 229 ملفاً · 34457 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · FirestoreRemoteStore.kt 355 · ChatScreens.kt 336
 
 ### ./
 - CLAUDE.md (44)
@@ -33,7 +33,7 @@
 - AndroidManifest.xml (69)
 ### app/src/main/java/com/anjaz/app/
 - AnjazApp.kt (27): AnjazApp
-- BrandConfig.kt (55): BrandConfig
+- BrandConfig.kt (57): BrandConfig
 - MainActivity.kt (79): MainActivity
 ### app/src/main/java/com/anjaz/app/backup/
 - BackupManager.kt (84): BackupFile, RestoreSummary, BackupManager
@@ -47,8 +47,8 @@
 - Oklch.kt (36): Oklch, Color.toHex
 - SelfTest.kt (96): Check, SelfTest
 ### app/src/main/java/com/anjaz/app/data/
-- AccountsRepository.kt (89): AccountsRepository
-- ChatRepository.kt (97): directRoomId, String.csv, ChatRepository
+- AccountsRepository.kt (95): AccountsRepository
+- ChatRepository.kt (103): directRoomId, String.csv, encodeNames, decodeNames, ChatRepository
 - Clock.kt (10): interface, SystemClock
 - DashboardRepository.kt (41): DashboardCounts, DashboardRepository
 - DemoSeeder.kt (39): DemoSeeder
@@ -57,14 +57,14 @@
 - Session.kt (6): Session
 - SessionStore.kt (35): SessionStore
 - SosRepository.kt (58): SosStatus, SosRepository
-- TaskQueries.kt (17): TaskQueries
-- TaskRepository.kt (178): TaskOpPayload, TaskRepository
+- TaskQueries.kt (18): TaskQueries
+- TaskRepository.kt (222): TaskOpPayload, TaskRepository
 - TaskTarget.kt (22): TargetKind, TaskTarget, Trash
 ### app/src/main/java/com/anjaz/app/data/db/
 - AnjazDatabase.kt (33): AnjazDatabase
 - Daos.kt (302): SquareCount, TaskDao, TaskEventDao, OutboxDao, DirectoryDao, SosDao, ChatDao +1
-- Entities.kt (185): RegionEntity, SquareEntity, CampEntity, UserEntity, TaskEntity, TaskEventEntity, OutboxEntity +6
-- Migrations.kt (64): Migrations
+- Entities.kt (190): RegionEntity, SquareEntity, CampEntity, UserEntity, TaskEntity, TaskEventEntity, OutboxEntity +6
+- Migrations.kt (73): Migrations
 - SearchDao.kt (23): SearchDao
 ### app/src/main/java/com/anjaz/app/di/
 - DataModule.kt (37): DataModule
@@ -72,10 +72,11 @@
 - Dashboard.kt (50): Slice, Dashboard, DashboardBuilder
 - Outcome.kt (7): Outcome
 - Plural.kt (27): Noun, Plural
-- Profile.kt (17): Profile
-- Role.kt (12): Role
+- Profile.kt (18): Profile
+- Role.kt (16): Role
 - TaskStatus.kt (42): TaskStatus, Priority
 - Username.kt (49): Username
+- Weights.kt (36): Weights
 ### app/src/main/java/com/anjaz/app/downloads/
 - DownloadCenter.kt (125): DlStatus, DlItem, DownloadCenter
 - DownloadsScreen.kt (108): DownloadsViewModel, DownloadsScreen
@@ -105,7 +106,7 @@
 - XlsxExporter.kt (56): XlsxExporter
 ### app/src/main/java/com/anjaz/app/schema/
 - Schema.kt (54): FieldType, Choice, FieldSchema, ModuleSchema, SchemaValidator
-- Schemas.kt (64): Schemas
+- Schemas.kt (65): Schemas
 ### app/src/main/java/com/anjaz/app/security/
 - AppLock.kt (29): AppLock
 ### app/src/main/java/com/anjaz/app/stt/
@@ -117,21 +118,21 @@
 ### app/src/main/java/com/anjaz/app/sync/
 - ApiClient.kt (95): ApiClient
 - CleanupWorker.kt (44): CleanupWorker
-- FirestoreRemoteStore.kt (329): FirestoreRemoteStore
+- FirestoreRemoteStore.kt (355): FirestoreRemoteStore
 - RemoteStore.kt (56): RemoteDenied, AuditEntry, RemoteStore, NoRemoteStore, interface
-- SyncEngine.kt (224): PushResult, SyncEngine
+- SyncEngine.kt (232): PushResult, SyncEngine
 - SyncWorker.kt (54): SyncWorker, SyncScheduler
 ### app/src/main/java/com/anjaz/app/ui/about/
 - AboutCard.kt (83): AboutCard
-- Changelog.kt (53): ChangelogSheet
+- Changelog.kt (54): ChangelogSheet
 ### app/src/main/java/com/anjaz/app/ui/accounts/
 - AccountsScreen.kt (200): AccountsScreen
-- AccountsViewModel.kt (156): AccountsUi, AccountsViewModel
+- AccountsViewModel.kt (158): AccountsUi, AccountsViewModel
 ### app/src/main/java/com/anjaz/app/ui/audit/
 - AuditScreen.kt (99): AuditRow, actionLabel, AuditViewModel, AuditScreen
 ### app/src/main/java/com/anjaz/app/ui/chat/
-- ChatScreens.kt (313): ChatListScreen, ChatRoomScreen
-- ChatViewModels.kt (134): RoomRow, ChatListViewModel, roomTitle, RoomUi, ChatRoomViewModel
+- ChatScreens.kt (336): ChatListScreen, ChatRoomScreen
+- ChatViewModels.kt (178): RoomRow, ContactRow, ContactGroup, ChatListViewModel, roomTitle, RoomUi, ChatRoomViewModel
 - MediaUi.kt (213): sizeLabel, clock, MediaContent, AttachSheet
 - VoiceUi.kt (331): VoiceBubble, RecorderState, RecordingBar, HoldToRecord
 ### app/src/main/java/com/anjaz/app/ui/components/
@@ -151,6 +152,9 @@
 ### app/src/main/java/com/anjaz/app/ui/directory/
 - DirectoryScreen.kt (216): DirectoryScreen
 - DirectoryViewModel.kt (192): DirKind, SquareRow, RegionSection, DirectoryUi, DirForm, DirectoryViewModel
+### app/src/main/java/com/anjaz/app/ui/distribute/
+- DistributeScreen.kt (173): DistributeScreen
+- DistributeViewModel.kt (124): CampShare, SquareShare, DistributeInput, DistributeUi, DistributeViewModel
 ### app/src/main/java/com/anjaz/app/ui/home/
 - HomeScreen.kt (193): HomeScreen
 - HomeShortcuts.kt (157): MapCard, CampsCard
@@ -166,9 +170,9 @@
 - MapViewModel.kt (181): MapUi, MapViewModel
 ### app/src/main/java/com/anjaz/app/ui/more/
 - ChatPlaceholder.kt (29): ChatPlaceholder
-- MoreScreen.kt (220): MoreScreen
+- MoreScreen.kt (229): MoreScreen
 ### app/src/main/java/com/anjaz/app/ui/nav/
-- AnjazNav.kt (180): Routes, AnjazRoot
+- AnjazNav.kt (182): Routes, AnjazRoot
 - SyncViewModel.kt (36): SyncViewModel
 ### app/src/main/java/com/anjaz/app/ui/reports/
 - ReportsScreen.kt (83): ReportsScreen
@@ -179,15 +183,15 @@
 - SosScreen.kt (188): SosScreen
 - SosViewModel.kt (50): SosViewModel
 ### app/src/main/java/com/anjaz/app/ui/stats/
-- StatsScreen.kt (208): StatsScreen
+- StatsScreen.kt (217): StatsScreen
 - StatsViewModel.kt (57): SquareStat, RegionChip, StatsUi, StatsViewModel
 ### app/src/main/java/com/anjaz/app/ui/sync/
 - SyncCenter.kt (95): SyncCenterViewModel, SyncSheet
 ### app/src/main/java/com/anjaz/app/ui/tasks/
 - TaskPhotos.kt (190): TaskPhoto, TaskPhotosViewModel, TaskPhotosSection
 - TaskTargetPicker.kt (153): DeadlineField, TargetField
-- TasksScreen.kt (264): TasksScreen, NewTaskSheet
-- TasksViewModel.kt (240): TaskFilter, TaskCategory, TasksUiState, NewTaskState, TasksViewModel
+- TasksScreen.kt (270): TasksScreen, NewTaskSheet
+- TasksViewModel.kt (256): TaskFilter, TaskCategory, TasksUiState, NewTaskState, TasksViewModel
 ### app/src/main/java/com/anjaz/app/ui/templates/
 - Templates.kt (223): Template, TemplatesRepository, TemplatesUi, TemplatesViewModel, TemplatesScreen
 ### app/src/main/java/com/anjaz/app/ui/test/
@@ -240,13 +244,14 @@
 - MigrationTest.kt (65): MigrationTest
 - RoomSelfTestTest.kt (22): RoomSelfTestTest
 - SyncEngineTest.kt (181): SyncEngineTest
+- WeightsTest.kt (35): WeightsTest
 ### app/src/test/java/com/anjaz/app/update/
 - UpdateCheckerTest.kt (49): UpdateCheckerTest
 ### backend/
 - README.md (28)
 ### backend/firebase/
 - firebase.json (5)
-- firestore.rules (274)
+- firestore.rules (285)
 - package-lock.json (10702)
 - package.json (8)
 ### backend/firebase/test/
@@ -262,15 +267,15 @@
 - firestore.js (101): encodeValue, encodeFields, decodeValue, decodeFields, decodeDoc, Firestore
 - google.js (45): serviceAccount, signJwt, accessToken, resetTokenCache
 - identity.js (42): Identity
-- index.js (251): json, limited, body, str, profile, audit, createUser +12
+- index.js (258): json, limited, body, str, profile, audit, createUser +13
 - media.js (91): roomOf, putMedia, getMedia, ackMedia, purgeMedia
-- notify.js (57): sendFcm, leadsFor, targetsFor
-- policy.js (55): validUsername, validPassword, isActive, isLead, inScope, shapeOk, canCreateUser +3
+- notify.js (75): sendFcm, leadsFor, targetsFor
+- policy.js (57): validUsername, validPassword, isActive, isLead, inScope, shapeOk, canCreateUser +3
 - recurring.js (56): localTime, due, runRecurring, weeklyReport
 - trash.js (27): purgeTrash
 ### backend/worker/test/
 - harness.js (119): keys, idToken, d1, world
-- worker.test.js (246): newUser
+- worker.test.js (259): newUser
 ### brand/
 - BRAND.md (39)
 - board-spec.json (32)
@@ -297,7 +302,7 @@
 ### docs/
 - DEPLOY.md (18)
 - media.md (7)
-- repo-map.md (41)
+- repo-map.md (47)
 ### tools/
 - repomap.py (146): files, symbols, build, main
 <!-- repomap:auto:end -->

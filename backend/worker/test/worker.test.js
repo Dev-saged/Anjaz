@@ -118,7 +118,8 @@ test('الإشعارات: التحقق من الصلاحية واستهداف ا
   assert.equal((await n('staffA2', 'chat', 'r1')).status, 403);
   assert.equal((await n('staffA1', 'chat', 'r1')).status, 200);
   assert.deepEqual(w.calls.fcm.map((m) => m.token), ['tok-smA1']);
-  assert.equal(w.calls.fcm[0].notification.body, 'لديك رسالة جديدة');
+  assert.equal(w.calls.fcm[0].notification.body, 'اضغط للرد');
+  assert.ok(w.calls.fcm[0].notification.title.startsWith('رسالة من'));
   w.calls.fcm.length = 0;
   assert.equal((await n('smA1', 'sos', 's1')).status, 403);
   assert.equal((await n('staffA1', 'sos', 's1')).status, 200);
@@ -242,4 +243,16 @@ test('سلة المهملات: الإزالة الفعلية بعد 30 يوما�
   assert.ok(w.docs('tasks/fresh'));
   assert.ok(w.docs('tasks/live'));
   assert.equal(w.docs('camps/gone'), null);
+});
+
+test('إشعار مهمة المربع يصل لمدير المربع وأفراده ويذكر المرسِل', async () => {
+  const w = await world(users);
+  for (const u of ['smA1', 'staffA1', 'staffA2', 'rmA']) w.put(`devices/${u}`, { token: `tok-${u}` });
+  w.put('tasks/t9', { title: 'توزيع', status: 'NEW', regionId: 'A', squareId: 'A1', assigneeId: null, createdBy: 'rmA', priority: 'NORMAL' });
+  const r = await w.call(handle, 'rmA', 'POST', '/v1/notify', { kind: 'task', id: 't9' });
+  assert.equal(r.status, 200);
+  const toks = w.calls.fcm.map((m) => m.token).sort();
+  assert.ok(toks.includes('tok-smA1') && toks.includes('tok-staffA1'));
+  assert.ok(!toks.includes('tok-rmA'));
+  assert.ok(w.calls.fcm[0].notification.title.startsWith('مهمة جديدة من'));
 });

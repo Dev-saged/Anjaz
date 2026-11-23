@@ -38,19 +38,37 @@ export async function targetsFor(fs, actorId, actor, kind, id) {
   if (kind === 'chat') {
     const room = await fs.get(`rooms/${id}`);
     if (!room || !room.members?.includes(actorId)) return null;
-    return { uids: room.members.filter((m) => m !== actorId), title: 'رسالة جديدة', body: 'لديك رسالة جديدة', high: false };
+    return { uids: room.members.filter((m) => m !== actorId), title: `رسالة من ${actor.displayName || 'زميل'}`, body: room.type === 'group' ? `في ${room.name || 'مجموعة'}` : 'اضغط للرد', high: false };
   }
   if (kind === 'task') {
     const t = await fs.get(`tasks/${id}`);
     if (!t || !taskReader(actor, t, actorId)) return null;
-    const uids = [t.assigneeId, t.createdBy].filter((u) => u && u !== actorId);
-    return { uids, title: 'تحديث على مهمة', body: String(t.title || '').slice(0, 80), high: false };
+    const who = actor.displayName || 'الإدارة';
+    let targets = [t.assigneeId, t.createdBy];
+    if (!t.assigneeId) {
+      // مهمة لمربع أو مخيم: تصل لمدير المربع وأفراده (أو المرتبطين بالمخيم)
+      const people = t.campId
+        ? await fs.query('users', [['campId', 'EQUAL', t.campId]])
+        : t.squareId ? await fs.query('users', [['squareId', 'EQUAL', t.squareId]]) : [];
+      targets = targets.concat(people.filter((u) => u.active && !u.deleted && u.regionId === t.regionId).map((u) => u.id));
+      if (t.campId && t.squareId) {
+        const managers = await fs.query('users', [['squareId', 'EQUAL', t.squareId]]);
+        targets = targets.concat(managers.filter((u) => u.role === 'SQUARE_MANAGER' && u.active).map((u) => u.id));
+      }
+    }
+    const uids = targets.filter((u) => u && u !== actorId);
+    const fresh = t.status === 'NEW' && t.createdBy === actorId;
+    return {
+      uids,
+      title: fresh ? `مهمة جديدة من ${who}` : `تحديث من ${who} على مهمة`,
+      body: String(t.title || '').slice(0, 80), high: t.priority === 'URGENT',
+    };
   }
   if (kind === 'sos') {
     const s = await fs.get(`sos/${id}`);
     if (!s || s.senderId !== actorId) return null;
     const uids = (await leadsFor(fs, s.regionId, s.squareId)).filter((u) => u !== actorId);
-    return { uids, title: 'نداء استغاثة', body: 'اضغط لفتح الموقع والتفاصيل', high: true };
+    return { uids, title: `نداء استغاثة من ${s.senderName || actor.displayName || 'زميل'}`, body: s.note ? String(s.note).slice(0, 80) : 'اضغط لفتح الموقع والتفاصيل', high: true };
   }
   return null;
 }

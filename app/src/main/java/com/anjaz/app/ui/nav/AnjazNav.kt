@@ -121,7 +121,7 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
             popEnterTransition = { fadeIn(tween(240)) },
             popExitTransition = { fadeOut(tween(160)) },
         ) {
-            composable(Routes.HOME) { HomeScreen(onOpenTask = { nav.navigateTab(Routes.TASKS) }, onNewTask = tasksVm::openForm, onOpenSos = { nav.navigateTab(Routes.SOS) }, onSearch = { nav.navigate(Routes.SEARCH) }, onOpenMap = { nav.navigate(Routes.MAP) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, canAssign = profile.canAssign, onOpenStats = { nav.navigate(Routes.STATS) }, onOpenDistribute = { nav.navigate(Routes.DISTRIBUTE) }) }
+            composable(Routes.HOME) { HomeScreen(onOpenTask = { nav.navigateTab(Routes.TASKS) }, onNewTask = tasksVm::openForm, onOpenSos = { nav.navigateTab(Routes.SOS) }, onSearch = { nav.navigate(Routes.SEARCH) }, onOpenMap = { nav.navigate(Routes.MAP) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, canAssign = profile.canAssign, onOpenStats = { nav.navigate(Routes.STATS) }) }
             composable(Routes.TASKS) { TasksScreen(tasksVm, onNewTask = tasksVm::openForm) }
             composable(Routes.CHAT) { ChatListScreen(onOpenRoom = { nav.navigate(Routes.room(it)) }) }
             composable(Routes.ROOM) { ChatRoomScreen(onBack = { nav.popBackStack() }, onCall = { nav.navigate("call/new?members=" + it.joinToString(",")) }) }
@@ -132,7 +132,7 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
                 )
             }
             composable(Routes.SOS) { SosScreen() }
-            composable(Routes.MORE) { MoreScreen(profile, onSignOut = onSignOut, onOpenSelfTest = { nav.navigate(Routes.TEST) }, onOpenAccounts = { nav.navigate(Routes.ACCOUNTS) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, onOpenReports = { nav.navigate(Routes.REPORTS) }, onOpenDashboard = { nav.navigate(Routes.DASHBOARD) }, onOpenAudit = { nav.navigate(Routes.AUDIT) }, onOpenMap = { nav.navigate(Routes.MAP) }, onOpenTemplates = { nav.navigate(Routes.TEMPLATES) }, onOpenDownloads = { nav.navigate(Routes.DOWNLOADS) }, onOpenTrash = { nav.navigate(Routes.TRASH) }, onOpenStats = { nav.navigate(Routes.STATS) }) }
+            composable(Routes.MORE) { MoreScreen(profile, onSignOut = onSignOut, onOpenSelfTest = { nav.navigate(Routes.TEST) }, onOpenAccounts = { nav.navigate(Routes.ACCOUNTS) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, onOpenReports = { nav.navigate(Routes.REPORTS) }, onOpenDashboard = { nav.navigate(Routes.DASHBOARD) }, onOpenAudit = { nav.navigate(Routes.AUDIT) }, onOpenMap = { nav.navigate(Routes.MAP) }, onOpenTemplates = { nav.navigate(Routes.TEMPLATES) }, onOpenDownloads = { nav.navigate(Routes.DOWNLOADS) }, onOpenTrash = { nav.navigate(Routes.TRASH) }, onOpenStats = { nav.navigate(Routes.STATS) }, onOpenDistribute = { nav.navigate(Routes.DISTRIBUTE) }) }
             composable(Routes.TRASH) { com.anjaz.app.ui.trash.TrashScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.DOWNLOADS) { com.anjaz.app.downloads.DownloadsScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.SEARCH) {

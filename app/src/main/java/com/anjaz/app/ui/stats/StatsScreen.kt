@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.anjaz.app.domain.Plural
+import com.anjaz.app.domain.Weights
 import com.anjaz.app.ui.components.AnjazIcon
 import com.anjaz.app.ui.components.EmptyState
 import com.anjaz.app.ui.components.FitText

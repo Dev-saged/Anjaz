@@ -18,6 +18,11 @@ fun directRoomId(a: String, b: String): String = "d_" + listOf(a, b).sorted().jo
 
 fun String.csv(): List<String> = if (isEmpty()) emptyList() else split(',')
 
+fun encodeNames(m: Map<String, String>): String = m.entries.joinToString("|") { "${it.key}=${it.value.replace("|", " ").replace("=", " ")}" }
+fun decodeNames(s: String): Map<String, String> = if (s.isEmpty()) emptyMap() else s.split('|').mapNotNull { p ->
+    val i = p.indexOf('='); if (i <= 0) null else p.substring(0, i) to p.substring(i + 1)
+}.toMap()
+
 @Singleton
 class ChatRepository @Inject constructor(private val db: AnjazDatabase, private val clock: Clock) {
     fun rooms(): Flow<List<RoomEntity>> = db.chat().observeRooms()
@@ -29,7 +34,8 @@ class ChatRepository @Inject constructor(private val db: AnjazDatabase, private 
         if (db.chat().roomById(id) != null) return id
         val now = clock.now()
         db.withTransaction {
-            db.chat().upsertRoom(RoomEntity(id, "direct", other.displayName, listOf(me.uid, other.id).sorted().joinToString(","), "", now))
+            db.chat().upsertRoom(RoomEntity(id, "direct", other.displayName, listOf(me.uid, other.id).sorted().joinToString(","), "", now,
+                memberNames = encodeNames(mapOf(me.uid to me.displayName, other.id to other.displayName))))
             db.outbox().insertIgnore(Outbox.op("room", "create", EntityOp(id), now))
         }
         return id
@@ -41,7 +47,7 @@ class ChatRepository @Inject constructor(private val db: AnjazDatabase, private 
         if (clean.length > 4000) return Outcome.Failure("الرسالة طويلة")
         if (db.chat().roomById(roomId) == null) return Outcome.Failure("المحادثة غير موجودة")
         val now = clock.now()
-        val m = MessageEntity(UUID.randomUUID().toString(), roomId, me.uid, "text", clean, now, me.uid, MessageState.LOCAL)
+        val m = MessageEntity(UUID.randomUUID().toString(), roomId, me.uid, "text", clean, now, me.uid, MessageState.LOCAL, senderName = me.displayName)
         return runCatching {
             db.withTransaction {
                 db.chat().insertMessage(m)

@@ -62,7 +62,7 @@ class AuthRepository @Inject constructor(
             val profile = Profile(
                 uid = uid, username = doc.getString("username") ?: user,
                 displayName = doc.getString("displayName") ?: user, role = doc.getString("role") ?: "FIELD_STAFF",
-                regionId = doc.getString("regionId"), squareId = doc.getString("squareId"),
+                regionId = doc.getString("regionId"), squareId = doc.getString("squareId"), campId = doc.getString("campId"),
             )
             store.save(profile)
             Outcome.Ok(profile)

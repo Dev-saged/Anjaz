@@ -77,7 +77,15 @@ class TaskRepository @Inject constructor(
                 .let { DirectoryRepository.squaresInScope(actor, it) }.map { Spec(it.regionId, it.id) }
             TargetKind.CAMP -> target.ids.mapNotNull { dir.campById(it) }
                 .let { DirectoryRepository.campsInScope(actor, it) }.map { Spec(it.regionId.ifEmpty { actor.regionId.orEmpty() }, it.squareId, null, it.id) }
-            TargetKind.PERSONS -> target.ids.distinct().filter { it.isNotBlank() }.map { Spec(actor.regionId, actor.squareId, it) }
+            // المهمة تُسجَّل في نطاق المكلَّف لا المرسِل، فيراها في قائمته ويراها مديره المباشر
+            TargetKind.PERSONS -> {
+                val users = dir.allUsers().associateBy { it.id }
+                target.ids.distinct().filter { it.isNotBlank() }.mapNotNull { id ->
+                    val u = users[id] ?: return@mapNotNull null
+                    if (!canAssignTo(actor, u)) return@mapNotNull null
+                    Spec(u.regionId ?: actor.regionId, u.squareId, id, u.campId)
+                }
+            }
         }
         if (specs.isEmpty()) return Outcome.Failure("لا توجد جهة مطابقة لهذا التكليف")
         val now = clock.now()
@@ -88,7 +96,7 @@ class TaskRepository @Inject constructor(
                     db.tasks().insert(
                         TaskEntity(
                             id = id, number = null, title = clean.getValue("title"), description = clean.getValue("description"),
-                            createdBy = actor.uid, regionId = sp.regionId, squareId = sp.squareId, assigneeId = sp.assigneeId,
+                            createdBy = actor.uid, createdByName = actor.displayName, regionId = sp.regionId, squareId = sp.squareId, assigneeId = sp.assigneeId,
                             priority = Priority.parse(clean.getValue("priority")).name, status = TaskStatus.NEW.name,
                             deadline = deadline, createdAt = now, updatedAt = now, archived = false, campId = sp.campId,
                         ),
@@ -100,6 +108,42 @@ class TaskRepository @Inject constructor(
             }
             Outcome.Ok(specs.size)
         }.getOrElse { Outcome.Failure("تعذّر الحفظ محلياً") }
+    }
+
+    /** خطة توزيع: مهمة لكل مربع بعنوانه ووصفه الخاص (كميته وتفصيل مخيماته). */
+    suspend fun createDistribution(actor: Profile, items: List<Triple<com.anjaz.app.data.db.SquareEntity, String, String>>, deadline: Long?, urgent: Boolean): Outcome<Int> {
+        if (!actor.canAssign) return Outcome.Failure("ليس لديك صلاحية إرسال مهام")
+        val scoped = DirectoryRepository.squaresInScope(actor, items.map { it.first }).map { it.id }.toSet()
+        val list = items.filter { it.first.id in scoped }
+        if (list.isEmpty()) return Outcome.Failure("لا مربعات ضمن نطاقك في هذه الخطة")
+        val now = clock.now()
+        return runCatching {
+            db.withTransaction {
+                list.forEach { (sq, title, desc) ->
+                    val id = UUID.randomUUID().toString()
+                    db.tasks().insert(
+                        TaskEntity(
+                            id = id, number = null, title = title.take(120), description = desc.take(1000),
+                            createdBy = actor.uid, createdByName = actor.displayName, regionId = sq.regionId, squareId = sq.id, assigneeId = null,
+                            priority = if (urgent) Priority.URGENT.name else Priority.NORMAL.name, status = TaskStatus.NEW.name,
+                            deadline = deadline, createdAt = now, updatedAt = now, archived = false,
+                        ),
+                    )
+                    val ev = event(id, null, TaskStatus.NEW, actor.uid, null, now)
+                    db.taskEvents().insert(ev)
+                    db.outbox().insertIgnore(outbox("task", "create", TaskOpPayload(id, TaskStatus.NEW.name, null, ev.id), now))
+                }
+            }
+            Outcome.Ok(list.size)
+        }.getOrElse { Outcome.Failure("تعذّر الحفظ محلياً") }
+    }
+
+    /** يُكلَّف من هو داخل نطاق المرسِل الإداري فقط (قاعدة الإنشاء في Firestore تشترط ذلك). */
+    fun canAssignTo(actor: Profile, u: com.anjaz.app.data.db.UserEntity): Boolean = u.id != actor.uid && u.active && !u.deleted && when (actor.roleEnum) {
+        Role.CENTRAL -> u.role != Role.CENTRAL.name
+        Role.REGION_MANAGER, Role.REGION_ADMIN -> u.regionId == actor.regionId && u.role in setOf(Role.SQUARE_MANAGER.name, Role.FIELD_STAFF.name, Role.REGION_ADMIN.name)
+        Role.SQUARE_MANAGER -> u.squareId == actor.squareId && u.regionId == actor.regionId && u.role == Role.FIELD_STAFF.name
+        Role.FIELD_STAFF -> false
     }
 
     fun canDelete(p: Profile) = p.roleEnum.rank >= Role.SQUARE_MANAGER.rank

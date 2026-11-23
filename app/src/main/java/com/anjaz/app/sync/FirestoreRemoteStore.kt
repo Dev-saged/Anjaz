@@ -18,6 +18,7 @@ import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
@@ -63,38 +64,57 @@ class FirestoreRemoteStore : RemoteStore {
         Unit
     }
 
+    /** كل ما يخص المستخدم: نطاقه الإداري + ما كُلِّف به شخصياً + مهام مربعه/مخيمه غير المسندة لشخص. */
     override fun tasks(profile: Profile): Flow<List<TaskEntity>> {
         val col = fs.collection("tasks")
-        val q: Query = when (profile.roleEnum) {
-            Role.CENTRAL -> col
-            Role.REGION_MANAGER, Role.REGION_ADMIN -> col.whereEqualTo("regionId", profile.regionId)
-            Role.SQUARE_MANAGER -> col.whereEqualTo("regionId", profile.regionId).whereEqualTo("squareId", profile.squareId)
-            Role.FIELD_STAFF -> col.whereEqualTo("assigneeId", profile.uid)
-        }
-        return snapshots(q) { snap -> snap.documents.mapNotNull { d -> d.data?.let { taskFrom(d.id, it) } } }
-    }
-
-    override fun users(profile: Profile): Flow<List<UserEntity>> {
-        val col = fs.collection("users")
-        val q: Query = when (profile.roleEnum) {
-            Role.CENTRAL -> col
-            Role.REGION_MANAGER, Role.REGION_ADMIN -> col.whereEqualTo("regionId", profile.regionId)
-            Role.SQUARE_MANAGER -> col.whereEqualTo("regionId", profile.regionId).whereEqualTo("squareId", profile.squareId)
-            Role.FIELD_STAFF -> col.whereEqualTo(com.google.firebase.firestore.FieldPath.documentId(), profile.uid)
-        }
-        return snapshots(q) { snap ->
-            snap.documents.mapNotNull { d ->
-                d.data?.let {
-                    UserEntity(
-                        id = d.id, username = it["username"] as? String ?: "", displayName = it["displayName"] as? String ?: "",
-                        role = it["role"] as? String ?: "FIELD_STAFF", regionId = it["regionId"] as? String, squareId = it["squareId"] as? String,
-                        active = it["active"] as? Boolean ?: false, updatedAt = (it["updatedAt"] as? Number)?.toLong() ?: 0L,
-                        deleted = it["deleted"] as? Boolean ?: false,
-                    )
+        val queries = buildList<Query> {
+            when (profile.roleEnum) {
+                Role.CENTRAL -> add(col)
+                Role.REGION_MANAGER, Role.REGION_ADMIN -> add(col.whereEqualTo("regionId", profile.regionId))
+                Role.SQUARE_MANAGER -> add(col.whereEqualTo("regionId", profile.regionId).whereEqualTo("squareId", profile.squareId))
+                Role.FIELD_STAFF -> {
+                    if (profile.squareId != null) add(col.whereEqualTo("regionId", profile.regionId).whereEqualTo("squareId", profile.squareId).whereEqualTo("assigneeId", null))
+                    profile.campId?.let { add(col.whereEqualTo("campId", it)) }
                 }
             }
+            if (profile.roleEnum != Role.CENTRAL) { add(col.whereEqualTo("assigneeId", profile.uid)); add(col.whereEqualTo("createdBy", profile.uid)) }
         }
+        return union(queries) { d -> d.data?.let { taskFrom(d.id, it) } }
     }
+
+    /** يدمج عدة استعلامات في قائمة واحدة بلا تكرار؛ فشل استعلام واحد (صلاحية) لا يُسقط البقية. */
+    private inline fun <reified T : Any> union(queries: List<Query>, crossinline map: (com.google.firebase.firestore.DocumentSnapshot) -> T?): Flow<List<T>> {
+        val flows = queries.map { q ->
+            snapshots(q) { snap -> snap.documents.mapNotNull { d -> map(d)?.let { d.id to it } } }
+                .catch { emit(emptyList()) }
+        }
+        return kotlinx.coroutines.flow.combine(flows) { parts -> parts.toList().flatten().distinctBy { it.first }.map { it.second } }
+    }
+
+    /** من يراه المستخدم: نطاقه + زملاء مربعه + قيادات منطقته + الإدارة المركزية (للتواصل). */
+    override fun users(profile: Profile): Flow<List<UserEntity>> {
+        val col = fs.collection("users")
+        val queries = buildList<Query> {
+            when (profile.roleEnum) {
+                Role.CENTRAL -> add(col)
+                Role.REGION_MANAGER, Role.REGION_ADMIN -> add(col.whereEqualTo("regionId", profile.regionId))
+                Role.SQUARE_MANAGER, Role.FIELD_STAFF -> {
+                    add(col.whereEqualTo(com.google.firebase.firestore.FieldPath.documentId(), profile.uid))
+                    if (profile.squareId != null) add(col.whereEqualTo("regionId", profile.regionId).whereEqualTo("squareId", profile.squareId))
+                    add(col.whereEqualTo("regionId", profile.regionId).whereIn("role", listOf("REGION_MANAGER", "REGION_ADMIN")))
+                }
+            }
+            if (profile.roleEnum != Role.CENTRAL) add(col.whereEqualTo("role", "CENTRAL"))
+        }
+        return union(queries) { d -> d.data?.let { userFrom(d.id, it) } }
+    }
+
+    private fun userFrom(id: String, m: Map<String, Any?>): UserEntity = UserEntity(
+        id = id, username = m["username"] as? String ?: "", displayName = m["displayName"] as? String ?: "",
+        role = m["role"] as? String ?: "FIELD_STAFF", regionId = m["regionId"] as? String, squareId = m["squareId"] as? String,
+        active = m["active"] as? Boolean ?: false, updatedAt = (m["updatedAt"] as? Number)?.toLong() ?: 0L,
+        deleted = m["deleted"] as? Boolean ?: false, campId = m["campId"] as? String,
+    )
 
     override suspend fun createRegion(region: RegionEntity) = guard {
         val data = hashMapOf<String, Any?>("name" to region.name, "active" to region.active, "updatedAt" to region.updatedAt)
@@ -200,6 +220,7 @@ class FirestoreRemoteStore : RemoteStore {
     override suspend fun createRoom(room: RoomEntity) = guard {
         val data = hashMapOf<String, Any?>(
             "type" to room.type, "members" to room.members.split(','), "lastMessage" to "", "lastAt" to room.lastAt,
+            "names" to com.anjaz.app.data.decodeNames(room.memberNames),
         )
         fs.collection("rooms").document(room.id).set(data).await()
         Unit
@@ -209,7 +230,7 @@ class FirestoreRemoteStore : RemoteStore {
         val room = fs.collection("rooms").document(message.roomId)
         val msg = room.collection("messages").document(message.id)
         val data = hashMapOf<String, Any?>(
-            "senderId" to message.senderId, "type" to message.type, "text" to message.text,
+            "senderId" to message.senderId, "type" to message.type, "text" to message.text, "senderName" to message.senderName,
             "createdAt" to message.createdAt, "readBy" to message.readBy.split(',').filter { it.isNotEmpty() },
         )
         if (message.mediaId.isNotEmpty()) data["media"] = mapOf(
@@ -259,9 +280,12 @@ class FirestoreRemoteStore : RemoteStore {
                 d.data?.let {
                     @Suppress("UNCHECKED_CAST")
                     val members = (it["members"] as? List<String>).orEmpty().sorted()
+                    @Suppress("UNCHECKED_CAST")
+                    val names = (it["names"] as? Map<String, Any?>).orEmpty().mapNotNull { (k, v) -> (v as? String)?.let { n -> k to n } }.toMap()
                     RoomEntity(
                         d.id, it["type"] as? String ?: "direct", it["name"] as? String ?: "", members.joinToString(","),
                         it["lastMessage"] as? String ?: "", (it["lastAt"] as? Number)?.toLong() ?: 0L,
+                        memberNames = com.anjaz.app.data.encodeNames(names),
                     )
                 }
             }
@@ -296,6 +320,7 @@ class FirestoreRemoteStore : RemoteStore {
                         height = (media?.get("h") as? Number)?.toInt() ?: 0,
                         lat = (it["lat"] as? Number)?.toDouble(), lng = (it["lng"] as? Number)?.toDouble(),
                         mediaState = if (media?.get("id") is String) MediaState.REMOTE else MediaState.NONE,
+                        senderName = it["senderName"] as? String ?: "",
                     )
                 }
             }
@@ -312,7 +337,7 @@ class FirestoreRemoteStore : RemoteStore {
         fun taskMap(t: TaskEntity): Map<String, Any?> = mapOf(
             "title" to t.title, "description" to t.description, "priority" to t.priority, "status" to t.status,
             "regionId" to t.regionId, "squareId" to t.squareId, "assigneeId" to t.assigneeId, "createdBy" to t.createdBy,
-            "deadline" to t.deadline, "campId" to t.campId, "deletedAt" to t.deletedAt, "createdAt" to t.createdAt, "updatedAt" to t.updatedAt,
+            "deadline" to t.deadline, "campId" to t.campId, "deletedAt" to t.deletedAt, "createdByName" to t.createdByName, "createdAt" to t.createdAt, "updatedAt" to t.updatedAt,
         )
 
         fun taskFrom(id: String, m: Map<String, Any?>): TaskEntity = TaskEntity(
@@ -323,6 +348,7 @@ class FirestoreRemoteStore : RemoteStore {
             deadline = (m["deadline"] as? Number)?.toLong(), createdAt = (m["createdAt"] as? Number)?.toLong() ?: 0L,
             updatedAt = (m["updatedAt"] as? Number)?.toLong() ?: 0L, archived = false,
             campId = m["campId"] as? String, deletedAt = (m["deletedAt"] as? Number)?.toLong(),
+            createdByName = m["createdByName"] as? String,
         )
     }
 }

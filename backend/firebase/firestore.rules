@@ -24,6 +24,10 @@ service cloud.firestore {
       allow read: if signedIn() && (
         request.auth.uid == uid ||
         isCentral() ||
+        // للتواصل: الإدارة المركزية للجميع، وقيادات المنطقة لأفرادها، وزملاء المربع لبعضهم
+        (active() && resource.data.role == 'CENTRAL') ||
+        (active() && me().regionId == resource.data.regionId && resource.data.role in ['REGION_MANAGER', 'REGION_ADMIN']) ||
+        (active() && me().regionId == resource.data.regionId && me().squareId != null && me().squareId == resource.data.squareId) ||
         (active() && me().regionId == resource.data.regionId && (
           me().role in ['REGION_MANAGER', 'REGION_ADMIN'] ||
           (me().role == 'SQUARE_MANAGER' && me().squareId == resource.data.squareId))));
@@ -65,7 +69,14 @@ service cloud.firestore {
     // ---------- tasks ----------
     function taskReader(d) {
       return isCentral() || isRegionLead(d.regionId) || isSquareLead(d.regionId, d.squareId)
-        || (active() && (d.assigneeId == request.auth.uid || d.createdBy == request.auth.uid));
+        || (active() && (d.assigneeId == request.auth.uid || d.createdBy == request.auth.uid))
+        // مهام المربع غير المسندة لشخص يراها أفراده، ومهام المخيم يراها المرتبطون به
+        || (inSquare(d.regionId, d.squareId) && d.assigneeId == null)
+        || (active() && d.campId != null && me().campId == d.campId);
+    }
+    function executor(d) {
+      return d.assigneeId == request.auth.uid
+        || (d.assigneeId == null && (inSquare(d.regionId, d.squareId) || (d.campId != null && me().campId == d.campId)));
     }
     function validTransition(from, to) {
       return (from == 'NEW' && to in ['SEEN', 'IN_PROGRESS'])
@@ -105,7 +116,7 @@ service cloud.firestore {
                   || validTransition(resource.data.status, request.resource.data.status)))
             ||
             // المُكلَّف يحرّك الحالة للأمام فقط
-            (resource.data.assigneeId == request.auth.uid
+            (executor(resource.data)
               && only(['status', 'updatedAt'])
               && assigneeMove(resource.data.status, request.resource.data.status))
           ))

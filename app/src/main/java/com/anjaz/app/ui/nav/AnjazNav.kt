@@ -64,6 +64,7 @@ object Routes {
     const val DOWNLOADS = "downloads"
     const val TRASH = "trash"
     const val STATS = "stats"
+    const val DISTRIBUTE = "distribute"
     const val ROOM = "room/{roomId}"
     fun room(id: String) = "room/$id"
 }
@@ -86,7 +87,7 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
     val route = backStack?.destination?.route ?: Routes.HOME
     val haptic = LocalHapticFeedback.current
     val sync: SyncViewModel = hiltViewModel()
-    LaunchedEffect(profile.uid) { sync.start(profile) }
+    LaunchedEffect(profile.uid, profile.role, profile.regionId, profile.squareId, profile.campId) { sync.start(profile) }
     val link by DeepLink.pending.collectAsStateWithLifecycle()
     LaunchedEffect(link) {
         val target = link ?: return@LaunchedEffect
@@ -120,7 +121,7 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
             popEnterTransition = { fadeIn(tween(240)) },
             popExitTransition = { fadeOut(tween(160)) },
         ) {
-            composable(Routes.HOME) { HomeScreen(onOpenTask = { nav.navigateTab(Routes.TASKS) }, onNewTask = tasksVm::openForm, onOpenSos = { nav.navigateTab(Routes.SOS) }, onSearch = { nav.navigate(Routes.SEARCH) }, onOpenMap = { nav.navigate(Routes.MAP) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, canAssign = profile.canAssign, onOpenStats = { nav.navigate(Routes.STATS) }) }
+            composable(Routes.HOME) { HomeScreen(onOpenTask = { nav.navigateTab(Routes.TASKS) }, onNewTask = tasksVm::openForm, onOpenSos = { nav.navigateTab(Routes.SOS) }, onSearch = { nav.navigate(Routes.SEARCH) }, onOpenMap = { nav.navigate(Routes.MAP) }, onOpenDirectory = { nav.navigate(Routes.DIRECTORY) }, canAssign = profile.canAssign, onOpenStats = { nav.navigate(Routes.STATS) }, onOpenDistribute = { nav.navigate(Routes.DISTRIBUTE) }) }
             composable(Routes.TASKS) { TasksScreen(tasksVm, onNewTask = tasksVm::openForm) }
             composable(Routes.CHAT) { ChatListScreen(onOpenRoom = { nav.navigate(Routes.room(it)) }) }
             composable(Routes.ROOM) { ChatRoomScreen(onBack = { nav.popBackStack() }, onCall = { nav.navigate("call/new?members=" + it.joinToString(",")) }) }
@@ -150,11 +151,12 @@ private fun MainShell(profile: Profile, onSignOut: () -> Unit) {
             composable(Routes.DASHBOARD) { com.anjaz.app.ui.dashboard.DashboardScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.REPORTS) { ReportsScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.DIRECTORY) { DirectoryScreen(onBack = { nav.popBackStack() }) }
-            composable(Routes.STATS) { com.anjaz.app.ui.stats.StatsScreen(onBack = { nav.popBackStack() }, onManage = { nav.navigate(Routes.DIRECTORY) }) }
+            composable(Routes.STATS) { com.anjaz.app.ui.stats.StatsScreen(onBack = { nav.popBackStack() }, onManage = { nav.navigate(Routes.DIRECTORY) }, onDistribute = { nav.navigate(Routes.DISTRIBUTE) }) }
+            composable(Routes.DISTRIBUTE) { com.anjaz.app.ui.distribute.DistributeScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.ACCOUNTS) { AccountsScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.TEST) { SelfTestScreen() }
         }
-        if (route != Routes.TEST && route != Routes.ROOM && route != Routes.ACCOUNTS && route != Routes.DIRECTORY && route != Routes.REPORTS && route != Routes.DASHBOARD && route != Routes.AUDIT && route != Routes.MAP && route != Routes.TEMPLATES && route != Routes.SEARCH && route != Routes.DOWNLOADS && route != Routes.TRASH && route != Routes.STATS && !route.startsWith("call/")) {
+        if (route != Routes.TEST && route != Routes.ROOM && route != Routes.ACCOUNTS && route != Routes.DIRECTORY && route != Routes.REPORTS && route != Routes.DASHBOARD && route != Routes.AUDIT && route != Routes.MAP && route != Routes.TEMPLATES && route != Routes.SEARCH && route != Routes.DOWNLOADS && route != Routes.TRASH && route != Routes.STATS && route != Routes.DISTRIBUTE && !route.startsWith("call/")) {
             GlassNavBar(
                 items, route, { nav.navigateTab(it) },
                 onFab = {

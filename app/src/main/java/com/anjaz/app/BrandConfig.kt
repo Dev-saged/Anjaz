@@ -39,6 +39,8 @@ object BrandConfig {
         val navyHigh = Pair(Oklch(.46, .08, 255.0), Oklch(.52, .08, 255.0))
         val emerald = Pair(Oklch(.72, .16, 158.0), Oklch(.74, .16, 158.0))
         val emeraldDeep = Pair(Oklch(.50, .13, 158.0), Oklch(.78, .14, 158.0))
+        /** بطاقات خضراء بنص أبيض (تباين ≥ 4.5): بداية ونهاية التدرّج، ثابتة في الوضعين. */
+        val emeraldTile = Pair(Oklch(.50, .13, 158.0), Oklch(.40, .11, 158.0))
         val amber = Pair(Oklch(.78, .15, 70.0), Oklch(.80, .15, 70.0))
         val amberDeep = Pair(Oklch(.48, .12, 60.0), Oklch(.82, .13, 70.0))
         val red = Pair(Oklch(.60, .21, 25.0), Oklch(.66, .20, 25.0))

@@ -12,5 +12,6 @@ class TaskQueries @Inject constructor(private val db: AnjazDatabase, private val
     fun all(): Flow<List<TaskEntity>> = db.tasks().observeAll()
     fun events(taskId: String): Flow<List<TaskEventEntity>> = db.taskEvents().observeFor(taskId)
     fun team(): Flow<List<com.anjaz.app.data.db.UserEntity>> = db.directory().observeTeam()
+    fun people(): Flow<List<com.anjaz.app.data.db.UserEntity>> = db.contacts().observeContacts("")
     fun now(): Long = clock.now()
 }

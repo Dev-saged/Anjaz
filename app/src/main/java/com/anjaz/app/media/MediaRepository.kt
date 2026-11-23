@@ -71,7 +71,7 @@ class MediaRepository @Inject constructor(
     }
 
     private fun base(roomId: String, me: Profile, type: String, caption: String = "") = MessageEntity(
-        UUID.randomUUID().toString(), roomId, me.uid, type, caption, clock.now(), me.uid, MessageState.LOCAL,
+        UUID.randomUUID().toString(), roomId, me.uid, type, caption, clock.now(), me.uid, MessageState.LOCAL, senderName = me.displayName,
     )
 
     suspend fun sendImage(roomId: String, me: Profile, uri: Uri): Outcome<String> = withContext(Dispatchers.IO) {

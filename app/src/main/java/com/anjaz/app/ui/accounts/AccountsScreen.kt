@@ -118,7 +118,7 @@ fun AccountsScreen(onBack: () -> Unit, vm: AccountsViewModel = hiltViewModel()) 
     }
     val editing = ui.edit
     if (editing != null && s != null) ModalBottomSheet(onDismissRequest = vm::closeEdit, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = c.surface) {
-        val es = s.copy(title = "تعديل الحساب", fields = s.fields.filter { it.key in setOf("displayName", "role", "regionId", "squareId") })
+        val es = s.copy(title = "تعديل الحساب", fields = s.fields.filter { it.key in setOf("displayName", "role", "regionId", "squareId", "campId") })
         Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 20.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             ScreenTitle(es.title)
             Text(ltr(editing.username), color = c.mute, style = MaterialTheme.typography.bodySmall)

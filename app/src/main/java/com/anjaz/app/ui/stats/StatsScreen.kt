@@ -71,7 +71,7 @@ import com.anjaz.app.ui.theme.ltr
 private fun num(n: Int) = ltr(Plural.grouped(n))
 
 @Composable
-fun StatsScreen(onBack: () -> Unit, onManage: () -> Unit, vm: StatsViewModel = hiltViewModel()) {
+fun StatsScreen(onBack: () -> Unit, onManage: () -> Unit, onDistribute: () -> Unit = {}, vm: StatsViewModel = hiltViewModel()) {
     val c = Anjaz.colors
     val ui by vm.ui.collectAsStateWithLifecycle()
     var open by remember { mutableStateOf<SquareStat?>(null) }
@@ -102,8 +102,14 @@ fun StatsScreen(onBack: () -> Unit, onManage: () -> Unit, vm: StatsViewModel = h
                     }
                 }
             }
-            item { HeroTile("إجمالي المخيمات", num(ui.camps), "في " + Plural.of(ui.squares.size, Plural.square) { ltr(it.toString()) }, AnjazIcons.Camp, listOf(c.emerald, c.emeraldDeep), c.onEmerald) }
-            item { HeroTile("إجمالي الأسر", num(ui.families), if (ui.camps > 0) "متوسط ${num(ui.average)} لكل مخيم" else "—", AnjazIcons.Users, listOf(c.navyHigh, c.navy), c.onNavy) }
+            item {
+                val tile = com.anjaz.app.BrandConfig.Palette.emeraldTile
+                HeroTile("إجمالي المخيمات", num(ui.camps), "في " + Plural.of(ui.squares.size, Plural.square) { ltr(it.toString()) }, AnjazIcons.Camp, listOf(tile.light.toColor(), tile.dark.toColor()), Color.White)
+            }
+            item { HeroTile("إجمالي الأسر", num(ui.families), if (ui.camps > 0) "متوسط ${num(ui.average)} لكل مخيم" else "—", AnjazIcons.Users, listOf(c.navyHigh, c.navy), Color.White) }
+            if (ui.families > 0) item(span = { GridItemSpan(maxLineSpan) }) {
+                com.anjaz.app.ui.components.PrimaryButton("توزيع كمية واردة حسب الأوزان", onDistribute)
+            }
             if (ui.missing > 0) item(span = { GridItemSpan(maxLineSpan) }) {
                 Text(
                     "${Plural.of(ui.missing, Plural.camp) { ltr(it.toString()) }} بلا عدد أسر مسجّل — اضغط على المخيم في المربعات لإكماله",
@@ -143,7 +149,6 @@ private fun SquareTile(s: SquareStat, max: Int, total: Int, onClick: () -> Unit)
     val share = remember { Animatable(0f) }
     val target = if (max == 0) 0f else s.families.toFloat() / max
     LaunchedEffect(target) { if (reduce) share.snapTo(target) else share.animateTo(target, tween(700)) }
-    val pct = if (total == 0) 0 else (s.families * 100f / total).toInt()
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(c.card).border(BorderStroke(1.dp, c.line), RoundedCornerShape(20.dp))
             .clickable(onClick = onClick).semantics { role = Role.Button; contentDescription = "${s.square.name}، اضغط لعرض المخيمات" }.padding(14.dp),
@@ -159,7 +164,10 @@ private fun SquareTile(s: SquareStat, max: Int, total: Int, onClick: () -> Unit)
             drawRoundRect(c.emerald, size = Size(size.width * share.value, size.height), cornerRadius = r,
                 topLeft = androidx.compose.ui.geometry.Offset(size.width * (1 - share.value), 0f))
         }
-        Text("${ltr(pct.toString())}% من أسر المنطقة", color = c.mute, style = MaterialTheme.typography.labelSmall)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("الوزن النسبي", color = c.mute, style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
+            Text(ltr(Weights.percent(s.families, total)), color = c.emeraldDeep, style = MaterialTheme.typography.titleMedium)
+        }
     }
 }
 

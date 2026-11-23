@@ -48,7 +48,9 @@ class AccountsViewModel @Inject constructor(
     val users: StateFlow<List<UserEntity>> = profile.filterNotNull().flatMapLatest { repo.users(it.uid) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val schema: StateFlow<ModuleSchema?> = combine(profile, repo.regions(), repo.squares()) { p, r, s -> p?.let { repo.schema(it, r, s) } }
+    val schema: StateFlow<ModuleSchema?> = combine(profile, repo.regions(), repo.squares(), repo.camps(), ui) { p, r, s, c, u ->
+        p?.let { repo.schema(it, r, s, c, u.values["squareId"]?.takeIf { v -> v.isNotBlank() }) }
+    }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun openForm() = ui.update { AccountsUi(formOpen = true, values = mapOf("role" to repo.creatableRoles(profile.value ?: return).firstOrNull()?.key.orEmpty())) }
@@ -86,7 +88,7 @@ class AccountsViewModel @Inject constructor(
             return
         }
         values["username"] = user!!
-        if (role in setOf("REGION_MANAGER", "REGION_ADMIN")) values.remove("squareId")
+        if (role in setOf("REGION_MANAGER", "REGION_ADMIN")) { values.remove("squareId"); values.remove("campId") }
         ui.update { it.copy(busy = true) }
         viewModelScope.launch {
             when (val r = repo.create(me, values, sch)) {
@@ -116,7 +118,7 @@ class AccountsViewModel @Inject constructor(
     }
 
     fun openEdit(u: UserEntity) = ui.update {
-        AccountsUi(edit = u, values = mapOf("displayName" to u.displayName, "role" to u.role, "regionId" to u.regionId.orEmpty(), "squareId" to u.squareId.orEmpty()))
+        AccountsUi(edit = u, values = mapOf("displayName" to u.displayName, "role" to u.role, "regionId" to u.regionId.orEmpty(), "squareId" to u.squareId.orEmpty(), "campId" to u.campId.orEmpty()))
     }
     fun closeEdit() = ui.update { it.copy(edit = null, errors = emptyMap(), busy = false) }
 

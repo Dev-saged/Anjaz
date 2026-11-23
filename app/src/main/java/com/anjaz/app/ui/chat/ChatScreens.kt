@@ -91,6 +91,7 @@ fun ChatListScreen(onOpenRoom: (String) -> Unit, vm: ChatListViewModel = hiltVie
                             Text(r.title, color = c.ink, style = MaterialTheme.typography.titleMedium)
                             if (r.at > 0) Text(DayMath.time(r.at), color = c.mute, style = MaterialTheme.typography.bodySmall)
                         }
+                        if (r.subtitle.isNotEmpty()) Text(r.subtitle, color = c.emeraldDeep, style = MaterialTheme.typography.labelMedium, maxLines = 1)
                         Text(r.last.ifEmpty { "لا رسائل" }, color = c.mute, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
                     }
                 }
@@ -99,19 +100,41 @@ fun ChatListScreen(onOpenRoom: (String) -> Unit, vm: ChatListViewModel = hiltVie
     }
     if (picker && groupMode) GroupSheet(contacts, { groupMode = false; picker = false }) { name, ids -> vm.createGroup(name, ids) }
     else if (picker) ModalBottomSheet(onDismissRequest = { picker = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = c.surface) {
-        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 20.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            ScreenTitle("محادثة جديدة", Modifier.padding(bottom = 8.dp))
-            if (canGroup) QuietButton("مجموعة جديدة", Modifier.fillMaxWidth()) { groupMode = true }
-            if (contacts.isEmpty()) Text("لا توجد جهات اتصال بعد", color = c.mute, style = MaterialTheme.typography.bodyMedium)
-            contacts.forEach { u ->
-                Column(
-                    Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(RoundedCornerShape(14.dp)).clickable {
-                        scope.launch { vm.open(u)?.let { id -> picker = false; onOpenRoom(id) } }
-                    }.padding(horizontal = 8.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Text(u.displayName, color = c.ink, style = MaterialTheme.typography.titleMedium)
-                    Text(com.anjaz.app.domain.Role.entries.firstOrNull { it.name == u.role }?.label.orEmpty(), color = c.mute, style = MaterialTheme.typography.bodySmall)
+        val groups by vm.directoryGroups.collectAsStateWithLifecycle()
+        val ctx = androidx.compose.ui.platform.LocalContext.current
+        var query by remember { mutableStateOf("") }
+        val q = query.trim()
+        LazyColumn(Modifier.padding(horizontal = 20.dp).navigationBarsPadding(), contentPadding = PaddingValues(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            item { ScreenTitle("محادثة جديدة", Modifier.padding(bottom = 8.dp)) }
+            item {
+                androidx.compose.material3.OutlinedTextField(
+                    query, { query = it.take(40) }, singleLine = true, placeholder = { Text("ابحث باسم شخص أو مخيم أو مربع") },
+                    leadingIcon = { AnjazIcon(AnjazIcons.Search, c.mute, 20.dp) }, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            if (canGroup) item { QuietButton("مجموعة جديدة", Modifier.fillMaxWidth().padding(vertical = 6.dp)) { groupMode = true } }
+            if (groups.isEmpty()) item { Text("لا توجد جهات اتصال بعد", color = c.mute, style = MaterialTheme.typography.bodyMedium) }
+            groups.forEach { g ->
+                val rows = if (q.isEmpty()) g.rows else g.rows.filter { it.title.contains(q, true) || it.subtitle.contains(q, true) || g.title.contains(q, true) }
+                if (rows.isNotEmpty()) {
+                    item(key = "g_" + g.title) { Text(g.title, color = c.navy, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp, bottom = 2.dp)) }
+                    items(rows, key = { g.title + it.key }) { r ->
+                        Row(
+                            Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(RoundedCornerShape(14.dp)).background(c.card).clickable(enabled = r.user != null || r.phone != null) {
+                                val u = r.user
+                                if (u != null) scope.launch { vm.open(u)?.let { id -> picker = false; onOpenRoom(id) } }
+                                else r.phone?.let { runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_DIAL, android.net.Uri.parse("tel:$it"))) } }
+                            }.padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            AnjazIcon(if (r.user != null) AnjazIcons.Chat else AnjazIcons.Camp, if (r.user != null) c.navy else c.mute, 20.dp)
+                            Column(Modifier.weight(1f)) {
+                                Text(r.title, color = if (r.user != null) c.ink else c.mute, style = MaterialTheme.typography.titleMedium)
+                                if (r.subtitle.isNotEmpty()) Text(r.subtitle, color = c.mute, style = MaterialTheme.typography.bodySmall)
+                            }
+                            if (r.user == null && r.phone != null) AnjazIcon(AnjazIcons.Phone, c.emeraldDeep, 20.dp)
+                        }
+                    }
                 }
             }
         }
@@ -149,7 +172,7 @@ fun ChatRoomScreen(onBack: () -> Unit, onCall: (List<String>) -> Unit = {}, vm: 
             }
         }
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = listState, contentPadding = PaddingValues(14.dp, 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            items(msgs, key = { it.id }) { m -> Bubble(m, mine = m.senderId == ui?.me, vm, stt, sttBusy, sender = if (ui?.group == true) ui?.names?.get(m.senderId) else null) }
+            items(msgs, key = { it.id }) { m -> Bubble(m, mine = m.senderId == ui?.me, vm, stt, sttBusy, sender = if (ui?.group == true) (ui?.names?.get(m.senderId) ?: m.senderName.ifBlank { null }) else null) }
         }
         Row(
             Modifier.fillMaxWidth().navigationBarsPadding().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,

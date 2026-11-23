@@ -16,7 +16,7 @@ object Schemas {
         if (team.isEmpty()) task
         else task.copy(fields = task.fields + FieldSchema("assigneeId", "المكلّف بالمهمة", FieldType.CHOICE, choices = team))
 
-    fun account(roles: List<Choice>, regions: List<Choice>?, squares: List<Choice>?): ModuleSchema = ModuleSchema(
+    fun account(roles: List<Choice>, regions: List<Choice>?, squares: List<Choice>?, camps: List<Choice>? = null): ModuleSchema = ModuleSchema(
         id = "accounts", title = "حساب جديد",
         fields = buildList {
             add(FieldSchema("displayName", "الاسم", FieldType.TEXT, required = true, maxLength = 80))
@@ -25,6 +25,7 @@ object Schemas {
             add(FieldSchema("role", "الدور", FieldType.CHOICE, required = true, choices = roles))
             if (!regions.isNullOrEmpty()) add(FieldSchema("regionId", "المنطقة", FieldType.CHOICE, choices = regions))
             if (!squares.isNullOrEmpty()) add(FieldSchema("squareId", "المربع", FieldType.CHOICE, choices = squares))
+            if (!camps.isNullOrEmpty()) add(FieldSchema("campId", "المخيم (لمدير المخيم — اختياري)", FieldType.CHOICE, choices = camps))
         },
         listColumns = listOf("displayName", "role"),
     )

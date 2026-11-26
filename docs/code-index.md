@@ -4,7 +4,7 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 232 ملفاً · 34556 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> 232 ملفاً · 34559 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
 > الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · FirestoreRemoteStore.kt 355 · ChatScreens.kt 336
 
 ### ./
@@ -306,7 +306,7 @@
 ### docs/
 - DEPLOY.md (18)
 - media.md (7)
-- repo-map.md (47)
+- repo-map.md (50)
 ### tools/
 - repomap.py (146): files, symbols, build, main
 <!-- repomap:auto:end -->

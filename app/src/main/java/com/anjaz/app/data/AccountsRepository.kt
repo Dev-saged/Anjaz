@@ -34,7 +34,7 @@ class AccountsRepository @Inject constructor(private val db: AnjazDatabase, priv
     fun schema(p: Profile, regions: List<RegionEntity> = emptyList(), squares: List<SquareEntity> = emptyList(), camps: List<com.anjaz.app.data.db.CampEntity> = emptyList(), squareId: String? = null) = Schemas.account(
         creatableRoles(p),
         regions = if (p.roleEnum == Role.CENTRAL) regions.map { Choice(it.id, it.name) } else null,
-        squares = if (p.roleEnum.rank >= Role.REGION_ADMIN.rank) squares.map { Choice(it.id, it.name) } else null,
+        squares = if (p.roleEnum.rank >= Role.REGION_ADMIN.rank) squares.filter { it.deletedAt == null }.map { Choice(it.id, com.anjaz.app.domain.SquareTree.fullName(it, squares)) } else null,
         // المخيمات تتبع المربع المختار (أو مربع المدير نفسه)
         camps = (squareId ?: p.squareId)?.let { sq -> camps.filter { it.squareId == sq && it.deletedAt == null }.map { Choice(it.id, it.name) } },
     )

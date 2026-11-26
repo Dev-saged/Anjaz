@@ -30,6 +30,8 @@ data class SquareEntity(
     val updatedAt: Long,
     val managerName: String? = null,
     val deletedAt: Long? = null,
+    /** مربع رئيسي يتبعه هذا المربع الفرعي (مستوى واحد فقط). */
+    val parentId: String? = null,
 )
 
 @Entity(tableName = "camps", indices = [Index("squareId")])

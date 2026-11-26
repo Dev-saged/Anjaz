@@ -116,7 +116,8 @@ fun DistributeScreen(onBack: () -> Unit, vm: DistributeViewModel = hiltViewModel
                         Column(Modifier.weight(1f).clickable { open = if (expanded) open - s.square.id else open + s.square.id }) {
                             Text(s.square.name, color = if (s.included) c.ink else c.mute, style = MaterialTheme.typography.titleMedium)
                             Text(
-                                Plural.of(s.families, Plural.family) { ltr(Plural.grouped(it)) } + " · " + Plural.of(s.camps.size, Plural.camp) { ltr(it.toString()) } + if (s.included) " · الوزن ${ltr(s.weight)}" else " · مستثنى",
+                                Plural.of(s.families, Plural.family) { ltr(Plural.grouped(it)) } + (if (s.subs.isNotEmpty()) " · ${ltr(s.subs.size.toString())} مربعات فرعية" else "") +
+                                    " · " + Plural.of(s.camps.size + s.subs.sumOf { it.camps.size }, Plural.camp) { ltr(it.toString()) } + if (s.included) " · الوزن ${ltr(s.weight)}" else " · مستثنى",
                                 color = c.mute, style = MaterialTheme.typography.bodySmall,
                             )
                         }
@@ -136,10 +137,29 @@ fun DistributeScreen(onBack: () -> Unit, vm: DistributeViewModel = hiltViewModel
                                     Text(n(cs.amount), color = c.ink, style = MaterialTheme.typography.titleMedium)
                                 }
                             }
-                            if (s.camps.isEmpty()) Text("لا مخيمات في هذا المربع", color = c.mute, style = MaterialTheme.typography.bodySmall)
+                            s.subs.forEach { sub ->
+                                Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Column(Modifier.weight(1f)) {
+                                        Text("مربع فرعي: " + sub.square.name, color = c.ink, style = MaterialTheme.typography.titleMedium)
+                                        Text(Plural.of(sub.families, Plural.family) { ltr(Plural.grouped(it)) } + " · ${ltr(sub.weight)} من ${s.square.name}", color = c.mute, style = MaterialTheme.typography.bodySmall)
+                                    }
+                                    Text(n(sub.amount), color = c.emeraldDeep, style = MaterialTheme.typography.titleMedium)
+                                }
+                                sub.camps.forEach { cs ->
+                                    Row(Modifier.fillMaxWidth().padding(start = 12.dp).clip(RoundedCornerShape(12.dp)).background(c.surface).padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        AnjazIcon(AnjazIcons.Camp, c.emeraldDeep, 18.dp)
+                                        Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
+                                            Text(cs.camp.name, color = c.ink, style = MaterialTheme.typography.bodyLarge)
+                                            Text(Plural.of(cs.families, Plural.family) { ltr(Plural.grouped(it)) }, color = c.mute, style = MaterialTheme.typography.bodySmall)
+                                        }
+                                        Text(n(cs.amount), color = c.ink, style = MaterialTheme.typography.titleMedium)
+                                    }
+                                }
+                            }
+                            if (s.camps.isEmpty() && s.subs.isEmpty()) Text("لا مخيمات في هذا المربع", color = c.mute, style = MaterialTheme.typography.bodySmall)
                         }
                     }
-                    if (s.included && s.camps.isNotEmpty()) Text(if (expanded) "إخفاء المخيمات" else "عرض حصص المخيمات", color = c.navy, style = MaterialTheme.typography.labelLarge,
+                    if (s.included && (s.camps.isNotEmpty() || s.subs.isNotEmpty())) Text(if (expanded) "إخفاء التفاصيل" else if (s.subs.isNotEmpty()) "عرض حصص المربعات الفرعية والمخيمات" else "عرض حصص المخيمات", color = c.navy, style = MaterialTheme.typography.labelLarge,
                         modifier = Modifier.heightIn(min = 44.dp).clickable { open = if (expanded) open - s.square.id else open + s.square.id }.padding(vertical = 12.dp))
                 }
             }

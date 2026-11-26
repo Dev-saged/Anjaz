@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -76,8 +77,8 @@ fun DirectoryScreen(onBack: () -> Unit, vm: DirectoryViewModel = hiltViewModel()
             if (ui.canSquare) item { QuietButton("مربع جديد") { vm.open(DirKind.SQUARE, ui.profile?.regionId) } }
             if (ui.sections.isEmpty()) item { EmptyState(AnjazIcons.Map, "لا توجد مناطق بعد", "أضف منطقة ثم مربعات داخلها ثم مخيمات داخل كل مربع") }
             if (ui.squares.isNotEmpty()) item {
-                val camps = ui.squares.sumOf { it.camps.size }
-                val fam = ui.squares.sumOf { r -> r.camps.sumOf { it.families ?: 0 } }
+                val camps = ui.squares.sumOf { it.allCamps.size }
+                val fam = ui.squares.sumOf { it.families }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     com.anjaz.app.ui.components.KpiCard(ltr(ui.squares.size.toString()), "مربعات", Tone.Neutral, Modifier.weight(1f))
                     com.anjaz.app.ui.components.KpiCard(ltr(camps.toString()), "مخيمات", Tone.Neutral, Modifier.weight(1f))
@@ -93,7 +94,7 @@ fun DirectoryScreen(onBack: () -> Unit, vm: DirectoryViewModel = hiltViewModel()
             }
             items(sec.squares, key = { it.square.id }) { row ->
                 val open = row.square.id in expanded
-                val fam = row.camps.sumOf { it.families ?: 0 }
+                val fam = row.families
                 val turn by androidx.compose.animation.core.animateFloatAsState(if (open) 180f else 0f, label = "arrow")
                 AnjazCard(Modifier.fillMaxWidth()) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -106,7 +107,8 @@ fun DirectoryScreen(onBack: () -> Unit, vm: DirectoryViewModel = hiltViewModel()
                                 Text(row.square.name, color = c.ink, style = MaterialTheme.typography.titleMedium)
                                 Text("المسؤول: " + (row.square.managerName?.takeIf { it.isNotBlank() } ?: "غير محدد"), color = if (row.square.managerName.isNullOrBlank()) c.mute else c.ink, style = MaterialTheme.typography.bodyMedium)
                                 androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Tag(Plural.of(row.camps.size, Plural.camp, ::ltrNum), Tone.Neutral)
+                                    if (row.subs.isNotEmpty()) Tag(ltrNum(row.subs.size) + " مربعات فرعية", Tone.Warning)
+                                    Tag(Plural.of(row.allCamps.size, Plural.camp, ::ltrNum), Tone.Neutral)
                                     Tag(Plural.of(fam, Plural.family) { ltr(Plural.grouped(it)) }, Tone.Success)
                                     if (row.regionName.isNotEmpty()) Tag(row.regionName, Tone.Neutral)
                                 }
@@ -120,25 +122,16 @@ fun DirectoryScreen(onBack: () -> Unit, vm: DirectoryViewModel = hiltViewModel()
                         }
                         androidx.compose.animation.AnimatedVisibility(open) {
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                if (row.camps.isEmpty()) Text("لا مخيمات في هذا المربع بعد", color = c.mute, style = MaterialTheme.typography.bodySmall)
-                                row.camps.forEach { camp ->
-                                    Row(
-                                        Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).background(c.surface)
-                                            .then(if (ui.canCamp) Modifier.clickable { vm.openEdit(DirKind.CAMP, camp.id) } else Modifier).padding(12.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        AnjazIcon(AnjazIcons.Camp, c.emeraldDeep, 22.dp)
-                                        Column(Modifier.weight(1f)) {
-                                            Text(camp.name, color = c.ink, style = MaterialTheme.typography.bodyLarge)
-                                            camp.managerName?.takeIf { it.isNotBlank() }?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodySmall) }
-                                        }
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text(camp.families?.let { ltr(Plural.grouped(it)) } ?: "—", color = c.ink, style = MaterialTheme.typography.titleMedium)
-                                            Text("أسرة", color = c.mute, style = MaterialTheme.typography.labelSmall)
-                                        }
-                                    }
+                                if (row.camps.isEmpty() && row.subs.isEmpty()) Text("لا مخيمات في هذا المربع بعد", color = c.mute, style = MaterialTheme.typography.bodySmall)
+                                row.camps.forEach { camp -> CampLine(camp, ui.canCamp) { vm.openEdit(DirKind.CAMP, camp.id) } }
+                                if (ui.canCamp) QuietButton(if (row.subs.isEmpty()) "مخيم جديد" else "مخيم جديد مباشرة في ${row.square.name}") { vm.open(DirKind.CAMP, row.square.id) }
+                                row.subs.forEach { sub ->
+                                    SubSquareBlock(sub, ui.canSquare, ui.canCamp,
+                                        onEdit = { vm.openEdit(DirKind.SQUARE, sub.square.id) },
+                                        onCamp = { vm.openEdit(DirKind.CAMP, it) },
+                                        onNewCamp = { vm.open(DirKind.CAMP, sub.square.id) })
                                 }
-                                if (ui.canCamp) QuietButton("مخيم جديد") { vm.open(DirKind.CAMP, row.square.id) }
+                                if (ui.canSquare) QuietButton("مربع فرعي جديد داخل ${row.square.name}") { vm.openSub(row.square) }
                             }
                         }
                     }
@@ -212,4 +205,51 @@ private fun HeaderChip(text: String, onClick: () -> Unit) {
         modifier = Modifier.heightIn(min = 44.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp)).background(c.onNavy)
             .clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 11.dp),
     )
+}
+
+@Composable
+private fun CampLine(camp: com.anjaz.app.data.db.CampEntity, editable: Boolean, onEdit: () -> Unit) {
+    val c = Anjaz.colors
+    Row(
+        Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).background(c.surface)
+            .then(if (editable) Modifier.clickable(onClick = onEdit) else Modifier).padding(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AnjazIcon(AnjazIcons.Camp, c.emeraldDeep, 22.dp)
+        Column(Modifier.weight(1f)) {
+            Text(camp.name, color = c.ink, style = MaterialTheme.typography.bodyLarge)
+            camp.managerName?.takeIf { it.isNotBlank() }?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodySmall) }
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(camp.families?.let { ltr(Plural.grouped(it)) } ?: "—", color = c.ink, style = MaterialTheme.typography.titleMedium)
+            Text("أسرة", color = c.mute, style = MaterialTheme.typography.labelSmall)
+        }
+    }
+}
+
+/** مربع فرعي داخل المربع الرئيسي: عنوانه وأرقامه ومخيماته. */
+@Composable
+private fun SubSquareBlock(sub: SquareRow, canSquare: Boolean, canCamp: Boolean, onEdit: () -> Unit, onCamp: (String) -> Unit, onNewCamp: () -> Unit) {
+    val c = Anjaz.colors
+    val shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+    Column(
+        Modifier.fillMaxWidth().clip(shape).border(androidx.compose.foundation.BorderStroke(1.dp, c.line), shape).padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.size(width = 4.dp, height = 36.dp).clip(CircleShape).background(c.amber))
+            Column(Modifier.weight(1f)) {
+                Text("مربع فرعي: " + sub.square.name, color = c.ink, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    listOfNotNull(sub.square.managerName?.ifBlank { null }?.let { "المسؤول: $it" }, Plural.of(sub.camps.size, Plural.camp, ::ltrNum), Plural.of(sub.families, Plural.family) { ltr(Plural.grouped(it)) }).joinToString(" · "),
+                    color = c.mute, style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            if (canSquare) Box(Modifier.size(44.dp).clip(CircleShape).clickable(onClick = onEdit).semantics { contentDescription = "تعديل " + sub.square.name }, contentAlignment = Alignment.Center) {
+                AnjazIcon(AnjazIcons.Edit, c.mute, 20.dp)
+            }
+        }
+        sub.camps.forEach { camp -> CampLine(camp, canCamp) { onCamp(camp.id) } }
+        if (canCamp) QuietButton("مخيم جديد في ${sub.square.name}", onClick = onNewCamp)
+    }
 }

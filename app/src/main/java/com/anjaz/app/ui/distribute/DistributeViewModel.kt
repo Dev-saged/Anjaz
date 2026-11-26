@@ -22,7 +22,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class CampShare(val camp: CampEntity, val families: Int, val amount: Long)
-data class SquareShare(val square: SquareEntity, val families: Int, val weight: String, val amount: Long, val camps: List<CampShare>, val included: Boolean)
+data class SubShare(val square: SquareEntity, val families: Int, val weight: String, val amount: Long, val camps: List<CampShare>)
+data class SquareShare(val square: SquareEntity, val families: Int, val weight: String, val amount: Long, val camps: List<CampShare>, val included: Boolean, val subs: List<SubShare> = emptyList())
 
 data class DistributeInput(
     val item: String = "",
@@ -62,19 +63,29 @@ class DistributeViewModel @Inject constructor(
         val squares = DirectoryRepository.squaresInScope(p, sq)
         val camps = DirectoryRepository.campsInScope(p, cp)
         val total = com.anjaz.app.domain.Username.cleanSecret(inp.quantity).filter(Char::isDigit).take(12).toLongOrNull() ?: 0L
-        val fam = squares.associate { s -> s.id to camps.filter { it.squareId == s.id }.sumOf { it.families ?: 0 } }
-        val included = squares.filter { it.id !in inp.excluded }
-        val includedFamilies = included.sumOf { fam[it.id] ?: 0 }
-        val amounts = Weights.allocate(total, included.map { fam[it.id] ?: 0 })
-        val bySquare = included.indices.associate { included[it].id to amounts[it] }
-        val shares = squares.map { s ->
-            val own = camps.filter { it.squareId == s.id }.sortedByDescending { it.families ?: 0 }
-            val amount = bySquare[s.id] ?: 0L
-            val split = Weights.allocate(amount, own.map { it.families ?: 0 })
-            SquareShare(
-                s, fam[s.id] ?: 0, Weights.percent(fam[s.id] ?: 0, includedFamilies), amount,
-                own.mapIndexed { i, c -> CampShare(c, c.families ?: 0, split.getOrElse(i) { 0L }) }, s.id !in inp.excluded,
-            )
+        // التوزيع على المربعات الرئيسية فقط؛ الفرعية تأخذ من حصة رئيسيها
+        val tree = com.anjaz.app.domain.SquareTree.build(squares, camps)
+        val included = tree.filter { it.square.id !in inp.excluded }
+        val includedFamilies = included.sumOf { it.families }
+        val amounts = Weights.allocate(total, included.map { it.families })
+        val bySquare = included.indices.associate { included[it].square.id to amounts[it] }
+        fun campShares(list: List<CampEntity>, amount: Long): List<CampShare> {
+            val sorted = list.sortedByDescending { it.families ?: 0 }
+            val split = Weights.allocate(amount, sorted.map { it.families ?: 0 })
+            return sorted.mapIndexed { i, c -> CampShare(c, c.families ?: 0, split.getOrElse(i) { 0L }) }
+        }
+        val shares = tree.map { t ->
+            val amount = bySquare[t.square.id] ?: 0L
+            // داخل الرئيسي: مخيماته المباشرة ومربعاته الفرعية وحدات بأوزان أسرها
+            val own = t.camps.sortedByDescending { it.families ?: 0 }
+            val units = own.map { it.families ?: 0 } + t.subs.map { it.families }
+            val split = Weights.allocate(amount, units)
+            val ownShares = own.mapIndexed { i, c -> CampShare(c, c.families ?: 0, split.getOrElse(i) { 0L }) }
+            val subShares = t.subs.mapIndexed { k, sub ->
+                val a = split.getOrElse(own.size + k) { 0L }
+                SubShare(sub.square, sub.families, Weights.percent(sub.families, t.families), a, campShares(sub.camps, a))
+            }
+            SquareShare(t.square, t.families, Weights.percent(t.families, includedFamilies), amount, ownShares, t.square.id !in inp.excluded, subShares)
         }.sortedByDescending { it.families }
         DistributeUi(inp, shares, total, includedFamilies, p.canAssign, st.first, st.second, st.third)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DistributeUi())
@@ -93,6 +104,10 @@ class DistributeViewModel @Inject constructor(
             appendLine()
             appendLine("${s.square.name}: ${Plural.grouped(s.amount.toInt())} (${s.weight} — ${Plural.grouped(s.families)} أسرة)")
             s.camps.forEach { c -> appendLine("  • ${c.camp.name}: ${Plural.grouped(c.amount.toInt())} (${Plural.grouped(c.families)} أسرة)") }
+            s.subs.forEach { sub ->
+                appendLine("  ${sub.square.name}: ${Plural.grouped(sub.amount.toInt())} (${sub.weight} من ${s.square.name})")
+                sub.camps.forEach { c -> appendLine("    • ${c.camp.name}: ${Plural.grouped(c.amount.toInt())} (${Plural.grouped(c.families)} أسرة)") }
+            }
         }
     }
 
@@ -108,8 +123,12 @@ class DistributeViewModel @Inject constructor(
         val items = u.shares.filter { it.included && it.amount > 0 }.map { s ->
             val desc = buildString {
                 appendLine("حصة ${s.square.name}: ${Plural.grouped(s.amount.toInt())} $name من أصل ${Plural.grouped(u.total.toInt())}، بوزن ${s.weight} حسب عدد الأسر.")
-                if (s.camps.isNotEmpty()) appendLine("التوزيع على المخيمات:")
+                if (s.camps.isNotEmpty() || s.subs.isNotEmpty()) appendLine("التوزيع:")
                 s.camps.forEach { c -> appendLine("• ${c.camp.name}: ${Plural.grouped(c.amount.toInt())} (${Plural.grouped(c.families)} أسرة)") }
+                s.subs.forEach { sub ->
+                    appendLine("• مربع ${sub.square.name}: ${Plural.grouped(sub.amount.toInt())}")
+                    sub.camps.forEach { c -> appendLine("   - ${c.camp.name}: ${Plural.grouped(c.amount.toInt())} (${Plural.grouped(c.families)} أسرة)") }
+                }
             }.trim()
             Triple(s.square, "توزيع ${Plural.grouped(s.amount.toInt())} $name", desc)
         }

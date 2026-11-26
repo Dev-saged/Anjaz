@@ -25,12 +25,15 @@ import kotlinx.coroutines.launch
 
 enum class DirKind { REGION, SQUARE, CAMP }
 
-data class SquareRow(val square: SquareEntity, val regionName: String, val camps: List<CampEntity>)
+data class SquareRow(val square: SquareEntity, val regionName: String, val camps: List<CampEntity>, val subs: List<SquareRow> = emptyList()) {
+    val allCamps: List<CampEntity> get() = camps + subs.flatMap { it.camps }
+    val families: Int get() = allCamps.sumOf { it.families ?: 0 }
+}
 
 /** قسم منطقة في الدليل؛ region=null للمربعات التي لا منطقة لها. */
 data class RegionSection(val region: RegionEntity?, val squares: List<SquareRow>) {
-    val camps: Int get() = squares.sumOf { it.camps.size }
-    val families: Int get() = squares.sumOf { r -> r.camps.sumOf { it.families ?: 0 } }
+    val camps: Int get() = squares.sumOf { it.allCamps.size }
+    val families: Int get() = squares.sumOf { it.families }
 }
 
 data class DirectoryUi(
@@ -42,6 +45,8 @@ data class DirectoryUi(
     val canSquare: Boolean = false,
     val canCamp: Boolean = false,
 )
+
+const val NEW_SQUARE = "__new__"
 
 data class DirForm(
     val kind: DirKind, val parentId: String? = null, val values: Map<String, String> = emptyMap(), val errors: Map<String, String> = emptyMap(),
@@ -62,7 +67,10 @@ class DirectoryViewModel @Inject constructor(
     val ui: StateFlow<DirectoryUi> = combine(profile, repo.regions(), repo.squares(), repo.camps()) { p, regions, squares, camps ->
         val names = regions.associate { it.id to it.name }
         val scoped = p?.let { DirectoryRepository.squaresInScope(it, squares) } ?: emptyList()
-        val rows = scoped.map { s -> SquareRow(s, names[s.regionId].orEmpty(), camps.filter { it.squareId == s.id && it.deletedAt == null }) }
+        val liveCamps = camps.filter { it.deletedAt == null }
+        val rows = com.anjaz.app.domain.SquareTree.build(scoped, liveCamps).map { t ->
+            SquareRow(t.square, names[t.square.regionId].orEmpty(), t.camps, t.subs.map { SquareRow(it.square, names[it.square.regionId].orEmpty(), it.camps) })
+        }
         val visibleRegions = if (p?.roleEnum == com.anjaz.app.domain.Role.CENTRAL) regions else regions.filter { it.id == p?.regionId }
         val sections = visibleRegions.map { r -> RegionSection(r, rows.filter { it.square.regionId == r.id }) } +
             rows.filter { it.square.regionId !in names }.takeIf { it.isNotEmpty() }?.let { listOf(RegionSection(null, it)) }.orEmpty()
@@ -79,15 +87,32 @@ class DirectoryViewModel @Inject constructor(
         return when (f.kind) {
             DirKind.REGION -> Schemas.region.copy(title = if (f.editId != null) "تعديل المنطقة" else "منطقة جديدة")
             DirKind.SQUARE -> {
-                val title = when { f.convertFrom != null -> "تحويل إلى مربع"; f.editId != null -> "تعديل المربع"; else -> "مربع جديد" }
+                val none = com.anjaz.app.data.DirectoryRepository.NO_PARENT
+                val title = when { f.convertFrom != null -> "تحويل إلى مربع"; f.editId != null -> "تعديل المربع"; f.values["parentId"].let { it != null && it != none } -> "مربع فرعي جديد"; else -> "مربع جديد" }
                 val regions = regionChoices(state).filter { it.key != f.convertFrom }
-                val withRegion = central && (f.editId != null || f.convertFrom != null || f.parentId == null)
+                val tops = state.squares.map { it.square }.filter { it.id != f.editId && it.regionId != f.convertFrom && (central || it.regionId == state.profile?.regionId) }
+                if (f.convertFrom != null) {
+                    // دمج المنطقة تحت مربع موجود، أو إنشاء مربع جديد باسمها؛ مربعاتها تصبح فرعية داخله
+                    val into = com.anjaz.app.schema.FieldSchema("into", "تصبح مربعاً…", com.anjaz.app.schema.FieldType.CHOICE, required = true,
+                        choices = listOf(Choice(NEW_SQUARE, "مربعاً جديداً باسمها")) + tops.map { Choice(it.id, "تحت مربع موجود: ${it.name}") })
+                    val newOne = f.values["into"].let { it == null || it == NEW_SQUARE }
+                    val rest = if (newOne) listOf(com.anjaz.app.schema.FieldSchema("regionId", "المنطقة التي يتبعها", com.anjaz.app.schema.FieldType.CHOICE, required = true, choices = regions)) + Schemas.square.fields else emptyList()
+                    return Schemas.square.copy(title = title, fields = listOf(into) + rest)
+                }
+                val parentChoices = listOf(Choice(none, "مربع رئيسي (لا يتبع غيره)")) + tops.map { Choice(it.id, "فرعي داخل: ${it.name}") }
+                val hasKids = f.editId != null && state.squares.any { it.square.id == f.editId && it.subs.isNotEmpty() }
+                val parentField = if (tops.isNotEmpty() && !hasKids) listOf(com.anjaz.app.schema.FieldSchema("parentId", "التبعية", com.anjaz.app.schema.FieldType.CHOICE, choices = parentChoices)) else emptyList()
+                val isSub = f.values["parentId"].let { it != null && it != none }
+                val withRegion = central && !isSub && (f.editId != null || f.parentId == null)
                 val extra = if (withRegion) listOf(com.anjaz.app.schema.FieldSchema("regionId", if (f.editId != null) "المنطقة (غيّرها لنقل المربع)" else "المنطقة التابع لها", com.anjaz.app.schema.FieldType.CHOICE, required = true, choices = regions)) else emptyList()
-                Schemas.square.copy(title = title, fields = extra + Schemas.square.fields)
+                Schemas.square.copy(title = title, fields = parentField + extra + Schemas.square.fields)
             }
             DirKind.CAMP -> {
                 val extra = if (f.editId != null && state.squares.size > 1) listOf(com.anjaz.app.schema.FieldSchema("squareId", "المربع (غيّره لنقل المخيم)", com.anjaz.app.schema.FieldType.CHOICE, required = true,
-                    choices = state.squares.map { Choice(it.square.id, it.square.name + if (it.regionName.isNotEmpty() && central) " — " + it.regionName else "") })) else emptyList()
+                    choices = state.squares.flatMap { r -> listOf(r) + r.subs }.map { r ->
+                        val parent = state.squares.firstOrNull { p -> p.subs.any { it.square.id == r.square.id } }?.square?.name
+                        Choice(r.square.id, (parent?.let { "$it › " } ?: "") + r.square.name + if (r.regionName.isNotEmpty() && central) " — " + r.regionName else "")
+                    })) else emptyList()
                 Schemas.camp.copy(title = if (f.editId != null) "تعديل المخيم" else "مخيم جديد", fields = extra + Schemas.camp.fields)
             }
         }
@@ -100,17 +125,21 @@ class DirectoryViewModel @Inject constructor(
     }
 
     fun openConvert(region: RegionEntity) {
-        form.value = DirForm(DirKind.SQUARE, convertFrom = region.id, values = mapOf("name" to region.name))
+        form.value = DirForm(DirKind.SQUARE, convertFrom = region.id, values = mapOf("name" to region.name, "into" to NEW_SQUARE))
+    }
+
+    fun openSub(parent: SquareEntity) {
+        form.value = DirForm(DirKind.SQUARE, parent.regionId, values = mapOf("parentId" to parent.id, "regionId" to parent.regionId))
     }
     fun close() { form.value = null }
 
     fun openEdit(kind: DirKind, id: String) {
         val u = ui.value
         val values: Map<String, String>? = when (kind) {
-            DirKind.SQUARE -> u.squares.firstOrNull { it.square.id == id }?.square?.let {
-                mapOf("name" to it.name, "managerName" to it.managerName.orEmpty(), "idNumber" to it.idNumber.orEmpty(), "phone" to it.phone.orEmpty(), "regionId" to it.regionId)
+            DirKind.SQUARE -> u.squares.flatMap { listOf(it) + it.subs }.firstOrNull { it.square.id == id }?.square?.let {
+                mapOf("name" to it.name, "managerName" to it.managerName.orEmpty(), "idNumber" to it.idNumber.orEmpty(), "phone" to it.phone.orEmpty(), "regionId" to it.regionId, "parentId" to (it.parentId ?: com.anjaz.app.data.DirectoryRepository.NO_PARENT))
             }
-            DirKind.CAMP -> u.squares.flatMap { it.camps }.firstOrNull { it.id == id }?.let {
+            DirKind.CAMP -> u.squares.flatMap { it.allCamps }.firstOrNull { it.id == id }?.let {
                 mapOf("name" to it.name, "managerName" to it.managerName.orEmpty(), "families" to (it.families?.toString() ?: ""), "idNumber" to it.idNumber.orEmpty(), "phone" to it.phone.orEmpty(), "squareId" to it.squareId)
             }
             DirKind.REGION -> u.regions.firstOrNull { it.id == id }?.let { mapOf("name" to it.name, "phone" to it.phone.orEmpty()) }
@@ -149,7 +178,7 @@ class DirectoryViewModel @Inject constructor(
         viewModelScope.launch {
             val movedFrom = f.editId?.takeIf { f.kind == DirKind.SQUARE }?.let { repo.squareById(it)?.regionId }
             val r: Outcome<*> = when {
-                f.convertFrom != null -> repo.convertRegionToSquare(me, f.convertFrom, f.values["regionId"], f.values)
+                f.convertFrom != null -> repo.convertRegionToSquare(me, f.convertFrom, f.values["regionId"], f.values, f.values["into"]?.takeIf { it != NEW_SQUARE })
                 f.editId != null -> when (f.kind) {
                     DirKind.SQUARE -> repo.updateSquare(me, f.editId, f.values)
                     DirKind.CAMP -> repo.updateCamp(me, f.editId, f.values)

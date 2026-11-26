@@ -4,6 +4,7 @@ import { escalate } from './cron.js';
 import { runRecurring, weeklyReport } from './recurring.js';
 import { ackMedia, getMedia, purgeMedia, putMedia } from './media.js';
 import { purgeTrash } from './trash.js';
+import { publishRules } from './rules.js';
 import { Firestore } from './firestore.js';
 import { Identity } from './identity.js';
 import { sendFcm, targetsFor } from './notify.js';
@@ -228,6 +229,12 @@ export async function handle(request, env, deps = {}) {
   const url = new URL(request.url);
   try {
     if (url.pathname === '/v1/health') return json({ ok: true });
+    // يُستدعى من سير النشر: ينشر قواعد Firestore المضمّنة في الكود إن تغيّرت
+    if (url.pathname === '/v1/system/rules' && request.method === 'POST') {
+      if (limited('system', 'rules', 5, now)) throw new HttpError(429, 'محاولات كثيرة');
+      try { return json(await publishRules(env, new Firestore(env, fetchFn), fetchFn)); }
+      catch (e) { return json({ error: String(e.message || e).slice(0, 300) }, 502); }
+    }
     const auth = request.headers.get('authorization') || '';
     if (!auth.startsWith('Bearer ')) throw new HttpError(401, 'غير مصرّح');
     const uid = await verifyIdToken(auth.slice(7), env.FIREBASE_PROJECT_ID, { fetchFn, now });
@@ -248,6 +255,7 @@ export default {
         await runBackup(env);
         await purgeMedia(env);
         await purgeTrash(env);
+        await publishRules(env, new Firestore(env, (...a) => fetch(...a))).catch(() => {});
         await weeklyReport(env);
       })());
     } else {

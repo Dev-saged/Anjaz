@@ -256,3 +256,29 @@ test('إشعار مهمة المربع يصل لمدير المربع وأفرا
   assert.ok(!toks.includes('tok-rmA'));
   assert.ok(w.calls.fcm[0].notification.title.startsWith('مهمة جديدة من'));
 });
+
+test('قواعد Firestore: المضمَّنة تطابق المصدر، والنشر مرة واحدة لكل تغيير', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('../../firebase/firestore.rules', import.meta.url), 'utf8');
+  const embedded = (await import('../src/rules.generated.js')).default;
+  assert.equal(embedded, src, 'شغّل npm run rules بعد تعديل firestore.rules');
+  const { publishRules } = await import('../src/rules.js');
+  const store = new Map();
+  const fs = { get: async (p) => store.get(p) ?? null, set: async (p, d) => { store.set(p, d); } };
+  const calls = [];
+  const fetchFn = async (url, init = {}) => {
+    calls.push([init.method || 'GET', String(url)]);
+    if (String(url).includes('oauth2')) return new Response(JSON.stringify({ access_token: 't', expires_in: 3600 }));
+    if (String(url).endsWith('/rulesets')) return new Response(JSON.stringify({ name: 'projects/p/rulesets/r1' }));
+    return new Response('{}');
+  };
+  const w = await world({});
+  const env = { ...w.env, FIREBASE_PROJECT_ID: 'p' };
+  const a = await publishRules(env, fs, fetchFn, 'rules v1');
+  assert.equal(a.published, true);
+  assert.ok(calls.some(([m, u]) => m === 'PATCH' && u.endsWith('/releases/cloud.firestore')));
+  const b = await publishRules(env, fs, fetchFn, 'rules v1');
+  assert.equal(b.published, false);
+  const c = await publishRules(env, fs, fetchFn, 'rules v2');
+  assert.equal(c.published, true);
+});

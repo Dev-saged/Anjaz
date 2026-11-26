@@ -2,6 +2,7 @@
   "name": "anjaz-worker",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node --test test/worker.test.js", "deploy": "wrangler deploy" },
+  "scripts": { "rules": "node scripts/embed-rules.mjs",
+    "test": "node --test test/worker.test.js", "deploy": "wrangler deploy" },
   "devDependencies": { "wrangler": "^4.0.0" }
 }

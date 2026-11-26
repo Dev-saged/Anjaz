@@ -4,7 +4,7 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 229 ملفاً · 34457 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> 232 ملفاً · 34556 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
 > الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · FirestoreRemoteStore.kt 355 · ChatScreens.kt 336
 
 ### ./
@@ -17,7 +17,7 @@
 - apply-to-all-repos.yml (106)
 - backend-tests.yml (21)
 - build.yml (155)
-- deploy-worker.yml (21)
+- deploy-worker.yml (40)
 - new-project.yml (95)
 - repomap.yml (41)
 - unpack-zip.yml (79)
@@ -258,7 +258,9 @@
 - rules.test.js (208): db, task
 ### backend/worker/
 - package-lock.json (1552)
-- package.json (8)
+- package.json (9)
+### backend/worker/scripts/
+- embed-rules.mjs (5)
 ### backend/worker/src/
 - auth.js (41): HttpError, keys, resetKeyCache, verifyIdToken
 - b64.js (26): b64url, fromB64url, pemToDer
@@ -267,15 +269,17 @@
 - firestore.js (101): encodeValue, encodeFields, decodeValue, decodeFields, decodeDoc, Firestore
 - google.js (45): serviceAccount, signJwt, accessToken, resetTokenCache
 - identity.js (42): Identity
-- index.js (258): json, limited, body, str, profile, audit, createUser +13
+- index.js (266): json, limited, body, str, profile, audit, createUser +13
 - media.js (91): roomOf, putMedia, getMedia, ackMedia, purgeMedia
 - notify.js (75): sendFcm, leadsFor, targetsFor
 - policy.js (57): validUsername, validPassword, isActive, isLead, inScope, shapeOk, canCreateUser +3
 - recurring.js (56): localTime, due, runRecurring, weeklyReport
+- rules.generated.js (3)
+- rules.js (37): sha256, publishRules
 - trash.js (27): purgeTrash
 ### backend/worker/test/
 - harness.js (119): keys, idToken, d1, world
-- worker.test.js (259): newUser
+- worker.test.js (285): newUser
 ### brand/
 - BRAND.md (39)
 - board-spec.json (32)

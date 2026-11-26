@@ -44,3 +44,6 @@
 - المهمة لشخص لا تظهر لديه: كانت regionId/squareId للمرسِل → الآن نطاق المكلَّف.
 - الميداني لا يرى مهام مربعه: الاستعلام كان assigneeId فقط → union مع مربع/مخيم غير مسندة.
 - عنوان المحادثة باسم المستلم: room.name للطرف الآخر من جهة المنشئ → memberNames.
+
+## النشر التلقائي للقواعد
+- قواعد Firestore تُنشر تلقائياً: كل push إلى main يغيّر backend/worker أو firestore.rules يشغّل deploy-worker.yml (اختبار ← نشر Worker ← POST /v1/system/rules). الـ Worker ينشر النص المضمَّن `src/rules.generated.js` (من `npm run rules`) عبر Firebase Rules API بحساب الخدمة، ويتجاهل غير المتغيّر (hash في system/rules). الكرون الليلي يعيد المحاولة. اختبار يمنع اختلاف المضمَّن عن المصدر.

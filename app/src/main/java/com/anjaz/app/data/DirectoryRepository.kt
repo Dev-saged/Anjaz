@@ -26,6 +26,8 @@ class DirectoryRepository @Inject constructor(private val db: AnjazDatabase, pri
     fun canCreateCamp(p: Profile) = p.roleEnum.rank >= Role.SQUARE_MANAGER.rank
 
     companion object {
+        const val NO_PARENT = "__none__"
+
         fun squaresInScope(p: Profile, all: List<SquareEntity>): List<SquareEntity> = all.filter { it.deletedAt == null }.filter {
             when (p.roleEnum) {
                 Role.CENTRAL -> true
@@ -65,14 +67,18 @@ class DirectoryRepository @Inject constructor(private val db: AnjazDatabase, pri
 
     suspend fun createSquare(actor: Profile, regionId: String?, values: Map<String, String>): Outcome<String> {
         if (!canCreateSquare(actor)) return Outcome.Failure("ليس لديك صلاحية إضافة مربع")
-        val region = if (actor.roleEnum == Role.CENTRAL) regionId else actor.regionId
+        val parent = values["parentId"]?.takeIf { it.isNotBlank() && it != NO_PARENT }?.let { pid ->
+            db.directory().squareById(pid)?.takeIf { it.deletedAt == null && it.parentId == null } ?: return Outcome.Failure("المربع الرئيسي غير صالح")
+        }
+        val region = parent?.regionId ?: if (actor.roleEnum == Role.CENTRAL) regionId else actor.regionId
         if (region.isNullOrEmpty()) return Outcome.Failure("اختر المنطقة")
+        if (parent != null && actor.roleEnum != Role.CENTRAL && parent.regionId != actor.regionId) return Outcome.Failure("المربع الرئيسي خارج منطقتك")
         val errors = SchemaValidator.validate(Schemas.square, values)
         if (errors.isNotEmpty()) return Outcome.Failure(errors.values.first())
         val sqName = clean(values, "name").orEmpty()
         if (db.directory().allSquares().any { it.deletedAt == null && it.regionId == region && it.name.trim().equals(sqName, true) }) return Outcome.Failure("يوجد مربع باسم «$sqName» في هذه المنطقة")
         val now = clock.now()
-        val sq = SquareEntity(UUID.randomUUID().toString(), region, clean(values, "name").orEmpty(), null, clean(values, "idNumber"), clean(values, "phone"), now, clean(values, "managerName"))
+        val sq = SquareEntity(UUID.randomUUID().toString(), region, clean(values, "name").orEmpty(), null, clean(values, "idNumber"), clean(values, "phone"), now, clean(values, "managerName"), parentId = parent?.id)
         db.withTransaction {
             db.directory().upsertSquare(sq)
             db.outbox().insertIgnore(Outbox.op("square", "create", EntityOp(sq.id), now))
@@ -154,13 +160,44 @@ class DirectoryRepository @Inject constructor(private val db: AnjazDatabase, pri
     }
 
     /** منطقة أُنشئت بالخطأ وهي في الحقيقة مربع: يُنشأ مربع باسمها في المنطقة المختارة وتُنقل هي إلى السلة. */
-    suspend fun convertRegionToSquare(actor: Profile, regionId: String, targetRegion: String?, values: Map<String, String>): Outcome<String> {
-        if (targetRegion == regionId) return Outcome.Failure("اختر منطقة أخرى غير المنطقة نفسها")
-        val squares = db.directory().allSquares().count { it.regionId == regionId && it.deletedAt == null }
-        if (squares > 0) return Outcome.Failure("لا يمكن تحويل منطقة فيها مربعات؛ انقل مربعاتها أولاً")
-        val created = createSquare(actor, targetRegion, values)
-        if (created is Outcome.Ok) trashRegion(actor, regionId)
-        return created
+    /**
+     * منطقة هي في الحقيقة مربع: تصبح مربعاً في المنطقة المختارة. إن كان فيها مربعات تصبح مربعاتٍ فرعية
+     * داخله (مع مخيماتها). [intoSquare] لدمجها تحت مربع موجود بدل إنشاء مربع جديد.
+     */
+    suspend fun convertRegionToSquare(actor: Profile, regionId: String, targetRegion: String?, values: Map<String, String>, intoSquare: String? = null): Outcome<String> {
+        if (actor.roleEnum != Role.CENTRAL) return Outcome.Failure("التحويل للإدارة المركزية فقط")
+        val inside = db.directory().allSquares().filter { it.regionId == regionId && it.deletedAt == null }
+        val parent: SquareEntity = if (intoSquare != null) {
+            val p = db.directory().squareById(intoSquare)?.takeIf { it.deletedAt == null } ?: return Outcome.Failure("المربع المختار غير موجود")
+            if (p.regionId == regionId) return Outcome.Failure("اختر مربعاً خارج هذه المنطقة")
+            if (p.parentId != null) return Outcome.Failure("اختر مربعاً رئيسياً لا فرعياً")
+            p
+        } else {
+            if (targetRegion == null || targetRegion == regionId) return Outcome.Failure("اختر المنطقة التي سيتبعها المربع")
+            when (val r = createSquare(actor, targetRegion, values)) {
+                is Outcome.Ok -> db.directory().squareById(r.value) ?: return Outcome.Failure("تعذّر إنشاء المربع")
+                is Outcome.Failure -> return r
+            }
+        }
+        val now = clock.now()
+        db.withTransaction {
+            inside.filter { it.id != parent.id }.forEach { sub ->
+                db.directory().upsertSquare(sub.copy(regionId = parent.regionId, parentId = parent.id, updatedAt = now))
+                db.outbox().insertIgnore(Outbox.op("square", "update", EntityOp(sub.id), now))
+                // مربع كان رئيسياً وله فرعية: تنتقل فرعياته إلى الرئيسي الجديد (مستوى واحد فقط)
+                db.directory().allSquares().filter { it.parentId == sub.id && it.deletedAt == null }.forEach { kid ->
+                    db.directory().upsertSquare(kid.copy(regionId = parent.regionId, parentId = parent.id, updatedAt = now))
+                    db.outbox().insertIgnore(Outbox.op("square", "update", EntityOp(kid.id), now))
+                }
+            }
+            db.directory().allCamps().filter { it.regionId == regionId && it.deletedAt == null }.forEach {
+                db.directory().upsertCamp(it.copy(regionId = parent.regionId, updatedAt = now))
+                db.outbox().insertIgnore(Outbox.op("camp", "update", EntityOp(it.id), now))
+            }
+        }
+        val users = db.directory().allUsers().count { it.regionId == regionId && !it.deleted }
+        if (users == 0) trashRegion(actor, regionId)
+        return Outcome.Ok(parent.id)
     }
 
     suspend fun updateSquare(actor: Profile, id: String, values: Map<String, String>): Outcome<Unit> {
@@ -170,22 +207,39 @@ class DirectoryRepository @Inject constructor(private val db: AnjazDatabase, pri
         val errors = SchemaValidator.validate(Schemas.square, values)
         if (errors.isNotEmpty()) return Outcome.Failure(errors.values.first())
         val now = clock.now()
-        val target = values["regionId"]?.takeIf { it.isNotBlank() } ?: cur.regionId
+        val all = db.directory().allSquares()
+        // التبعية لمربع رئيسي: المنطقة تتبع الرئيسي، ومستوى واحد فقط
+        val parentKey = values["parentId"]
+        val parent = parentKey?.takeIf { it.isNotBlank() && it != NO_PARENT }?.let { pid -> all.firstOrNull { it.id == pid && it.deletedAt == null } ?: return Outcome.Failure("المربع الرئيسي غير موجود") }
+        if (parent != null) {
+            if (parent.id == id) return Outcome.Failure("لا يتبع المربع نفسه")
+            if (parent.parentId != null) return Outcome.Failure("المربع المختار فرعي؛ اختر مربعاً رئيسياً")
+            if (all.any { it.parentId == id && it.deletedAt == null }) return Outcome.Failure("لهذا المربع مربعات فرعية فلا يصير فرعياً")
+        }
+        val newParent = when { parentKey == null -> cur.parentId; parent == null -> null; else -> parent.id }
+        val target = parent?.regionId ?: values["regionId"]?.takeIf { it.isNotBlank() } ?: cur.regionId
         if (target != cur.regionId) {
             if (actor.roleEnum != Role.CENTRAL) return Outcome.Failure("نقل المربع بين المناطق للإدارة المركزية فقط")
             if (db.directory().regionById(target)?.deletedAt != null) return Outcome.Failure("المنطقة المختارة غير متاحة")
         }
         val next = cur.copy(
             name = clean(values, "name").orEmpty(), managerName = clean(values, "managerName"),
-            idNumber = clean(values, "idNumber"), phone = clean(values, "phone"), updatedAt = now, regionId = target,
+            idNumber = clean(values, "idNumber"), phone = clean(values, "phone"), updatedAt = now, regionId = target, parentId = newParent,
         )
         db.withTransaction {
             db.directory().upsertSquare(next)
             db.outbox().insertIgnore(Outbox.op("square", "update", EntityOp(id), now))
             // المخيمات تتبع مربعها إلى المنطقة الجديدة
-            if (target != cur.regionId) db.directory().allCamps().filter { it.squareId == id }.forEach {
-                db.directory().upsertCamp(it.copy(regionId = target, updatedAt = now))
-                db.outbox().insertIgnore(Outbox.op("camp", "update", EntityOp(it.id), now))
+            if (target != cur.regionId) {
+                val family = setOf(id) + all.filter { it.parentId == id && it.deletedAt == null }.map { it.id }
+                all.filter { it.parentId == id && it.deletedAt == null }.forEach {
+                    db.directory().upsertSquare(it.copy(regionId = target, updatedAt = now))
+                    db.outbox().insertIgnore(Outbox.op("square", "update", EntityOp(it.id), now))
+                }
+                db.directory().allCamps().filter { it.squareId in family }.forEach {
+                    db.directory().upsertCamp(it.copy(regionId = target, updatedAt = now))
+                    db.outbox().insertIgnore(Outbox.op("camp", "update", EntityOp(it.id), now))
+                }
             }
         }
         return Outcome.Ok(Unit)
@@ -221,12 +275,16 @@ class DirectoryRepository @Inject constructor(private val db: AnjazDatabase, pri
         if (squaresInScope(actor, listOf(sq)).isEmpty()) return Outcome.Failure("المربع خارج نطاقك")
         val now = clock.now()
         db.withTransaction {
-            db.directory().allCamps().filter { it.squareId == id && it.deletedAt == null }.forEach {
+            val family = listOf(sq) + db.directory().allSquares().filter { it.parentId == id && it.deletedAt == null }
+            val ids = family.map { it.id }.toSet()
+            db.directory().allCamps().filter { it.squareId in ids && it.deletedAt == null }.forEach {
                 db.directory().upsertCamp(it.copy(deletedAt = now, updatedAt = now))
                 db.outbox().insertIgnore(Outbox.op("camp", "delete", EntityOp(it.id), now))
             }
-            db.directory().upsertSquare(sq.copy(deletedAt = now, updatedAt = now))
-            db.outbox().insertIgnore(Outbox.op("square", "delete", EntityOp(id), now))
+            family.forEach {
+                db.directory().upsertSquare(it.copy(deletedAt = now, updatedAt = now))
+                db.outbox().insertIgnore(Outbox.op("square", "delete", EntityOp(it.id), now))
+            }
         }
         return Outcome.Ok(Unit)
     }
@@ -250,7 +308,13 @@ class DirectoryRepository @Inject constructor(private val db: AnjazDatabase, pri
         db.withTransaction {
             db.directory().upsertSquare(sq.copy(deletedAt = null, updatedAt = now))
             db.outbox().insertIgnore(Outbox.op("square", "restore", EntityOp(id), now))
-            db.directory().allCamps().filter { it.squareId == id && it.deletedAt == stamp }.forEach {
+            val kids = db.directory().allSquares().filter { it.parentId == id && it.deletedAt == stamp }
+            kids.forEach {
+                db.directory().upsertSquare(it.copy(deletedAt = null, updatedAt = now))
+                db.outbox().insertIgnore(Outbox.op("square", "restore", EntityOp(it.id), now))
+            }
+            val ids = setOf(id) + kids.map { it.id }
+            db.directory().allCamps().filter { it.squareId in ids && it.deletedAt == stamp }.forEach {
                 db.directory().upsertCamp(it.copy(deletedAt = null, updatedAt = now))
                 db.outbox().insertIgnore(Outbox.op("camp", "restore", EntityOp(it.id), now))
             }

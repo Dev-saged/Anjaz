@@ -115,7 +115,7 @@ fun TargetField(
     onKind: (TargetKind) -> Unit, onToggle: (String) -> Unit,
 ) {
     val c = Anjaz.colors
-    val squareNames = squares.associate { it.id to it.name }
+    val squareNames = squares.associate { it.id to com.anjaz.app.domain.SquareTree.fullName(it, squares) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("المكلّف بالمهمة *", color = c.ink, style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -127,7 +127,7 @@ fun TargetField(
             }
         }
         val items: List<Choice> = when (kind) {
-            TargetKind.SQUARE -> squares.map { Choice(it.id, it.name) }
+            TargetKind.SQUARE -> squares.map { Choice(it.id, com.anjaz.app.domain.SquareTree.fullName(it, squares)) }
             TargetKind.CAMP -> camps.map { Choice(it.id, it.name + (squareNames[it.squareId]?.let { s -> " — $s" } ?: "")) }
             TargetKind.PERSONS -> people
             else -> emptyList()

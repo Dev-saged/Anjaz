@@ -129,6 +129,7 @@ class FirestoreRemoteStore : RemoteStore {
         square.idNumber?.let { data["idNumber"] = it }
         square.phone?.let { data["phone"] = it }
         data["managerName"] = square.managerName
+        data["parentId"] = square.parentId
         data["deletedAt"] = square.deletedAt
         fs.collection("squares").document(square.id).set(data, com.google.firebase.firestore.SetOptions.merge()).await()
         Unit
@@ -166,7 +167,7 @@ class FirestoreRemoteStore : RemoteStore {
         return snapshots(q) { snap ->
             snap.documents.mapNotNull { d ->
                 d.data?.let {
-                    SquareEntity(d.id, it["regionId"] as? String ?: "", it["name"] as? String ?: "", it["managerId"] as? String, it["idNumber"] as? String, it["phone"] as? String, (it["updatedAt"] as? Number)?.toLong() ?: 0L, it["managerName"] as? String, (it["deletedAt"] as? Number)?.toLong())
+                    SquareEntity(d.id, it["regionId"] as? String ?: "", it["name"] as? String ?: "", it["managerId"] as? String, it["idNumber"] as? String, it["phone"] as? String, (it["updatedAt"] as? Number)?.toLong() ?: 0L, it["managerName"] as? String, (it["deletedAt"] as? Number)?.toLong(), it["parentId"] as? String)
                 }
             }
         }

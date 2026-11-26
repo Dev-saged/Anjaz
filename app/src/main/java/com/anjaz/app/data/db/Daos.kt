@@ -200,7 +200,7 @@ interface DirectoryDao {
     @Query("SELECT COUNT(*) FROM camps WHERE deletedAt IS NULL")
     fun observeCampCount(): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM squares WHERE deletedAt IS NULL")
+    @Query("SELECT COUNT(*) FROM squares WHERE deletedAt IS NULL AND parentId IS NULL")
     fun observeSquareCount(): Flow<Int>
 
     @Query("SELECT COALESCE(SUM(families), 0) FROM camps WHERE deletedAt IS NULL")

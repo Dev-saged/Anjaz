@@ -14,7 +14,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
-data class SquareStat(val square: SquareEntity, val camps: List<CampEntity>) {
+/** مربع رئيسي في الإحصائيات؛ camps تشمل مخيمات مربعاته الفرعية، وown مخيماته المباشرة. */
+data class SquareStat(
+    val square: SquareEntity,
+    val camps: List<CampEntity>,
+    val own: List<CampEntity> = camps,
+    val subs: List<com.anjaz.app.domain.SubSquare> = emptyList(),
+) {
     val families: Int get() = camps.sumOf { it.families ?: 0 }
     val missing: Int get() = camps.count { it.families == null }
 }
@@ -46,8 +52,9 @@ class StatsViewModel @Inject constructor(auth: AuthRepository, repo: DirectoryRe
         val chips = if (regionIds.size > 1) listOf(RegionChip(null, "الكل")) + rg.filter { it.id in regionIds }.map { RegionChip(it.id, it.name) } else emptyList()
         val shown = squares.filter { sel == null || it.regionId == sel }
         StatsUi(
-            squares = shown.map { s -> SquareStat(s, camps.filter { it.squareId == s.id }.sortedByDescending { it.families ?: -1 }) }
-                .sortedByDescending { it.families },
+            squares = com.anjaz.app.domain.SquareTree.build(shown, camps).map { t ->
+                SquareStat(t.square, t.allCamps, t.camps.sortedByDescending { it.families ?: -1 }, t.subs)
+            }.sortedByDescending { it.families },
             regions = chips, region = sel, loaded = true,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StatsUi())

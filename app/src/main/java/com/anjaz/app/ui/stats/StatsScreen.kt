@@ -157,6 +157,7 @@ private fun SquareTile(s: SquareStat, max: Int, total: Int, onClick: () -> Unit)
     ) {
         Text(s.square.name, color = if (c.dark) c.ink else c.navy, style = MaterialTheme.typography.titleLarge, maxLines = 2)
         s.square.managerName?.takeIf { it.isNotBlank() }?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodySmall, maxLines = 1) }
+        if (s.subs.isNotEmpty()) Stat("مربعات فرعية", num(s.subs.size))
         Stat("المخيمات", num(s.camps.size))
         Stat("الأسر", num(s.families))
         Canvas(Modifier.fillMaxWidth().height(8.dp)) {
@@ -193,24 +194,38 @@ private fun CampsSheet(s: SquareStat, onDismiss: () -> Unit) {
             Text(Plural.of(s.camps.size, Plural.camp) { ltr(it.toString()) } + " · " + Plural.of(s.families, Plural.family) { num(it) }, color = c.mute, style = MaterialTheme.typography.bodyMedium)
             if (s.camps.isEmpty()) Text("لا مخيمات في هذا المربع بعد", color = c.mute, style = MaterialTheme.typography.bodyMedium)
             val max = s.camps.maxOfOrNull { it.families ?: 0 }?.coerceAtLeast(1) ?: 1
-            s.camps.forEach { camp ->
-                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(c.card).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        AnjazIcon(AnjazIcons.Camp, c.emeraldDeep, 20.dp)
-                        Column(Modifier.weight(1f)) {
-                            Text(camp.name, color = c.ink, style = MaterialTheme.typography.titleMedium)
-                            camp.managerName?.takeIf { it.isNotBlank() }?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodySmall) }
-                        }
-                        Text(camp.families?.let { num(it) + " أسرة" } ?: "غير مسجّل", color = if (camp.families == null) c.amberDeep else c.ink, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+            s.own.forEach { camp -> CampBar(camp, max) }
+            s.subs.forEach { sub ->
+                Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("مربع فرعي: " + sub.square.name, color = c.ink, style = MaterialTheme.typography.titleMedium)
+                        Text(Plural.of(sub.camps.size, Plural.camp) { ltr(it.toString()) } + " · " + Plural.of(sub.families, Plural.family) { num(it) }, color = c.mute, style = MaterialTheme.typography.bodySmall)
                     }
-                    val f = (camp.families ?: 0).toFloat() / max
-                    Canvas(Modifier.fillMaxWidth().height(6.dp)) {
-                        val r = CornerRadius(size.height / 2)
-                        drawRoundRect(c.line, cornerRadius = r)
-                        drawRoundRect(c.emerald, size = Size(size.width * f, size.height), cornerRadius = r, topLeft = androidx.compose.ui.geometry.Offset(size.width * (1 - f), 0f))
-                    }
+                    Text(ltr(Weights.percent(sub.families, s.families)), color = c.emeraldDeep, style = MaterialTheme.typography.titleMedium)
                 }
+                sub.camps.sortedByDescending { it.families ?: -1 }.forEach { camp -> CampBar(camp, max) }
             }
+        }
+    }
+}
+
+@Composable
+private fun CampBar(camp: com.anjaz.app.data.db.CampEntity, max: Int) {
+    val c = Anjaz.colors
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(c.card).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            AnjazIcon(AnjazIcons.Camp, c.emeraldDeep, 20.dp)
+            Column(Modifier.weight(1f)) {
+                Text(camp.name, color = c.ink, style = MaterialTheme.typography.titleMedium)
+                camp.managerName?.takeIf { it.isNotBlank() }?.let { Text(it, color = c.mute, style = MaterialTheme.typography.bodySmall) }
+            }
+            Text(camp.families?.let { num(it) + " أسرة" } ?: "غير مسجّل", color = if (camp.families == null) c.amberDeep else c.ink, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+        }
+        val f = (camp.families ?: 0).toFloat() / max
+        Canvas(Modifier.fillMaxWidth().height(6.dp)) {
+            val r = CornerRadius(size.height / 2)
+            drawRoundRect(c.line, cornerRadius = r)
+            drawRoundRect(c.emerald, size = Size(size.width * f, size.height), cornerRadius = r, topLeft = androidx.compose.ui.geometry.Offset(size.width * (1 - f), 0f))
         }
     }
 }

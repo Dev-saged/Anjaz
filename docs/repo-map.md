@@ -10,13 +10,14 @@
 ## Features (v0.8.0)
 - SOS: ui/sos؛ محادثة: ui/chat (SyncEngine.listenRoom).
 - حسابات: data/AccountsRepository → ui/accounts؛ دليل: ui/directory؛ حول: ui/about/AboutCard؛ README: brand/tools/make_readme_assets.py.
-- Room v9: Migrations 1→9 (8→9 tasks.createdByName، users.campId، messages.senderName، rooms.memberNames)؛ PdfLayout منفصل لأن PdfDocument لا يعمل تحت Robolectric.
+- Room v10: Migrations 1→10 (9→10 squares.parentId)؛ سابقاً 1→9 (8→9 tasks.createdByName، users.campId، messages.senderName، rooms.memberNames)؛ PdfLayout منفصل لأن PdfDocument لا يعمل تحت Robolectric.
 - وسائط: media/{MediaRepository، VoiceRecorder، MediaTransport}؛ Worker جسر مؤقت media.js؛ واجهة ui/chat/MediaUi.
 - صوت→نص: stt/{WhisperModel، Transcriber، AudioPcm، SttViewModel}؛ AAR يُنزَّل ببصمة (fetchSherpa). فيديو: media/VideoCompressor.
 - تنظيف: sync/CleanupWorker (يومي، MediaRepository.cleanOrphans)؛ ما الجديد: ui/about/Changelog؛ حالة فارغة: components/EmptyState؛ النشر: docs/DEPLOY.md.
 - v0.8.0: خريطة ui/map؛ متكررة ui/templates؛ مكالمات `CallManager`؛ قفل `AppLock`؛ بحث ui/search؛ صور TaskPhotos.
 - حجم: splits.abi؛ version.json فيه apks/sizes.
 - v0.8.3: مكتبات onnx/sherpa/webrtc خارج الـ APK (excludes في gradle) → pack/`NativePacks` (يُنزَّل من release packs-v1، SHA-256، `PackPrefetchWorker` على Wi-Fi)؛ إن غيّرت هذه المكتبات ارفع PACK_ID/PACK_TAG وbuild.yml؛ الرئيسية: ui/home/HomeShortcuts (`MapCard`،`PlacesRow`).
+- v0.14.0: مربعات فرعية `squares.parentId` + `domain/SquareTree` (مستوى واحد، اليتيم يبقى رئيسياً، SquareTreeTest)؛ الإحصائيات والتوزيع على الرئيسية؛ `convertRegionToSquare(intoSquare)`؛ `DirectoryRepository.NO_PARENT`.
 - v0.13.0: رؤية المهام `FirestoreRemoteStore.tasks` (union) + `TaskRepository.canAssignTo`؛ قارئ/منفّذ في القواعد `taskReader`/`executor`؛ جهات الاتصال `users` (union) + `ChatListViewModel.directoryGroups`؛ أسماء الغرف `encodeNames`؛ التوزيع ui/distribute + `Weights.allocate` (أكبر الباقي، WeightsTest)؛ إشعارات notify.js تذكر المرسِل.
 - v0.12.0: الدليل `RegionSection`؛ نقل/تحويل `convertRegionToSquare`؛ `FormAlert`؛ كلمة مرور حرة `Username.authPassword` (لاحقة #anjaz للأقصر من 6).
 - v0.11.0: إحصائيات ui/stats؛ أقسام المهام `TaskCategory`؛ `FitText`+حد الخط 1.3 في AnjazTheme؛ `Plural`؛ حذف سلة فعلي Worker trash.js؛ حذف الرسالة `unsend`.

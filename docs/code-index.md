@@ -4,8 +4,8 @@
 
 <!-- repomap:auto:start (tools/repomap.py — لا تعدّل يدوياً) -->
 ## Code index (auto)
-> 232 ملفاً · 34559 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
-> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · FirestoreRemoteStore.kt 355 · ChatScreens.kt 336
+> 234 ملفاً · 34837 سطراً. للتفاصيل: Grep باسم الرمز ثم Read بنطاق أسطر، لا تقرأ الملفات الكبيرة كاملة.
+> الأكبر: package-lock.json 10702 · package-lock.json 1552 · 4.json 812 · 3.json 742 · 2.json 735 · 1.json 519 · DirectoryRepository.kt 361 · FirestoreRemoteStore.kt 356
 
 ### ./
 - CLAUDE.md (44)
@@ -52,7 +52,7 @@
 - Clock.kt (10): interface, SystemClock
 - DashboardRepository.kt (41): DashboardCounts, DashboardRepository
 - DemoSeeder.kt (39): DemoSeeder
-- DirectoryRepository.kt (297): DirectoryRepository
+- DirectoryRepository.kt (361): DirectoryRepository
 - Outbox.kt (24): EntityOp, Outbox
 - Session.kt (6): Session
 - SessionStore.kt (35): SessionStore
@@ -63,8 +63,8 @@
 ### app/src/main/java/com/anjaz/app/data/db/
 - AnjazDatabase.kt (33): AnjazDatabase
 - Daos.kt (302): SquareCount, TaskDao, TaskEventDao, OutboxDao, DirectoryDao, SosDao, ChatDao +1
-- Entities.kt (190): RegionEntity, SquareEntity, CampEntity, UserEntity, TaskEntity, TaskEventEntity, OutboxEntity +6
-- Migrations.kt (73): Migrations
+- Entities.kt (192): RegionEntity, SquareEntity, CampEntity, UserEntity, TaskEntity, TaskEventEntity, OutboxEntity +6
+- Migrations.kt (79): Migrations
 - SearchDao.kt (23): SearchDao
 ### app/src/main/java/com/anjaz/app/di/
 - DataModule.kt (37): DataModule
@@ -74,6 +74,7 @@
 - Plural.kt (27): Noun, Plural
 - Profile.kt (18): Profile
 - Role.kt (16): Role
+- SquareTree.kt (42): SubSquare, TopSquare, SquareTree
 - TaskStatus.kt (42): TaskStatus, Priority
 - Username.kt (49): Username
 - Weights.kt (36): Weights
@@ -118,13 +119,13 @@
 ### app/src/main/java/com/anjaz/app/sync/
 - ApiClient.kt (95): ApiClient
 - CleanupWorker.kt (44): CleanupWorker
-- FirestoreRemoteStore.kt (355): FirestoreRemoteStore
+- FirestoreRemoteStore.kt (356): FirestoreRemoteStore
 - RemoteStore.kt (56): RemoteDenied, AuditEntry, RemoteStore, NoRemoteStore, interface
 - SyncEngine.kt (232): PushResult, SyncEngine
 - SyncWorker.kt (54): SyncWorker, SyncScheduler
 ### app/src/main/java/com/anjaz/app/ui/about/
 - AboutCard.kt (83): AboutCard
-- Changelog.kt (54): ChangelogSheet
+- Changelog.kt (55): ChangelogSheet
 ### app/src/main/java/com/anjaz/app/ui/accounts/
 - AccountsScreen.kt (200): AccountsScreen
 - AccountsViewModel.kt (158): AccountsUi, AccountsViewModel
@@ -150,11 +151,11 @@
 - DashboardScreen.kt (151): DashboardScreen
 - DashboardViewModel.kt (44): DashboardViewModel
 ### app/src/main/java/com/anjaz/app/ui/directory/
-- DirectoryScreen.kt (216): DirectoryScreen
-- DirectoryViewModel.kt (192): DirKind, SquareRow, RegionSection, DirectoryUi, DirForm, DirectoryViewModel
+- DirectoryScreen.kt (256): DirectoryScreen
+- DirectoryViewModel.kt (221): DirKind, SquareRow, RegionSection, DirectoryUi, DirForm, DirectoryViewModel
 ### app/src/main/java/com/anjaz/app/ui/distribute/
-- DistributeScreen.kt (173): DistributeScreen
-- DistributeViewModel.kt (124): CampShare, SquareShare, DistributeInput, DistributeUi, DistributeViewModel
+- DistributeScreen.kt (193): DistributeScreen
+- DistributeViewModel.kt (143): CampShare, SubShare, SquareShare, DistributeInput, DistributeUi, DistributeViewModel
 ### app/src/main/java/com/anjaz/app/ui/home/
 - HomeScreen.kt (193): HomeScreen
 - HomeShortcuts.kt (157): MapCard, CampsCard
@@ -183,8 +184,8 @@
 - SosScreen.kt (188): SosScreen
 - SosViewModel.kt (50): SosViewModel
 ### app/src/main/java/com/anjaz/app/ui/stats/
-- StatsScreen.kt (217): StatsScreen
-- StatsViewModel.kt (57): SquareStat, RegionChip, StatsUi, StatsViewModel
+- StatsScreen.kt (232): StatsScreen
+- StatsViewModel.kt (64): SquareStat, RegionChip, StatsUi, StatsViewModel
 ### app/src/main/java/com/anjaz/app/ui/sync/
 - SyncCenter.kt (95): SyncCenterViewModel, SyncSheet
 ### app/src/main/java/com/anjaz/app/ui/tasks/
@@ -243,6 +244,7 @@
 - MediaTest.kt (171): MediaTest
 - MigrationTest.kt (65): MigrationTest
 - RoomSelfTestTest.kt (22): RoomSelfTestTest
+- SquareTreeTest.kt (31): SquareTreeTest
 - SyncEngineTest.kt (181): SyncEngineTest
 - WeightsTest.kt (35): WeightsTest
 ### app/src/test/java/com/anjaz/app/update/
@@ -306,7 +308,7 @@
 ### docs/
 - DEPLOY.md (18)
 - media.md (7)
-- repo-map.md (50)
+- repo-map.md (51)
 ### tools/
 - repomap.py (146): files, symbols, build, main
 <!-- repomap:auto:end -->
